@@ -1,0 +1,156 @@
+/* SONORA — las ventanas.
+
+   Lo que se usa SIEMPRE se queda a la vista: la pista repartida. Lo que se
+   usa CUANDO HACE FALTA se abre aquí encima, hace lo suyo y se cierra, sin
+   empujar nada de sitio ni quitarle alto a la pista.
+
+   Un desplegable hacía las dos cosas mal: estorbaba cerrado y obligaba a
+   desplazar abierto. */
+
+/* ---------- La ventana ---------- */
+
+.velo {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(5, 7, 11, 0.72);
+  backdrop-filter: blur(3px);
+  animation: velo-entra 140ms ease-out;
+}
+
+@keyframes velo-entra {
+  from {
+    opacity: 0;
+  }
+}
+
+.ventana {
+  display: flex;
+  flex-direction: column;
+  width: min(460px, 100%);
+  max-height: 92dvh;
+  border: 1px solid var(--borde-vivo);
+  border-radius: var(--radio-grande);
+  background: var(--panel);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6);
+  animation: ventana-entra 180ms cubic-bezier(0.2, 0.9, 0.3, 1);
+  outline: none;
+  overflow: hidden;
+}
+
+.ventana--ancha {
+  width: min(1040px, 100%);
+}
+
+/* La que tiene que llenar: la rejilla de la matriz y el cuadro X/Y solo
+   sirven si son grandes, así que su ventana toma todo el alto que puede.
+   Las demás miden lo que su contenido pida y no dejan hueco debajo. */
+.ventana--alta {
+  height: min(700px, 92dvh);
+}
+
+@keyframes ventana-entra {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+}
+
+/* El filo de color dice de qué instrumento es esta ventana. */
+.ventana::before {
+  content: '';
+  display: block;
+  height: 3px;
+  background: currentColor;
+  flex: none;
+}
+
+.ventana__cabecera {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--borde);
+  flex: none;
+}
+
+.ventana__textos {
+  flex: 1;
+  min-width: 0;
+}
+
+.ventana__titulo {
+  font-size: 17px;
+  font-weight: 650;
+  color: var(--texto);
+  margin: 0;
+}
+
+.ventana__nota {
+  display: block;
+  margin-top: 3px;
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--texto-tenue);
+}
+
+.ventana__cerrar {
+  flex: none;
+  width: var(--toque);
+  height: var(--toque);
+  border: 1px solid var(--borde-vivo);
+  border-radius: 9px;
+  background: var(--fondo);
+  color: var(--texto-suave);
+  font-size: 15px;
+}
+
+.ventana__cuerpo {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Las altas no se desplazan: su contenido se reparte el alto que hay. */
+.ventana--alta .ventana__cuerpo {
+  overflow: hidden;
+}
+
+.ventana__pie {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--borde);
+  background: var(--fondo-alto);
+}
+
+.tira--grande {
+  height: 34px;
+}
+
+/* ---------- Pantallas bajas ---------- */
+
+@media (max-height: 760px) {
+  .velo {
+    padding: 12px;
+  }
+
+  .ventana {
+    max-height: 94dvh;
+  }
+
+  .ventana__cuerpo {
+    padding: 13px;
+    gap: 10px;
+  }
+}

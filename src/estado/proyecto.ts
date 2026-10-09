@@ -43,6 +43,46 @@ export function colorPorIndice(indice: number): string {
   return COLORES_FILA[indice % COLORES_FILA.length];
 }
 
+/** La paleta de los sonidos propios: tonos que no se confunden con el kit. */
+export const COLORES_SAMPLE = [
+  '#5fd4ff',
+  '#ff9f68',
+  '#9bff6b',
+  '#ff6bd6',
+  '#6bffe0',
+  '#d6ff5f',
+] as const;
+
+/** Cada sonido del kit tiene SU color, siempre el mismo. */
+const COLOR_DE_TIPO: Record<TipoSonido, string> = {
+  bombo: COLORES_FILA[0],
+  redoblante: COLORES_FILA[1],
+  hihat: COLORES_FILA[2],
+  palma: COLORES_FILA[3],
+  tom: COLORES_FILA[4],
+  aro: COLORES_FILA[5],
+  sample: COLORES_SAMPLE[0],
+};
+
+/**
+ * El color de una pista sale de SU SONIDO, no del orden en que se creó.
+ *
+ * Antes rotaba la paleta por posición, así que cuatro bombos salían de
+ * cuatro colores y el color no decía nada. Ahora dos bombos son del mismo
+ * amarillo y lo que distingue los colores es el sonido: en la pista
+ * repartida se lee de un vistazo qué suena, sin leer los nombres.
+ */
+export function colorDeSonido(tipo: TipoSonido, sampleUrl?: string): string {
+  if (tipo !== 'sample' || !sampleUrl) return COLOR_DE_TIPO[tipo];
+  // El mismo sonido da siempre el mismo color: se saca del propio sonido.
+  let mezcla = 2166136261;
+  for (let i = 0; i < sampleUrl.length; i++) {
+    mezcla ^= sampleUrl.charCodeAt(i);
+    mezcla = Math.imul(mezcla, 16777619);
+  }
+  return COLORES_SAMPLE[Math.abs(mezcla) % COLORES_SAMPLE.length];
+}
+
 export function crearFila(
   tipo: TipoSonido,
   cantidadPasos: number,
@@ -52,14 +92,15 @@ export function crearFila(
     id: nuevoId(tipo),
     nombre: NOMBRES_SONIDO[tipo],
     tipo,
-    color: COLORES_FILA[0],
+    color: colorDeSonido(tipo, opciones.sampleUrl),
     pasos: new Array(cantidadPasos).fill(false),
     probabilidad: new Array(cantidadPasos).fill(1),
     volumen: 0.8,
     silenciada: false,
     soloActivo: false,
-    protegida: false,
-    regla: { modo: 'manual', pulsos: 4, rotacion: 0, densidad: 0.5, mutabilidad: 0.12 },
+    // Arranca a mano: lo primero que hace el estudiante es dibujar su beat,
+    // y la máquina entra cuando él lo decide en la mesa Procedural.
+    regla: { activa: false, golpes: 0.25, azar: 0.3, rotacion: 0, mutabilidad: 0.12 },
     ...opciones,
   };
 }
@@ -84,6 +125,7 @@ const PERFILES_SECCION: Record<
 > = {
   intro: {
     etiqueta: 'Intro',
+    modo: 'procedural',
     intencion: 'Entra en puntas de pie: pocas capas, deja espacio a la voz.',
     compases: 2,
     intensidad: 0.35,
@@ -92,8 +134,9 @@ const PERFILES_SECCION: Record<
     desvanecer: false,
     proporcionCapas: 0.4,
   },
-  cuerpo: {
-    etiqueta: 'Cuerpo',
+  estrofa: {
+    etiqueta: 'Estrofa',
+    modo: 'procedural',
     intencion: 'La pieza en pleno: todas las capas sosteniendo la historia.',
     compases: 4,
     intensidad: 0.8,
@@ -102,8 +145,9 @@ const PERFILES_SECCION: Record<
     desvanecer: false,
     proporcionCapas: 1,
   },
-  giro: {
-    etiqueta: 'Giro',
+  coro: {
+    etiqueta: 'Coro',
+    modo: 'procedural',
     intencion: 'Aquí cambia algo: más intensidad y un empujón de tempo.',
     compases: 2,
     intensidad: 1,
@@ -114,6 +158,7 @@ const PERFILES_SECCION: Record<
   },
   cierre: {
     etiqueta: 'Cierre',
+    modo: 'procedural',
     intencion: 'Se apaga: quedan pocas capas y la pieza se desvanece.',
     compases: 2,
     intensidad: 0.5,
@@ -124,7 +169,7 @@ const PERFILES_SECCION: Record<
   },
 };
 
-export const ORDEN_SECCIONES: NombreSeccion[] = ['intro', 'cuerpo', 'giro', 'cierre'];
+export const ORDEN_SECCIONES: NombreSeccion[] = ['intro', 'estrofa', 'coro', 'cierre'];
 
 export function crearPatronInicial(): Patron {
   const pasos = 16;
@@ -148,13 +193,14 @@ export function crearPatronInicial(): Patron {
     filas: [bombo, redoblante, hihat, palma, tom],
     melodia: {
       octavaBase: 2,
+      instrumento: 'sintetizador',
+      notaSample: 'C3',
       notas: [],
       volumen: 0.7,
       silenciada: false,
       soloActivo: false,
       escala: 'menorPentatonica',
-      regla: { modo: 'manual', pulsos: 5, rotacion: 0, densidad: 0.35, mutabilidad: 0.2 },
-      protegida: false,
+      regla: { activa: false, golpes: 0.3, azar: 0.35, rotacion: 0, mutabilidad: 0.2 },
       visible: true,
     },
   };
@@ -181,13 +227,16 @@ function repartirCapas(idsFilas: string[], proporcion: number): string[] {
 
 /**
  * Vuelve a aplicar el arco sugerido sin tocar las semillas:
- * intro suave → cuerpo pleno → giro marcado → cierre en fade.
+ * intro suave → estrofa plena → coro marcado → cierre en fade.
  */
 export function sugerirArreglo(proyecto: Proyecto): void {
   const ids = proyecto.patron.filas.map((f) => f.id);
   for (const seccion of proyecto.secciones) {
     const { proporcionCapas, ...perfil } = PERFILES_SECCION[seccion.id];
+    // El modo lo eligió el estudiante: sugerir un arreglo no se lo cambia.
+    const modoElegido = seccion.modo;
     Object.assign(seccion, perfil);
+    seccion.modo = modoElegido;
     seccion.capasActivas = repartirCapas(ids, proporcionCapas);
   }
 }
@@ -205,6 +254,111 @@ export function duracionPieza(proyecto: Proyecto): number {
       total + (s.compases * proyecto.patron.cantidadPasos * segundosPorPaso) / s.factorTempo,
     0,
   );
+}
+
+// ------------------------------------------------- La estructura en el tiempo
+
+/**
+ * El reparto del tiempo. La unidad real de la pieza es la VUELTA del patrón
+ * —el motor cuenta vueltas, no segundos—, así que estas funciones traducen
+ * entre lo que el estudiante ve (minutos y porcentajes) y lo que el motor
+ * necesita (vueltas enteras por sección).
+ */
+
+/** Vueltas mínimas y máximas de la pieza completa. */
+export const VUELTAS_MINIMAS = 8;
+export const VUELTAS_MAXIMAS = 200;
+
+/** Segundos que dura una vuelta del patrón, con el tempo de la sección. */
+export function segundosPorVuelta(proyecto: Proyecto, factorTempo = 1): number {
+  const segundosPorPaso = 60 / proyecto.bpm / 4;
+  return (proyecto.patron.cantidadPasos * segundosPorPaso) / factorTempo;
+}
+
+/** Cuánto dura una sección, en segundos. */
+export function duracionSeccion(proyecto: Proyecto, seccion: Seccion): number {
+  return seccion.compases * segundosPorVuelta(proyecto, seccion.factorTempo);
+}
+
+/** Qué parte del total ocupa cada sección (0..1, suman 1). */
+export function proporcionesDeSecciones(proyecto: Proyecto): number[] {
+  const duraciones = proyecto.secciones.map((s) => duracionSeccion(proyecto, s));
+  const total = duraciones.reduce((a, b) => a + b, 0);
+  if (total <= 0) return duraciones.map(() => 1 / (duraciones.length || 1));
+  return duraciones.map((d) => d / total);
+}
+
+/**
+ * Reparte un total de vueltas según unas proporciones.
+ * Cada sección se lleva al menos una vuelta (si no, desaparecería de la pieza)
+ * y la sobra se reparte por resto mayor, que es lo que menos deforma los
+ * porcentajes pedidos.
+ */
+export function repartirVueltas(proporciones: number[], total: number): number[] {
+  const cuantas = proporciones.length;
+  if (cuantas === 0) return [];
+  const suma = proporciones.reduce((a, b) => a + b, 0) || 1;
+  const repartibles = Math.max(0, Math.round(total) - cuantas);
+  const exactos = proporciones.map((p) => (p / suma) * repartibles);
+  const enteros = exactos.map((v) => Math.floor(v));
+  let sobra = repartibles - enteros.reduce((a, b) => a + b, 0);
+
+  const porDecimal = exactos
+    .map((v, i) => ({ i, decimal: v - Math.floor(v) }))
+    .sort((a, b) => b.decimal - a.decimal);
+  for (const { i } of porDecimal) {
+    if (sobra <= 0) break;
+    enteros[i] += 1;
+    sobra -= 1;
+  }
+  return enteros.map((v) => v + 1);
+}
+
+/** Cambia la duración total de la pieza conservando los porcentajes actuales. */
+export function fijarVueltasTotales(proyecto: Proyecto, total: number): void {
+  const limitado = Math.max(VUELTAS_MINIMAS, Math.min(VUELTAS_MAXIMAS, Math.round(total)));
+  const reparto = repartirVueltas(proporcionesDeSecciones(proyecto), limitado);
+  proyecto.secciones.forEach((seccion, i) => {
+    seccion.compases = reparto[i];
+  });
+}
+
+/** Aplica unos porcentajes sin tocar la duración total. */
+export function aplicarProporciones(proyecto: Proyecto, proporciones: number[]): void {
+  const reparto = repartirVueltas(proporciones, vueltasTotales(proyecto));
+  proyecto.secciones.forEach((seccion, i) => {
+    seccion.compases = reparto[i];
+  });
+}
+
+/**
+ * Mueve el límite entre dos secciones vecinas: lo que gana una lo pierde la
+ * otra, así arrastrar el punto del arco reparte el tiempo sin alargar la pieza.
+ */
+export function moverLimite(proyecto: Proyecto, indice: number, vueltasIzquierda: number): void {
+  const izquierda = proyecto.secciones[indice];
+  const derecha = proyecto.secciones[indice + 1];
+  if (!izquierda || !derecha) return;
+  const par = izquierda.compases + derecha.compases;
+  const nueva = Math.max(1, Math.min(par - 1, Math.round(vueltasIzquierda)));
+  izquierda.compases = nueva;
+  derecha.compases = par - nueva;
+}
+
+/** Cuántas vueltas hacen falta para que la pieza dure, más o menos, N segundos. */
+export function vueltasParaDuracion(proyecto: Proyecto, segundos: number): number {
+  const vueltas = vueltasTotales(proyecto);
+  const actual = duracionPieza(proyecto);
+  const porVuelta = vueltas > 0 && actual > 0 ? actual / vueltas : segundosPorVuelta(proyecto);
+  return Math.round(segundos / porVuelta);
+}
+
+/** Segundos en formato reloj: 2:05. */
+export function formatearReloj(segundos: number): string {
+  const total = Math.max(0, Math.round(segundos));
+  const minutos = Math.floor(total / 60);
+  const resto = total % 60;
+  return `${minutos}:${String(resto).padStart(2, '0')}`;
 }
 
 export function crearProyectoInicial(): Proyecto {
@@ -232,7 +386,9 @@ export function crearProyectoInicial(): Proyecto {
       semilla,
     },
     bpm: 100,
+    swing: 0,
     semilla,
+    generacionMutacion: 0,
     volumenMaestro: 0.85,
     patron,
     efectos: {
@@ -240,8 +396,10 @@ export function crearProyectoInicial(): Proyecto {
       filtroFrecuencia: 18000,
       filtroTipo: 'lowpass',
       delayCantidad: 0,
+      movimiento: 0,
     },
     secciones: crearSecciones(semilla, patron.filas.map((f) => f.id)),
+    sonidos: [],
   };
 }
 

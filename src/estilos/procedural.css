@@ -1,0 +1,220 @@
+/* SONORA — la mesa Procedural: un cuadro X/Y por instrumento.
+
+   El aspecto viene de los controladores de hardware, pero con una diferencia
+   que importa: aquí ningún mando es un número sin nombre. Los dos ejes están
+   rotulados con palabras, y encima del cuadro va siempre la tira de 16 que
+   muestra lo que la regla está produciendo. */
+
+.cuadros {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(238px, 1fr));
+}
+
+/* ¿Quién arma esta pista? Es el único interruptor de la tarjeta, y por eso
+   dice con todas las letras cuál de los dos está mandando. */
+.quien {
+  flex: none;
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid var(--borde-vivo);
+  border-radius: 999px;
+  background: var(--fondo);
+  color: var(--texto-tenue);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.quien--maquina {
+  border-color: currentColor;
+  color: inherit;
+  background: var(--panel-alto);
+}
+
+/* ---------- La tira: la regla hecha visible ---------- */
+
+/* Va ARRIBA del cuadro: la mano que arrastra el punto tapa lo que quede
+   debajo, y esto es justo lo que hay que mirar mientras se arrastra. */
+.tira {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 2px;
+  height: 26px;
+}
+
+.tira__casilla {
+  border-radius: 3px;
+  background: #1b1f29;
+  border: 1px solid transparent;
+}
+
+/* Suena a veces: hueco pero con borde, para que se vea que ahí puede pasar algo. */
+.tira__casilla[data-estado='1'] {
+  background: transparent;
+  border-color: currentColor;
+  opacity: 0.85;
+}
+
+/* Suena siempre: lleno. */
+.tira__casilla[data-estado='2'] {
+  background: currentColor;
+}
+
+.tira__casilla[data-cabeza='si'] {
+  outline: 2px solid var(--texto);
+  outline-offset: -1px;
+}
+
+.tira__cuenta {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--texto-tenue);
+  font-variant-numeric: tabular-nums;
+}
+
+.tira__cuenta strong {
+  color: var(--texto);
+  font-weight: 500;
+}
+
+/* ---------- El cuadro ---------- */
+
+.cuadro {
+  position: relative;
+  aspect-ratio: 1;
+  width: 100%;
+  border: 1px solid var(--borde-vivo);
+  border-radius: var(--radio-chico);
+  background:
+    linear-gradient(0deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px) 0 0 / 100% 25%,
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px) 0 0 / 25% 100%,
+    #0e1118;
+  cursor: crosshair;
+  /* El dedo mueve el punto; no desplaza la página. */
+  touch-action: none;
+  overflow: hidden;
+}
+
+.cuadro:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.cuadro--apagado {
+  cursor: default;
+  opacity: 0.5;
+  border-style: dashed;
+}
+
+.cuadro__dedo {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  margin: -14px 0 0 -14px;
+  border-radius: 50%;
+  border: 2px solid #0b0d13;
+  background: currentColor;
+  box-shadow: 0 0 16px 2px currentColor;
+  pointer-events: none;
+}
+
+/* Las guías hasta los bordes: ayudan a leer en qué punto de cada eje estás. */
+.cuadro__cruz {
+  position: absolute;
+  background: currentColor;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.cuadro__cruz--v {
+  top: 0;
+  bottom: 0;
+  width: 1px;
+}
+
+.cuadro__cruz--h {
+  left: 0;
+  right: 0;
+  height: 1px;
+}
+
+.cuadro__eje {
+  position: absolute;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #6b7383;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.cuadro__eje--arriba {
+  top: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.cuadro__eje--abajo {
+  bottom: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.cuadro__eje--izq {
+  left: 5px;
+  top: 50%;
+  transform: translateY(-50%) rotate(180deg);
+  writing-mode: vertical-rl;
+}
+
+.cuadro__eje--der {
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  writing-mode: vertical-rl;
+}
+
+.cuadro__apagado {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  color: var(--texto-tenue);
+}
+
+/* ---------- Correr el patrón ---------- */
+
+.corrida {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+  color: var(--texto-tenue);
+}
+
+.corrida span:first-child {
+  flex: none;
+}
+
+.corrida input[type='range'] {
+  flex: 1;
+  min-width: 0;
+}
+
+.corrida__valor {
+  flex: none;
+  min-width: 18px;
+  font-family: var(--mono);
+  color: var(--texto-suave);
+  text-align: right;
+}
+
+.corrida input:disabled {
+  opacity: 0.35;
+}
+

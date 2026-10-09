@@ -1,0 +1,791 @@
+/* SONORA — el taller y las ventanas de sus herramientas.
+
+   Una sola idea gobierna esta hoja: en cada sitio hay UNA cosa grande y el
+   resto la gobierna desde el borde. En la pantalla, la cosa grande es la
+   pista repartida y las herramientas están a la derecha. Dentro de cada
+   ventana, la cosa grande es la celda, la rejilla o el cuadro, y lo que la
+   gobierna está a la derecha otra vez.
+
+   Nada de esto se desplaza: la caja grande se lleva el alto que haya con
+   `flex: 1; min-height: 0`, y las casillas se reparten lo que les toque en
+   vez de medir un número fijo de píxeles. Eso es lo que hace que entre
+   igual en una tablet de 800 de alto que en un portátil. */
+
+/* ---------- La pantalla de Producción ---------- */
+
+.taller {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 14px;
+  align-items: stretch;
+}
+
+.taller__pista {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+}
+
+.taller__pista > .panel {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.taller__pista > .panel > .panel__cuerpo {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.taller__mandos {
+  flex: 0 0 clamp(190px, 20vw, 248px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+
+/* Cada herramienta es una carta: su nombre y, debajo, lo que lleva hecho.
+   No lleva instrucciones — para eso está la ventana cuando se abre. */
+.carta {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 13px;
+  min-height: 52px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-grande);
+  background: linear-gradient(145deg, var(--panel-alto), var(--panel));
+  text-align: left;
+  transition:
+    border-color 140ms ease,
+    transform 90ms ease,
+    background 140ms ease;
+}
+
+.carta:hover {
+  border-color: var(--borde-vivo);
+}
+
+.carta:active {
+  transform: scale(0.985);
+}
+
+.carta--abierta {
+  border-color: var(--acento);
+  box-shadow: inset 0 0 0 1px var(--acento-oscuro);
+}
+
+.carta__icono {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: var(--fondo);
+  color: var(--acento);
+  font-size: 15px;
+}
+
+.carta__textos {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.carta__nombre {
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--texto);
+}
+
+.carta__estado {
+  font-size: 11.5px;
+  line-height: 1.3;
+  color: var(--texto-tenue);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Tocar el nombre de una pista en la línea de tiempo abre sus golpes. */
+.cancion__etiqueta--abre {
+  border: 0;
+  background: none;
+  width: 100%;
+  text-align: left;
+  border-radius: var(--radio-chico);
+}
+
+.cancion__etiqueta--abre:hover {
+  background: var(--panel-alto);
+}
+
+/* ---------- La columna que gobierna, dentro de las ventanas ---------- */
+
+.pistas {
+  flex: 0 0 clamp(150px, 20%, 196px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+
+.pistas__titulo {
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--texto-tenue);
+  margin: 0;
+}
+
+/* Con muchas pistas la lista se desplaza por dentro en vez de estirar la
+   ventana: el tope está puesto para que siempre se vea el pie. */
+.pistas__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-height: 0;
+  max-height: 42dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.pistas__lista::-webkit-scrollbar {
+  width: 8px;
+}
+
+.pistas__lista::-webkit-scrollbar-thumb {
+  background: var(--borde-vivo);
+  border-radius: 999px;
+}
+
+/* En las ventanas altas manda el alto que haya, no el tope. */
+.ventana--alta .pistas__lista {
+  max-height: none;
+}
+
+.pista {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  min-height: 38px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-chico);
+  background: var(--fondo-alto);
+  text-align: left;
+}
+
+.pista--actual {
+  border-color: currentColor;
+  background: var(--panel-alto);
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+
+.pista__textos {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.pista__nombre {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--texto);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pista__nota {
+  font-size: 11px;
+  color: var(--texto-tenue);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pistas__pie {
+  flex: none;
+}
+
+.pistas__pie .boton {
+  width: 100%;
+  justify-content: center;
+}
+
+/* Empuja lo que venga después hasta el otro extremo del pie. */
+.pie__hueco {
+  flex: 1;
+}
+
+/* ---------- Ventana: Golpes ---------- */
+
+.golpes {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+  flex: 1;
+}
+
+.golpes__celda {
+  flex: none;
+}
+
+/* La celda de golpes: las casillas se reparten el ancho, así que 16, 32 o
+   64 pasos entran igual sin desplazar nada. */
+.celdas {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  height: clamp(54px, 11dvh, 86px);
+}
+
+/* La cabeza lectora: una línea que recorre la rejilla al compás, en
+   porcentaje, porque las casillas no miden un número fijo de píxeles. */
+.cabeza-rejilla {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.35);
+  pointer-events: none;
+  z-index: 2;
+  transition: left 90ms linear;
+}
+
+.casilla {
+  border: 1px solid var(--borde-vivo);
+  border-radius: var(--radio-chico);
+  background: var(--fondo);
+  padding: 0;
+  min-width: 0;
+  transition:
+    transform 70ms ease,
+    background 120ms ease;
+}
+
+.casilla--fuerte {
+  border-color: var(--texto-tenue);
+}
+
+.casilla--activa {
+  border-color: transparent;
+}
+
+.casilla:active {
+  transform: scale(0.94);
+}
+
+.golpes__datos {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.golpes__cuenta {
+  font-size: 12.5px;
+  color: var(--texto-suave);
+}
+
+.golpes__cuenta strong {
+  color: var(--texto);
+  font-variant-numeric: tabular-nums;
+}
+
+.golpes__cuerpo {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 16px;
+}
+
+.sonidos-elegir {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 9px;
+}
+
+.sonidos-elegir__rejilla,
+.sonidos-elegir .pista__nota {
+  align-self: stretch;
+}
+
+.sonidos-elegir__rejilla {
+  display: grid;
+  gap: 7px;
+  grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+  align-content: start;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.chip-sonido {
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-chico);
+  background: var(--fondo-alto);
+  color: var(--texto-suave);
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chip-sonido--actual {
+  border-color: var(--acento);
+  background: var(--panel-alto);
+  color: var(--texto);
+}
+
+/* ---------- Ventana: Matriz ---------- */
+
+.matriz-ventana {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 16px;
+}
+
+.matriz-rejilla {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  gap: 6px;
+}
+
+.matriz-rejilla__notas {
+  flex: none;
+  width: 42px;
+  display: flex;
+  flex-direction: column;
+}
+
+.matriz-rejilla__nota {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 4px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--texto-tenue);
+}
+
+.matriz-rejilla__nota--fuerte {
+  color: var(--texto-suave);
+  font-weight: 650;
+}
+
+/* La rejilla entera entra en la caja: las casillas valen 1fr, no 28px. */
+.matriz-rejilla__celdas {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+  min-height: 0;
+}
+
+.matriz-rejilla__celdas .celda {
+  width: auto;
+  height: auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* ---------- Ventana: Procedural ---------- */
+
+.procedural-ventana {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.procedural-ventana__cuerpo {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 16px;
+}
+
+.procedural-ventana__cuadro {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* El cuadro es cuadrado y tan grande como el hueco deje. Era lo que faltaba:
+   con 140 px de lado no se podía apuntar con el dedo. */
+.procedural-ventana__cuadro .cuadro {
+  flex: 1;
+  min-height: 0;
+  aspect-ratio: 1;
+  height: auto;
+  width: auto;
+  max-width: 100%;
+  margin-inline: auto;
+}
+
+.procedural-ventana__mandos {
+  flex: 0 0 clamp(190px, 26%, 250px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+
+.procedural-ventana__mandos .pistas {
+  flex: 1;
+  min-height: 0;
+}
+
+/* El interruptor que entrega la pista a la máquina. Es la puerta de todo lo
+   demás —sin él el cuadro no hace nada—, así que se ve como una puerta y no
+   como un botón más del pie. */
+.interruptor {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 13px;
+  border: 1px solid var(--borde-vivo);
+  border-radius: var(--radio-grande);
+  background: var(--fondo-alto);
+  text-align: left;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease;
+}
+
+.interruptor--maquina {
+  border-color: currentColor;
+  background: var(--panel-alto);
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+
+.interruptor__palanca {
+  flex: none;
+  position: relative;
+  width: 44px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--borde);
+  transition: background 160ms ease;
+}
+
+.interruptor--maquina .interruptor__palanca {
+  background: currentColor;
+}
+
+.interruptor__bolita {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--texto);
+  transition: transform 160ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+.interruptor--maquina .interruptor__bolita {
+  transform: translateX(18px);
+  background: var(--fondo);
+}
+
+.interruptor__textos {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.interruptor__estado {
+  font-size: 13.5px;
+  font-weight: 650;
+  color: var(--texto);
+}
+
+.interruptor__pista {
+  font-size: 11.5px;
+  line-height: 1.3;
+  color: var(--texto-tenue);
+}
+
+.interruptor--maquina .interruptor__pista {
+  color: inherit;
+}
+
+/* Con la pista en manos del estudiante, el cuadro se ve cerrado: no es que
+   esté roto, es que todavía no es suyo. */
+.procedural-ventana__cuadro--cerrado {
+  opacity: 0.45;
+}
+
+/* ---------- Ventana: Sonidos ---------- */
+
+.sonidos {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 16px;
+}
+
+.sonidos__estantes {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.sonidos__grabar {
+  flex: 0 0 clamp(190px, 28%, 240px);
+}
+
+.sonidos__grabar .campo input[type='text'] {
+  width: 100%;
+}
+
+.recorte {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.recorte__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+/* ---------- Ventana: Mezcla ---------- */
+
+.mezcla {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 16px;
+}
+
+.mezcla__canales {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.canal {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 11px;
+  min-height: 44px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-chico);
+  background: var(--fondo-alto);
+}
+
+.canal__nombre {
+  flex: 0 0 110px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--texto);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.canal__volumen {
+  flex: 1;
+  min-width: 0;
+}
+
+.mezcla__efectos {
+  flex: 0 0 clamp(200px, 32%, 280px);
+}
+
+/* ---------- Ventana: Estructura ---------- */
+
+/* El arco es un gráfico, no una ilustración: en cuanto se lee ya cumplió.
+   Limitarlo es lo que hace que el detalle de la parte entre en la misma
+   pantalla y no haya que desplazar para ajustar la energía. */
+.ventana .estructura {
+  gap: 16px;
+  align-items: start;
+}
+
+.ventana .estructura__arco .dona {
+  max-height: 34dvh;
+  width: auto;
+  margin-inline: auto;
+}
+
+.ventana .estructura__reloj {
+  font-size: 24px;
+}
+
+/* ---------- La perilla ---------- */
+
+/* Como la de un controlador: se arrastra en vertical, nunca en círculo, y
+   el arco dice cuánto lleva sin tener que leer un número. */
+.perilla {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  text-align: center;
+}
+
+.perilla__mando {
+  width: 74px;
+  height: 74px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--matriz);
+  touch-action: none;
+  border-radius: 50%;
+}
+
+.perilla__mando:focus-visible {
+  outline: 2px solid var(--texto);
+  outline-offset: 2px;
+}
+
+.perilla__mando svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(135deg);
+}
+
+.perilla__pista,
+.perilla__lleno {
+  fill: none;
+  stroke-width: 7;
+  stroke-linecap: round;
+}
+
+.perilla__pista {
+  stroke: var(--borde);
+}
+
+.perilla__lleno {
+  stroke: currentColor;
+  transition: stroke-dasharray 60ms linear;
+}
+
+.perilla__aguja {
+  stroke: var(--texto);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+.perilla__nombre {
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--texto);
+}
+
+.perilla__lectura {
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--texto-tenue);
+}
+
+/* ---------- Pantallas bajas ---------- */
+
+@media (max-height: 760px) {
+  .taller {
+    gap: 10px;
+  }
+
+  .taller__mandos {
+    gap: 6px;
+  }
+
+  .carta {
+    min-height: 46px;
+    padding: 8px 11px;
+  }
+
+  .carta__icono {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+/* En vertical o en pantallas estrechas, el carril pasa debajo de la pista
+   en vez de comerse el ancho que la línea de tiempo necesita. */
+@media (max-width: 900px) {
+  .taller {
+    flex-direction: column;
+  }
+
+  .taller__mandos {
+    flex: none;
+    flex-direction: row;
+    overflow-x: auto;
+  }
+
+  .carta {
+    flex: 1 0 150px;
+  }
+
+  .golpes__cuerpo,
+  .matriz-ventana,
+  .procedural-ventana__cuerpo,
+  .sonidos,
+  .mezcla {
+    flex-direction: column;
+  }
+
+  .pistas,
+  .sonidos__grabar,
+  .mezcla__efectos {
+    flex: none;
+  }
+
+  .pistas__lista {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}

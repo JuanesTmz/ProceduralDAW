@@ -1,0 +1,221 @@
+/* SONORA — la app ocupa la ventana y nada más.
+
+   La regla de esta hoja: **el navegador nunca hace scroll**. La app mide
+   exactamente el alto de la ventana. Lo que sirve para orientarse —la marca,
+   las tres fases y el transporte— se queda clavado, y la herramienta de turno
+   se lleva todo lo que sobre.
+
+   La cadena para que esto funcione es flex + `min-height: 0` en cada
+   eslabón: sin eso un hijo con mucho contenido estira a su padre y el scroll
+   de página vuelve por la puerta de atrás.
+
+   Se carga la última, para poder soltar el `position: sticky` y los
+   `min-height: 100vh` que traen las hojas anteriores. */
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+#root {
+  height: 100%;
+  min-height: 0;
+}
+
+.app {
+  height: 100dvh;
+  max-height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- Lo que se queda quieto ---------- */
+
+.cabecera {
+  flex: none;
+  position: static;
+}
+
+.marco {
+  flex: none;
+  position: static;
+}
+
+.contenido {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 18px;
+  overflow: hidden;
+  /* En tablet la pantalla es justo lo que hay: se aprovecha entera. */
+  max-width: none;
+  margin: 0;
+}
+
+.mision,
+.pasos-nav {
+  flex: none;
+  margin: 0;
+}
+
+.pasos-nav {
+  padding: 0;
+}
+
+/* ---------- El área de trabajo ---------- */
+
+.area {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 4px;
+}
+
+.area::-webkit-scrollbar {
+  width: 10px;
+}
+
+.area::-webkit-scrollbar-thumb {
+  background: var(--borde-vivo);
+  border-radius: 999px;
+}
+
+/* En Producción el área no se desplaza: el taller mide justo lo que hay. */
+.app[data-fase='produccion'] .area {
+  overflow: hidden;
+  padding-right: 0;
+}
+
+/* Un panel solo en el área se queda con todo el alto. */
+.area > .panel:only-child {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.area > .panel:only-child > .panel__cabecera {
+  flex: none;
+}
+
+.area > .panel:only-child > .panel__cuerpo {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* El pie repetía lo que ya dice la pista y se comía 40 px de los 800 que
+   tiene la tablet. Fuera. */
+.pie {
+  display: none;
+}
+
+/* ---------- La guía, en una línea ---------- */
+
+/* Solo vive fuera de Producción: allí la pantalla se explica sola. */
+.mision {
+  padding: 8px 14px;
+  gap: 10px;
+  align-items: center;
+}
+
+.mision__frase {
+  font-size: 13.5px;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.mision__porque {
+  font-size: 12.5px;
+  margin-top: 5px;
+}
+
+.mision__icono {
+  width: 24px;
+  height: 24px;
+  font-size: 13px;
+  flex: none;
+}
+
+.pasos-nav .boton {
+  min-height: 38px;
+  padding: 0 14px;
+  font-size: 13px;
+}
+
+/* ---------- La canción: la rejilla se lleva el alto que sobre ---------- */
+
+.taller__pista .cancion {
+  flex: 1;
+  min-height: 160px;
+}
+
+.taller__pista .cancion__scroller {
+  overflow-y: auto;
+}
+
+/* ---------- El marco, más delgado ---------- */
+
+.transporte {
+  padding: 7px 18px;
+}
+
+/* En las fases sin marco, los botones siguen abajo y a los lados. */
+.contenido > .pasos-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* ---------- Pantallas bajas ---------- */
+
+@media (max-height: 760px) {
+  .contenido {
+    padding: 8px 14px;
+    gap: 8px;
+  }
+
+  .area {
+    gap: 8px;
+  }
+
+  .panel__cuerpo {
+    padding: 13px;
+  }
+
+  .panel__cabecera {
+    padding: 11px 16px;
+  }
+
+  .mision__frase {
+    -webkit-line-clamp: 1;
+  }
+}
+
+/* ---------- El visual: el lienzo de Hydra se ajusta a lo que haya ---------- */
+
+/* Traía `aspect-ratio: 16/9` con tope de 460 px, que en una tablet de 800
+   empujaba los controles fuera de la pantalla. Ahora manda el alto
+   disponible y la proporción cede. */
+@media (max-height: 900px) {
+  .lienzo {
+    aspect-ratio: auto;
+    height: clamp(180px, 34dvh, 400px);
+    margin-bottom: 12px;
+  }
+}

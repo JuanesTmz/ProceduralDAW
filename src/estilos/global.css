@@ -1122,10 +1122,10 @@ button:focus-visible {
 .seccion[data-seccion='intro'] {
   border-top-color: var(--azul);
 }
-.seccion[data-seccion='cuerpo'] {
+.seccion[data-seccion='estrofa'] {
   border-top-color: var(--verde);
 }
-.seccion[data-seccion='giro'] {
+.seccion[data-seccion='coro'] {
   border-top-color: var(--coral);
 }
 .seccion[data-seccion='cierre'] {
@@ -1496,10 +1496,10 @@ button:focus-visible {
 .reparto__bloque[data-seccion='intro'] {
   border-top-color: var(--azul);
 }
-.reparto__bloque[data-seccion='cuerpo'] {
+.reparto__bloque[data-seccion='estrofa'] {
   border-top-color: var(--verde);
 }
-.reparto__bloque[data-seccion='giro'] {
+.reparto__bloque[data-seccion='coro'] {
   border-top-color: var(--coral);
 }
 .reparto__bloque[data-seccion='cierre'] {
@@ -1602,10 +1602,10 @@ button:focus-visible {
 .arco__columna[data-seccion='intro'] {
   border-top-color: var(--azul);
 }
-.arco__columna[data-seccion='cuerpo'] {
+.arco__columna[data-seccion='estrofa'] {
   border-top-color: var(--verde);
 }
-.arco__columna[data-seccion='giro'] {
+.arco__columna[data-seccion='coro'] {
   border-top-color: var(--coral);
 }
 .arco__columna[data-seccion='cierre'] {
@@ -2194,4 +2194,356 @@ button:focus-visible {
   justify-content: space-between;
   gap: 12px;
   padding-top: 6px;
+}
+
+
+/* ---------- Estructura de la canción ---------- */
+
+.estructura {
+  display: grid;
+  grid-template-columns: minmax(300px, 1.1fr) minmax(260px, 1fr);
+  gap: 22px;
+  align-items: center;
+}
+
+@media (max-width: 900px) {
+  .estructura {
+    grid-template-columns: 1fr;
+  }
+}
+
+.estructura__arco {
+  position: relative;
+}
+
+/* El arco: ángulo = tiempo, grosor = energía. */
+.dona {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+  touch-action: none;
+}
+
+.dona__techo {
+  fill: var(--borde);
+  opacity: 0.55;
+}
+
+.dona__parte {
+  cursor: pointer;
+}
+
+.dona__sector {
+  fill: currentColor;
+  stroke: var(--fondo);
+  stroke-width: 1.5;
+  opacity: 0.82;
+  transition: opacity 0.14s ease;
+}
+
+.dona__parte:hover .dona__sector {
+  opacity: 1;
+}
+
+.dona__parte--elegida .dona__sector {
+  opacity: 1;
+  stroke: var(--texto);
+  stroke-width: 2;
+}
+
+.dona__porcentaje {
+  fill: var(--fondo);
+  font-family: var(--fuente);
+  font-size: 14px;
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  pointer-events: none;
+}
+
+.dona__guia {
+  stroke: var(--fondo);
+  stroke-width: 2;
+  opacity: 0.85;
+}
+
+.dona__asa {
+  fill: var(--texto);
+  stroke: var(--fondo);
+  stroke-width: 2.5;
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.dona__asa:hover {
+  fill: var(--acento);
+}
+
+/* Con el mouse no se dibuja contorno; con teclado sí, para saber dónde se está. */
+.dona__asa:focus {
+  outline: none;
+}
+
+.dona__asa:focus-visible {
+  outline: none;
+  fill: var(--acento);
+  stroke: var(--acento);
+}
+
+.dona__aguja line {
+  stroke: var(--acento);
+  stroke-width: 2;
+}
+
+.dona__aguja circle {
+  fill: var(--acento);
+}
+
+.estructura__centro {
+  position: absolute;
+  left: 50%;
+  bottom: 11.1%;
+  transform: translateX(-50%);
+  width: 38%;
+  padding-bottom: 8px;
+  text-align: center;
+  pointer-events: none;
+}
+
+.estructura__reloj {
+  display: block;
+  font-family: var(--mono);
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.estructura__leyenda {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--texto-tenue);
+  font-weight: 700;
+}
+
+.estructura__mandos {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.estructura__atajos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.estructura__aviso {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--texto-suave);
+}
+
+.formas__lista--compacta {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 8px;
+}
+
+.formas__lista--compacta .forma {
+  padding: 9px 11px;
+}
+
+/* Las cuatro partes, bajo el arco: resumen y selector a la vez. */
+.partes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.parte {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+  padding: 11px 13px;
+  background: var(--fondo-alto);
+  border: 1px solid var(--borde);
+  border-top: 3px solid var(--borde-vivo);
+  border-radius: var(--radio-chico);
+}
+
+.parte:hover {
+  border-color: var(--borde-vivo);
+}
+
+.parte--elegida {
+  background: var(--panel-alto);
+  border-color: var(--borde-vivo);
+  box-shadow: inset 0 0 0 1px var(--borde-vivo);
+}
+
+.parte[data-seccion='intro'] {
+  border-top-color: var(--azul);
+}
+.parte[data-seccion='estrofa'] {
+  border-top-color: var(--verde);
+}
+.parte[data-seccion='coro'] {
+  border-top-color: var(--coral);
+}
+.parte[data-seccion='cierre'] {
+  border-top-color: var(--lila);
+}
+
+.parte__nombre {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13.5px;
+  font-weight: 650;
+}
+
+.parte__tiempo {
+  font-family: var(--mono);
+  font-size: 19px;
+  font-variant-numeric: tabular-nums;
+}
+
+.parte__dato {
+  font-size: 11.5px;
+  color: var(--texto-tenue);
+}
+
+.parte__modo {
+  align-self: flex-start;
+  margin-top: 4px;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--borde-vivo);
+  color: var(--texto-tenue);
+}
+
+.parte__modo--procedural {
+  border-color: var(--acento-oscuro);
+  color: var(--acento);
+}
+
+/* El detalle de la parte elegida. */
+.detalle {
+  margin-top: 16px;
+  padding: 16px;
+  background: var(--fondo-alto);
+  border: 1px solid var(--borde);
+  border-top: 3px solid var(--borde-vivo);
+  border-radius: var(--radio);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.detalle[data-seccion='intro'] {
+  border-top-color: var(--azul);
+}
+.detalle[data-seccion='estrofa'] {
+  border-top-color: var(--verde);
+}
+.detalle[data-seccion='coro'] {
+  border-top-color: var(--coral);
+}
+.detalle[data-seccion='cierre'] {
+  border-top-color: var(--lila);
+}
+
+.detalle__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.detalle__titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
+}
+
+.detalle__duracion {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.detalle__reloj {
+  font-family: var(--mono);
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  min-width: 52px;
+  text-align: center;
+}
+
+.detalle__intencion {
+  margin: 0;
+  font-size: 13px;
+  color: var(--texto-suave);
+  line-height: 1.5;
+}
+
+.detalle__bloque {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detalle__bloque .grupo-segmentado {
+  align-self: flex-start;
+}
+
+.detalle__ayuda {
+  font-size: 12px;
+  color: var(--texto-tenue);
+  line-height: 1.5;
+}
+
+.detalle__pie {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-top: 12px;
+  border-top: 1px solid var(--borde);
+}
+
+.detalle .efectos__control span:first-child {
+  min-width: 72px;
+}
+
+.capa--sumar {
+  border-style: dashed;
+}
+
+
+/* El sonido propio de la matriz: subir un audio y tocarlo afinado. */
+.matriz__sonido {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.matriz__sonido .grupo-segmentado button {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

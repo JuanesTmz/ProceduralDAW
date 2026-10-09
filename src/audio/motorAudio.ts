@@ -12,12 +12,26 @@
  */
 import * as Tone from 'tone';
 import { crearVoz, type VozPercusion } from './kit';
+import { renderizarPieza } from '../generativo/renderPieza';
 import { notaTone, semitonoDeGrado } from '../generativo/escalas';
-import { debeSonar } from '../generativo/motorGenerativo';
+import {
+  acentoDePaso,
+  ajusteDeRemate,
+  debeSonar,
+  densidadDeIntensidad,
+  enRemate,
+  filaDeRemate,
+  humanizar,
+  nivelDeCapa,
+  PROBABILIDAD_NIVEL,
+  VELOCIDAD_NIVEL,
+  volumenDeIntensidad,
+} from '../generativo/motorGenerativo';
 import type { NombreEscala } from '../generativo/escalas';
 import type {
   Efectos,
   Fila,
+  Melodia,
   ModoReproduccion,
   Proyecto,
   Seccion,
@@ -38,19 +52,6 @@ export type OyentePaso = (paso: number) => void;
 /** Aviso al entrar en una sección nueva. -1 cuando la pieza termina. */
 export type OyenteSeccion = (indice: number) => void;
 
-/**
- * Cuánto pesa la intensidad de la sección sobre la probabilidad de cada golpe.
- * En 1 suena todo; en 0 queda el 40%, que adelgaza la textura sin vaciarla.
- */
-function densidadDeIntensidad(intensidad: number): number {
-  return 0.4 + 0.6 * intensidad;
-}
-
-/** La intensidad también mueve el volumen, pero menos: la mezcla no se hunde. */
-function volumenDeIntensidad(intensidad: number): number {
-  return 0.45 + 0.55 * intensidad;
-}
-
 class MotorAudio {
   private iniciado = false;
   private bus: Tone.Gain | null = null;
@@ -62,6 +63,10 @@ class MotorAudio {
   private matriz: Tone.PolySynth<Tone.Synth> | null = null;
   private ecoMatriz: Tone.FeedbackDelay | null = null;
   private gananciaMatriz: Tone.Gain | null = null;
+  /** El sonido propio del estudiante tocando la matriz, afinado por casilla. */
+  private muestreadorMatriz: Tone.Sampler | null = null;
+  private urlMuestreador: string | undefined;
+  private notaMuestreador: string | undefined;
 
   private voces = new Map<string, EntradaVoz>();
 
@@ -313,6 +318,9 @@ class MotorAudio {
       this.gananciaSeccion.gain.cancelScheduledValues(Tone.now());
       this.gananciaSeccion.gain.value = 1;
     }
+    // Lo que quedaba agendado para dibujar se tira: si no, un paso viejo
+    // llega después del -1 y la pantalla cree que todavía suena.
+    Tone.getDraw().cancel(0);
     this.avisarPaso(-1);
     this.avisarSeccion(-1);
   }
@@ -340,32 +348,71 @@ class MotorAudio {
       return;
     }
     const semillaActiva = seccion ? seccion.semilla : proyecto.semilla;
-    const factorDensidad = seccion ? densidadDeIntensidad(seccion.intensidad) : 1;
+    // Sección a mano: suena exactamente lo dibujado, sin azar ni adelgazado.
+    const aMano = seccion?.modo === 'manual';
+    const factorDensidad = seccion && !aMano ? densidadDeIntensidad(seccion.intensidad) : 1;
+
+    // El remate: los últimos pasos antes de cambiar de parte suenan seguros
+    // y más fuerte, y la pista del redoble rellena lo que tenía vacío.
+    const ultimaVuelta = Boolean(
+      seccion &&
+        this.vueltaEnSeccion === seccion.compases - 1 &&
+        this.indiceSeccion < proyecto.secciones.length - 1,
+    );
+    const remate = enRemate(paso, patron.cantidadPasos, ultimaVuelta);
+    const ajuste = remate ? ajusteDeRemate(paso, patron.cantidadPasos) : null;
+    const idRedoble = remate
+      ? filaDeRemate(
+          patron.filas.filter((f) => (seccion ? nivelDeCapa(seccion, f.id) > 0 : true)),
+        )
+      : null;
+
+    // El swing retrasa las semicorcheas impares: es lo que hace que el ritmo
+    // cojee en vez de ir cuadrado. El tiempo del transporte ya trae el tempo
+    // propio de la parte, así que el retraso sale proporcionado solo.
+    const segundosPorPaso = 60 / Tone.getTransport().bpm.value / 4;
+    const cuando =
+      paso % 2 === 1 ? tiempo + (proyecto.swing ?? 0) * segundosPorPaso * 0.5 : tiempo;
 
     for (const fila of patron.filas) {
-      if (!fila.pasos[paso]) continue;
+      const esRedoble = remate && fila.id === idRedoble;
+      if (!fila.pasos[paso] && !esRedoble) continue;
       if (!this.filaSuena(fila, patron.filas)) continue;
-      if (seccion && !seccion.capasActivas.includes(fila.id)) continue;
-      const probabilidad = (fila.probabilidad[paso] ?? 1) * factorDensidad;
+      // Sin sección (modo bucle) todo suena a tope; con sección manda su escalón.
+      const nivel = seccion ? nivelDeCapa(seccion, fila.id) : 3;
+      if (nivel === 0) continue;
+      const base = aMano
+        ? PROBABILIDAD_NIVEL[nivel]
+        : (fila.probabilidad[paso] ?? 1) * factorDensidad * PROBABILIDAD_NIVEL[nivel];
+      const probabilidad = esRedoble ? 1 : base * (ajuste?.probabilidad ?? 1);
       if (!debeSonar(semillaActiva, fila.id, paso, this.vuelta, probabilidad)) continue;
-      this.voces.get(fila.id)?.voz.disparar(tiempo, 1);
+
+      const velocidad =
+        VELOCIDAD_NIVEL[nivel] *
+        acentoDePaso(paso, patron.cantidadPasos) *
+        humanizar(semillaActiva, fila.id, paso, this.vuelta) *
+        (ajuste?.velocidad ?? 1);
+      this.voces.get(fila.id)?.voz.disparar(cuando, Math.min(1, velocidad));
     }
 
     const melodia = patron.melodia;
     const melodiaSuena = !melodia.silenciada && (!seccion || seccion.melodiaActiva);
-    if (melodiaSuena && this.matriz) {
+    if (melodiaSuena) {
       // Se disparan juntas: en la matriz varias notas en la misma columna son un acorde.
       const acorde = melodia.notas
         .filter((n) => n.paso === paso)
         .map((n) => notaTone(semitonoDeGrado(n.grado, melodia.escala), melodia.octavaBase));
-      if (acorde.length > 0) {
-        this.matriz.triggerAttackRelease(acorde, '8n', tiempo);
-      }
+      if (acorde.length > 0) this.dispararMatriz(acorde, cuando);
     }
 
     // Tone.Draw sincroniza el dibujo con el audio: la cabeza lectora no se desfasa.
     const pasoDibujado = paso;
-    Tone.getDraw().schedule(() => this.avisarPaso(pasoDibujado), tiempo);
+    // El aviso va por la cola de dibujo de Tone, que se vacía en el hilo de
+    // la pantalla. Si entretanto se paró, ese paso ya no es verdad: por eso
+    // se vuelve a mirar al llegar, y no solo al agendar.
+    Tone.getDraw().schedule(() => {
+      if (this.estaSonando) this.avisarPaso(pasoDibujado);
+    }, tiempo);
 
     this.paso = (this.paso + 1) % patron.cantidadPasos;
     if (this.paso !== 0) return;
@@ -405,6 +452,8 @@ class MotorAudio {
     ganancia.cancelScheduledValues(tiempo);
     ganancia.rampTo(objetivo, 0.12, tiempo);
 
+    this.moverEcualizador(seccion, tiempo);
+
     if (seccion.desvanecer) {
       // El cierre se apaga a lo largo de toda la sección.
       const duracion = this.duracionSeccion(seccion);
@@ -412,6 +461,31 @@ class MotorAudio {
     }
 
     this.aplicarTempo(seccion);
+  }
+
+  /**
+   * El ecualizador que se mueve solo.
+   *
+   * Lo mismo que hacen las reglas con los golpes, pero con el timbre: en las
+   * partes de poca energía el filtro se cierra y entra más sala, y en el coro
+   * se abre del todo. Con `movimiento` en 0 no pasa nada: manda lo que el
+   * estudiante dejó puesto.
+   */
+  private moverEcualizador(seccion: Seccion, tiempo: number): void {
+    const fx = this.proyecto?.efectos;
+    const cuanto = fx?.movimiento ?? 0;
+    if (!fx || cuanto <= 0) return;
+
+    const base = fx.filtroFrecuencia;
+    // «Cerrado» es sonar más lejos: tapando agudos, o quitando cuerpo.
+    const cerrado = fx.filtroTipo === 'lowpass' ? base * 0.2 : Math.min(2200, base * 4 + 260);
+    const porEnergia = cerrado + (base - cerrado) * seccion.intensidad;
+    const destino = base + (porEnergia - base) * cuanto;
+    this.filtro?.frequency.rampTo(Math.max(80, destino), 0.25, tiempo);
+
+    // La sala va al revés: donde hay menos música, más aire.
+    const aire = fx.reverbCantidad + (0.5 - fx.reverbCantidad) * (1 - seccion.intensidad) * cuanto;
+    this.reverb?.wet.rampTo(Math.min(0.8, Math.max(0, aire)), 0.25, tiempo);
   }
 
   /** Cuánto dura una sección en segundos, con su propio factor de tempo. */
@@ -474,6 +548,7 @@ class MotorAudio {
     }
 
     const melodia = proyecto.patron.melodia;
+    this.cargarMuestreadorMatriz(melodia);
     const haySolo = proyecto.patron.filas.some((f) => f.soloActivo) || melodia.soloActivo;
     const melodiaAudible = !melodia.silenciada && (!haySolo || melodia.soloActivo);
     this.gananciaMatriz?.gain.rampTo(melodiaAudible ? melodia.volumen : 0, 0.03);
@@ -497,6 +572,49 @@ class MotorAudio {
 
   get narracionLista(): boolean {
     return Boolean(this.narrador?.loaded);
+  }
+
+  /**
+   * El sonido que el estudiante sube para la matriz.
+   *
+   * Tone.Sampler lo reproduce más rápido o más lento según la nota que se
+   * le pida, así que una sola grabación cubre toda la matriz afinada: la
+   * casilla de la nota base suena tal cual, las de arriba más agudas y las
+   * de abajo más graves. Solo se rehace si cambió el archivo o su afinación.
+   */
+  private cargarMuestreadorMatriz(melodia: Melodia): void {
+    const url = melodia.instrumento === 'sample' ? melodia.sampleUrl : undefined;
+    const nota = melodia.notaSample || 'C3';
+    if (this.urlMuestreador === url && this.notaMuestreador === nota) return;
+    this.urlMuestreador = url;
+    this.notaMuestreador = nota;
+    this.muestreadorMatriz?.dispose();
+    this.muestreadorMatriz = null;
+    if (!url || !this.ecoMatriz) return;
+    this.muestreadorMatriz = new Tone.Sampler({
+      urls: { [nota]: url },
+      attack: 0.002,
+      // Corto: la cola la pone el eco de la matriz, no el sample.
+      release: 0.35,
+      volume: -3,
+    }).connect(this.ecoMatriz);
+  }
+
+  /** ¿Ya se puede tocar el sonido propio de la matriz? */
+  get sonidoMelodiaListo(): boolean {
+    return Boolean(this.muestreadorMatriz?.loaded);
+  }
+
+  /**
+   * Toca la matriz con el instrumento que corresponda. Mientras el sonido
+   * propio termina de cargar sigue respondiendo el sintetizador, para que
+   * la grilla nunca quede muda.
+   */
+  private dispararMatriz(notas: string[], tiempo: number): void {
+    const melodia = this.proyecto?.patron.melodia;
+    const muestreador = melodia?.instrumento === 'sample' ? this.muestreadorMatriz : null;
+    if (muestreador?.loaded) muestreador.triggerAttackRelease(notas, '8n', tiempo);
+    else this.matriz?.triggerAttackRelease(notas, '8n', tiempo);
   }
 
   /** Crea o reemplaza la voz de una fila. */
@@ -535,11 +653,7 @@ class MotorAudio {
   /** Escucha previa de una nota de la matriz. */
   async escucharNota(grado: number, escala: NombreEscala, octavaBase: number): Promise<void> {
     await this.iniciar();
-    this.matriz?.triggerAttackRelease(
-      notaTone(semitonoDeGrado(grado, escala), octavaBase),
-      '8n',
-      Tone.now(),
-    );
+    this.dispararMatriz([notaTone(semitonoDeGrado(grado, escala), octavaBase)], Tone.now());
   }
 
   ajustarVolumenFila(id: string, volumen: number): void {
@@ -571,6 +685,8 @@ class MotorAudio {
 export const motorAudio = new MotorAudio();
 
 // Solo en desarrollo: acceso desde la consola para diagnosticar el audio.
+// Va también renderizarPieza porque la promesa de la pantalla de La canción
+// es que lo dibujado sea lo que suena, y eso hay que poder comprobarlo.
 if (import.meta.env.DEV) {
-  (globalThis as Record<string, unknown>).__sonora = { motorAudio, Tone };
+  (globalThis as Record<string, unknown>).__sonora = { motorAudio, Tone, renderizarPieza };
 }

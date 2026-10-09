@@ -1,21 +1,22 @@
 /**
- * Mueve la cabeza lectora (la columna que marca el paso que suena)
+ * Mueve la cabeza lectora —la columna que marca el paso que suena—
  * escribiendo directamente en el DOM.
  *
  * Por qué así: si el paso actual viviera en el estado de React, cada
- * semicorchea re-renderizaría las ~2000 celdas de la grilla. En los equipos
- * modestos del evento eso se nota. Aquí solo se toca un `transform`.
+ * semicorchea re-renderizaría las casillas de la rejilla entera. En las
+ * tablets del evento eso se nota. Aquí solo se toca un `left`.
+ *
+ * Y va en porcentaje, no en píxeles, porque las rejillas de las ventanas ya
+ * no miden un número fijo de píxeles por casilla: se reparten el ancho que
+ * tengan. El porcentaje vale igual con 16 pasos que con 64.
  */
 import { useEffect } from 'react';
 import type { RefObject } from 'react';
 import { motorAudio } from '../audio/motorAudio';
 
-/** Separación entre celdas, igual que el `gap` de la grilla en el CSS. */
-export const SEPARACION_CELDA = 3;
-
 export function useCabezaLectora(
   referencia: RefObject<HTMLDivElement | null>,
-  anchoCelda: number,
+  cantidadPasos: number,
 ): void {
   useEffect(() => {
     const elemento = referencia.current;
@@ -27,7 +28,7 @@ export function useCabezaLectora(
         return;
       }
       elemento.style.opacity = '1';
-      elemento.style.transform = `translateX(${paso * (anchoCelda + SEPARACION_CELDA)}px)`;
+      elemento.style.left = `${((paso + 0.5) / cantidadPasos) * 100}%`;
     });
-  }, [referencia, anchoCelda]);
+  }, [referencia, cantidadPasos]);
 }

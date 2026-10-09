@@ -67,18 +67,22 @@ export function evaluarRequisitos(proyecto: Proyecto): Requisito[] {
     {
       id: 'generativo',
       etiqueta: 'Música que varía con la semilla',
-      cumplido: tieneElementoGenerativo(proyecto.patron),
+      // No basta con tener reglas: si todas las partes se hacen a mano,
+      // la pieza no varía y el criterio de la rúbrica no se cumple.
+      cumplido:
+        tieneElementoGenerativo(proyecto.patron) &&
+        proyecto.secciones.some((s) => s.modo === 'procedural'),
       pista:
-        'Pon al menos una fila en Euclidiano o Probabilístico, o bájale la probabilidad a algunos pasos.',
-      paso: 'motor',
+        'Dale una regla a por lo menos un sonido en la mesa Procedural, y deja al menos una parte en modo Procedural.',
+      paso: 'procedural',
       bloqueante: true,
     },
     {
       id: 'secciones',
       etiqueta: 'Secciones que se distinguen',
       cumplido: seccionesSeDistinguen(proyecto),
-      pista: 'Dale distinta intensidad o distintas capas a Intro, Cuerpo, Giro y Cierre.',
-      paso: 'arco',
+      pista: 'Dale distinta energía o distintos elementos a Intro, Estrofa, Coro y Cierre.',
+      paso: 'cancion',
       bloqueante: true,
     },
     {
@@ -116,18 +120,18 @@ export function pasoCompleto(proyecto: Proyecto, vista: Vista): boolean {
       return requisitos[0].cumplido;
     case 'monologo':
       return requisitos[1].cumplido && requisitos[2].cumplido;
-    case 'arco':
+    case 'cancion':
       return requisitos[4].cumplido;
-    case 'patron':
-      // Basta con que haya material: algún golpe o alguna nota.
-      return (
-        proyecto.patron.filas.some((f) => f.pasos.some(Boolean)) ||
-        proyecto.patron.melodia.notas.length > 0
-      );
-    case 'motor':
+    case 'golpes':
+      // Basta con que haya material: algún golpe puesto en la grilla.
+      return proyecto.patron.filas.some((f) => f.pasos.some(Boolean));
+    case 'matriz':
+      return proyecto.patron.melodia.notas.length > 0;
+    case 'procedural':
       return requisitos[3].cumplido;
-    case 'secciones':
-      return requisitos[4].cumplido;
+    case 'sonidos':
+      // Hecha cuando al menos una pista suena con un sonido propio.
+      return proyecto.patron.filas.some((f) => f.tipo === 'sample');
     case 'visual':
       return requisitos[5].cumplido;
     case 'exportar':

@@ -1,0 +1,181 @@
+/* SONORA — el Estudio: grabar, recortar y llevar el sonido a una pista. */
+
+/* ---------- Grabar ---------- */
+
+.grabar {
+  padding: 16px 18px;
+  margin-bottom: 22px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-grande);
+  background: var(--panel);
+}
+
+.grabar__boton {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 22px;
+  border: 1px solid var(--coral);
+  border-radius: 999px;
+  background: var(--panel-alto);
+  color: var(--coral);
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.grabar__boton:disabled {
+  opacity: 0.4;
+}
+
+.grabar__punto {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--coral);
+}
+
+/* Grabando: el botón late, que es la señal de que el micrófono está abierto. */
+.grabar__boton--grabando {
+  background: var(--coral);
+  color: #2b0a10;
+  border-color: var(--coral);
+}
+
+.grabar__boton--grabando .grabar__punto {
+  background: #2b0a10;
+  animation: latido 1s ease-in-out infinite;
+}
+
+@keyframes latido {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+/* ---------- La onda y el recorte ---------- */
+
+.recorte {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.onda {
+  position: relative;
+  height: 112px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-chico);
+  background: #080a0f;
+  touch-action: none;
+  overflow: hidden;
+}
+
+.onda__lienzo {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Lo que queda fuera del recorte se apaga, en vez de desaparecer: así se ve
+   cuánto se está descartando y se puede recuperar arrastrando. */
+.onda__fuera {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: rgba(8, 10, 15, 0.62);
+  pointer-events: none;
+}
+
+.tirador {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 30px;
+  margin-left: -15px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+/* La línea fina se ve; el botón ancho es lo que el dedo agarra. */
+.tirador::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 14px;
+  width: 2px;
+  background: var(--verde);
+}
+
+.tirador::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 7px;
+  width: 16px;
+  height: 30px;
+  margin-top: -15px;
+  border-radius: 5px;
+  background: var(--verde);
+  box-shadow: 0 0 10px rgba(46, 230, 168, 0.5);
+}
+
+.tirador:focus-visible::after {
+  outline: 2px solid var(--texto);
+  outline-offset: 2px;
+}
+
+.recorte__dato {
+  margin: 0;
+  font-size: 13px;
+  color: var(--texto-tenue);
+}
+
+.recorte__dato strong {
+  color: var(--verde);
+  font-family: var(--mono);
+}
+
+.recorte__acciones {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ---------- Mis sonidos ---------- */
+
+.ficha--sonido {
+  gap: 7px;
+}
+
+.ficha__acciones {
+  display: flex;
+  gap: 7px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.boton--chico {
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 12.5px;
+}
+
+.aviso--bueno {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--verde);
+  border-radius: 0 var(--radio-chico) var(--radio-chico) 0;
+  background: rgba(46, 230, 168, 0.08);
+  font-size: 13px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grabar__boton--grabando .grabar__punto {
+    animation: none;
+  }
+}

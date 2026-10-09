@@ -33,15 +33,20 @@ function porcentaje(valor: number): string {
 }
 
 function describirRegla(regla: ReglaFila, cantidadPasos: number, golpes: number): string {
-  switch (regla.modo) {
-    case 'euclidiano':
-      return `Euclidiano: ${regla.pulsos} pulsos repartidos en ${cantidadPasos} pasos`;
-    case 'probabilistico':
-      return `Probabilístico: densidad ${porcentaje(regla.densidad)}`;
-    case 'manual':
-    default:
-      return `Manual: ${golpes} ${golpes === 1 ? 'golpe puesto a mano' : 'golpes puestos a mano'}`;
+  if (!regla.activa) {
+    return `A mano: ${golpes} ${golpes === 1 ? 'golpe puesto por ti' : 'golpes puestos por ti'}`;
   }
+  // Se cuentan los golpes que de verdad quedaron, no los del esqueleto: con
+  // azar alto aparecen golpes de relleno, y el mapa tiene que decir lo mismo
+  // que la tira de la mesa Procedural.
+  const repartidos = golpes;
+  const firmeza =
+    regla.azar < 0.05
+      ? 'siempre igual'
+      : regla.azar < 0.4
+        ? `con algo de azar (${porcentaje(regla.azar)})`
+        : `con mucho azar (${porcentaje(regla.azar)})`;
+  return `La máquina: ${repartidos} golpes repartidos parejo en ${cantidadPasos} pasos, ${firmeza}`;
 }
 
 export function construirMapaReglas(proyecto: Proyecto): MapaReglas {
@@ -52,11 +57,10 @@ export function construirMapaReglas(proyecto: Proyecto): MapaReglas {
     const probabilidad = probabilidadMedia(fila);
     const detalles: string[] = [];
 
-    if (fila.regla.modo === 'euclidiano' && fila.regla.rotacion !== 0) {
-      detalles.push(`rotación ${fila.regla.rotacion}`);
+    if (fila.regla.activa && fila.regla.rotacion !== 0) {
+      detalles.push(`corrida ${fila.regla.rotacion} pasos`);
     }
     if (probabilidad < 1) detalles.push(`suena ${porcentaje(probabilidad)} de las veces`);
-    if (fila.protegida) detalles.push('con candado');
     if (fila.silenciada) detalles.push('silenciada');
     if (fila.tipo === 'sample') detalles.push('sample propio');
 
@@ -66,21 +70,23 @@ export function construirMapaReglas(proyecto: Proyecto): MapaReglas {
       color: fila.color,
       regla: describirRegla(fila.regla, patron.cantidadPasos, golpes),
       detalles,
-      varia: !fila.protegida && (fila.regla.modo === 'probabilistico' || probabilidad < 1),
+      varia: (fila.regla.activa && fila.regla.azar > 0.02) || probabilidad < 1,
     };
   });
 
   const melodia = patron.melodia;
-  if (melodia.notas.length > 0 || melodia.regla.modo !== 'manual') {
+  if (melodia.notas.length > 0 || melodia.regla.activa) {
     const detalles = [ETIQUETAS_ESCALA[melodia.escala], `${melodia.notas.length} notas`];
-    if (melodia.protegida) detalles.push('con candado');
+    if (melodia.instrumento === 'sample' && melodia.sampleUrl) {
+      detalles.push('tocada con un sonido propio, afinado por casilla');
+    }
     lineas.push({
       id: 'melodia',
       nombre: 'Bajo / melodía',
       color: '#c792ea',
       regla: describirRegla(melodia.regla, patron.cantidadPasos, melodia.notas.length),
       detalles,
-      varia: !melodia.protegida && melodia.regla.modo !== 'manual',
+      varia: melodia.regla.activa && melodia.regla.azar > 0.02,
     });
   }
 

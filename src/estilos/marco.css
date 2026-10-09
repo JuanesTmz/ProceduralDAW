@@ -1,0 +1,773 @@
+/* SONORA — el marco: fases, transporte, banda de partes y mesas.
+
+   La idea de color: cada parte de la canción tiene la suya, y la parte en la
+   que estás trabajando tiñe todo el marco a través de --parte. Así la app
+   cambia de color según dónde estés en la pieza, y eso es a la vez decoración
+   y orientación.
+
+   Se carga después de global.css, así que aquí se pueden afinar los tokens. */
+
+:root {
+  /* Noche con tinte violeta en vez de gris: menos oficina, más estudio. */
+  --fondo: #0b0d13;
+  --fondo-alto: #11141d;
+  --panel: #161a25;
+  --panel-alto: #1d2231;
+  --borde: #272d3d;
+  --borde-vivo: #3a4358;
+
+  /* Las cuatro partes de la canción. */
+  --intro: #6ec8ff;
+  --estrofa: #ff6b81;
+  --coro: #2ee6a8;
+  --cierre: #b182ff;
+
+  /* La parte en la que se está trabajando. La pintan los data-parte. */
+  --parte: var(--acento);
+
+  --radio-grande: 14px;
+  --toque: 44px;
+}
+
+.app[data-parte='intro'] {
+  --parte: var(--intro);
+}
+.app[data-parte='estrofa'] {
+  --parte: var(--estrofa);
+}
+.app[data-parte='coro'] {
+  --parte: var(--coro);
+}
+.app[data-parte='cierre'] {
+  --parte: var(--cierre);
+}
+
+/* ---------- Las tres fases ---------- */
+
+.cabecera {
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.fases {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.fases__lista {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.fase {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--toque);
+  padding: 6px 16px 6px 10px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--texto-suave);
+  text-align: left;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    border-color 160ms ease;
+}
+
+.fase:hover {
+  background: var(--panel);
+  color: var(--texto);
+}
+
+.fase__marca {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border-radius: 50%;
+  border: 1px solid var(--borde-vivo);
+  font-size: 12px;
+  font-family: var(--mono);
+  color: var(--texto-tenue);
+  transition: inherit;
+}
+
+.fase__textos {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  min-width: 0;
+}
+
+.fase__nombre {
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.fase__lema {
+  font-size: 11.5px;
+  color: var(--texto-tenue);
+  white-space: nowrap;
+}
+
+.fase--hecha .fase__marca {
+  border-color: var(--verde);
+  color: var(--verde);
+}
+
+.fase--actual {
+  background: var(--panel-alto);
+  border-color: var(--borde-vivo);
+  color: var(--texto);
+}
+
+.fase--actual .fase__marca {
+  background: var(--acento);
+  border-color: var(--acento);
+  color: #1a1406;
+}
+
+.fase--actual.fase--hecha .fase__marca {
+  background: var(--verde);
+  border-color: var(--verde);
+  color: #04281c;
+}
+
+.fases__exportar {
+  margin-left: auto;
+  min-height: var(--toque);
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid var(--borde-vivo);
+  background: var(--panel);
+  color: var(--texto-suave);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.fases__exportar--listo {
+  border-color: var(--verde);
+  color: var(--verde);
+}
+
+.fases__exportar--actual {
+  background: var(--panel-alto);
+  color: var(--texto);
+}
+
+/* ---------- El marco fijo de Producción ---------- */
+
+.marco {
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  background: linear-gradient(180deg, var(--fondo-alto) 0%, rgba(11, 13, 19, 0.96) 100%);
+  border-bottom: 1px solid var(--borde);
+  backdrop-filter: blur(10px);
+}
+
+/* El hilo de color de la parte en la que trabajas, cruzando todo el marco. */
+.marco::before {
+  content: '';
+  display: block;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--parte), transparent);
+  opacity: 0.85;
+  transition: background 400ms ease;
+}
+
+.transporte {
+  gap: 12px;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--borde);
+}
+
+.tocar {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: var(--toque);
+  padding: 0 20px;
+  border: none;
+  border-radius: 10px;
+  background: var(--acento);
+  color: #1a1406;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+}
+
+.tocar__icono {
+  font-size: 12px;
+}
+
+.tocar--sonando {
+  background: var(--coral);
+  color: #2b0a10;
+}
+
+.segmentado {
+  display: flex;
+}
+
+.segmentado button {
+  min-height: var(--toque);
+  padding: 0 14px;
+  border: 1px solid var(--borde-vivo);
+  border-right: none;
+  background: var(--panel);
+  color: var(--texto-suave);
+  font-weight: 600;
+  font-size: 13.5px;
+}
+
+.segmentado button:first-child {
+  border-radius: 9px 0 0 9px;
+}
+
+.segmentado button:last-child {
+  border-radius: 0 9px 9px 0;
+  border-right: 1px solid var(--borde-vivo);
+}
+
+.segmentado button[aria-pressed='true'] {
+  background: var(--panel-alto);
+  color: var(--texto);
+  box-shadow: inset 0 -2px 0 var(--parte);
+}
+
+.mando-barra {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: var(--toque);
+}
+
+.mando-barra__nombre {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--texto-tenue);
+}
+
+.mando-barra input[type='range'] {
+  width: 128px;
+}
+
+.mando-barra--corto input[type='range'] {
+  width: 84px;
+}
+
+.mando-barra__valor {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--texto-suave);
+  font-variant-numeric: tabular-nums;
+  min-width: 62px;
+}
+
+/* El motor, siempre a mano: la semilla con cara de aparato. */
+.motor-barra {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  border: 1px solid var(--borde-vivo);
+  border-radius: 10px;
+  background: var(--fondo);
+}
+
+.motor-barra__rotulo {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--texto-tenue);
+}
+
+.motor-barra__display {
+  width: 74px;
+  padding: 6px 8px;
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  background: #05070b;
+  color: var(--acento);
+  font-family: var(--mono);
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.boton--motor {
+  min-height: 42px;
+  white-space: nowrap;
+}
+
+/* ---------- La banda de partes ---------- */
+
+.banda-partes {
+  padding: 12px 18px 10px;
+}
+
+.banda-partes__pista {
+  position: relative;
+  display: flex;
+  gap: 4px;
+  height: 66px;
+}
+
+.parte-banda {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 12px;
+  border: 1px solid var(--borde);
+  border-radius: 9px;
+  background: var(--panel);
+  color: var(--texto-suave);
+  overflow: hidden;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease;
+}
+
+.parte-banda__nombre {
+  position: relative;
+  font-weight: 650;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.parte-banda__dato {
+  position: relative;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--texto-tenue);
+  font-variant-numeric: tabular-nums;
+}
+
+/* La energía de la parte, como un nivel que sube desde abajo. */
+.parte-banda__energia {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: currentColor;
+  opacity: 0.14;
+  transition: height 220ms ease;
+  pointer-events: none;
+}
+
+.parte-banda[data-seccion='intro'] {
+  color: var(--intro);
+}
+.parte-banda[data-seccion='estrofa'] {
+  color: var(--estrofa);
+}
+.parte-banda[data-seccion='coro'] {
+  color: var(--coro);
+}
+.parte-banda[data-seccion='cierre'] {
+  color: var(--cierre);
+}
+
+.parte-banda--elegida {
+  border-color: currentColor;
+  background: var(--panel-alto);
+}
+
+.parte-banda--elegida .parte-banda__energia {
+  opacity: 0.26;
+}
+
+.parte-banda--suena {
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+
+.parte-banda--suena .parte-banda__nombre::after {
+  content: ' ●';
+  font-size: 9px;
+  vertical-align: middle;
+}
+
+.banda-partes__cabeza {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--texto);
+  box-shadow: 0 0 10px 1px rgba(233, 238, 245, 0.7);
+  z-index: 4;
+  pointer-events: none;
+  border-radius: 2px;
+}
+
+.banda-partes__pie {
+  margin: 9px 0 0;
+  font-size: 12.5px;
+  color: var(--texto-tenue);
+}
+
+.banda-partes__pie strong {
+  color: var(--parte);
+  font-weight: 600;
+}
+
+/* ---------- Las mesas de trabajo ---------- */
+
+.mesas {
+  display: flex;
+  gap: 2px;
+  padding: 0 18px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.mesa {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--toque);
+  padding: 0 15px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--texto-tenue);
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+  transition:
+    color 160ms ease,
+    border-color 160ms ease;
+}
+
+.mesa:hover {
+  color: var(--texto-suave);
+}
+
+.mesa__icono {
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+.mesa__visto {
+  font-size: 11px;
+  color: var(--verde);
+}
+
+.mesa--actual {
+  color: var(--texto);
+  border-bottom-color: var(--parte);
+}
+
+.mesa--actual .mesa__icono {
+  color: var(--parte);
+  opacity: 1;
+}
+
+/* ---------- Estanterías de la Librería ---------- */
+
+.estanteria {
+  margin-bottom: 26px;
+}
+
+.estanteria:last-child {
+  margin-bottom: 0;
+}
+
+.estanteria__cabecera {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--borde);
+}
+
+.estanteria__titulo {
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.chip--pendiente {
+  border-color: var(--acento-oscuro);
+  color: var(--acento);
+}
+
+.fichas {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+}
+
+.ficha {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-height: var(--toque);
+  padding: 13px 14px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--panel);
+  text-align: left;
+  transition:
+    border-color 140ms ease,
+    transform 140ms ease;
+}
+
+.ficha:hover {
+  border-color: var(--borde-vivo);
+}
+
+.ficha:active {
+  transform: scale(0.98);
+}
+
+.ficha--suena {
+  border-color: var(--parte);
+}
+
+.ficha--propia {
+  border-left: 3px solid var(--parte);
+}
+
+.ficha__nombre {
+  font-weight: 650;
+  font-size: 14px;
+}
+
+.ficha__descripcion {
+  font-size: 12px;
+  color: var(--texto-tenue);
+  line-height: 1.35;
+}
+
+/* ---------- Estados vacíos ---------- */
+
+.vacio-mesa {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 26px 24px;
+  border: 1px dashed var(--borde-vivo);
+  border-radius: var(--radio-grande);
+  background: linear-gradient(180deg, var(--panel) 0%, transparent 100%);
+}
+
+.vacio-mesa__icono {
+  font-size: 22px;
+  color: var(--parte);
+  opacity: 0.8;
+}
+
+.vacio-mesa__frase,
+.vacio-mesa__ayuda {
+  /* align-items: flex-start encoge los hijos al contenido, y el texto
+     quebraba antes de tiempo: se estiran y se limitan por caracteres. */
+  align-self: stretch;
+  margin: 0;
+  max-width: 58ch;
+}
+
+.vacio-mesa__frase {
+  font-size: 15px;
+}
+
+.vacio-mesa__ayuda {
+  font-size: 13px;
+  color: var(--texto-tenue);
+}
+
+/* ---------- La prueba del micrófono ---------- */
+
+.prueba-micro {
+  padding: 18px 20px;
+  margin-bottom: 22px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-grande);
+  background: var(--panel);
+}
+
+.prueba-micro__cabecera {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.prueba-micro__acciones {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.chip--estado {
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.chip--funciona {
+  border-color: var(--verde);
+  color: var(--verde);
+}
+
+.chip--falla {
+  border-color: var(--coral);
+  color: var(--coral);
+}
+
+.medidor {
+  height: 16px;
+  margin-top: 12px;
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  background: #05070b;
+  overflow: hidden;
+}
+
+.medidor__nivel {
+  height: 100%;
+  background: linear-gradient(90deg, var(--verde), var(--acento) 70%, var(--coral));
+  transition: width 60ms linear;
+}
+
+.aviso--malo {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--coral);
+  border-radius: 0 var(--radio-chico) var(--radio-chico) 0;
+  background: rgba(255, 93, 115, 0.08);
+  font-size: 13px;
+}
+
+.diagnostico {
+  display: grid;
+  gap: 1px;
+  margin: 16px 0 0;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-chico);
+  overflow: hidden;
+  background: var(--borde);
+}
+
+.diagnostico > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 12px;
+  background: var(--fondo-alto);
+}
+
+.diagnostico dt {
+  font-size: 12.5px;
+  color: var(--texto-suave);
+}
+
+.diagnostico dd {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 12px;
+  text-align: right;
+}
+
+.diagnostico dd.bien {
+  color: var(--verde);
+}
+
+.diagnostico dd.mal {
+  color: var(--coral);
+}
+
+/* ---------- Tablet: 10 pulgadas en horizontal ---------- */
+
+@media (max-width: 1100px) {
+  .fase__lema {
+    display: none;
+  }
+
+  .transporte__pista {
+    display: none;
+  }
+
+  .mando-barra input[type='range'] {
+    width: 96px;
+  }
+}
+
+@media (max-width: 820px) {
+  .fase__textos {
+    display: none;
+  }
+
+  .fase {
+    padding: 6px 10px;
+  }
+
+  .banda-partes__pista {
+    height: 58px;
+  }
+}
+
+/* En pantalla táctil no hay puntero que se pose encima: los efectos de hover
+   se apagan para que no queden estados pegados después de un toque. */
+@media (hover: none) {
+  .fase:hover {
+    background: transparent;
+    color: var(--texto-suave);
+  }
+
+  .fase--actual:hover {
+    background: var(--panel-alto);
+    color: var(--texto);
+  }
+
+  .mesa:hover {
+    color: var(--texto-tenue);
+  }
+
+  .mesa--actual:hover {
+    color: var(--texto);
+  }
+
+  .ficha:hover {
+    border-color: var(--borde);
+  }
+}
+
+/* El motor sin nada que hacer: los botones se apagan y el hueco del atajo
+   de teclado explica por qué, que es información más útil que el atajo. */
+.boton--motor:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.transporte__pista--aviso {
+  color: var(--acento);
+  max-width: 230px;
+  line-height: 1.3;
+}

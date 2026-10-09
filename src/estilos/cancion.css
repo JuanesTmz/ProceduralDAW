@@ -1,0 +1,345 @@
+/* SONORA — la pantalla de La canción: la pieza entera estirada en el tiempo.
+
+   Dos cosas mandan en esta hoja:
+   - El alto de las filas lo fija el componente en píxeles y aquí no se toca,
+     porque la columna de nombres y el canvas de golpes tienen que coincidir.
+   - Nada empieza nunca cuadrado contra el borde derecho: si hay más canción,
+     se ve cortada. Es la señal más clara de que ahí se sigue. */
+
+/* ---------- El mapa de toda la pieza ---------- */
+
+.mapa {
+  position: relative;
+  display: flex;
+  gap: 2px;
+  height: 16px;
+  margin-bottom: 12px;
+}
+
+.mapa__tramo {
+  border: 0;
+  padding: 0;
+  border-radius: 3px;
+  opacity: 0.45;
+}
+
+.mapa__tramo[data-seccion='intro'] {
+  background: var(--intro);
+}
+.mapa__tramo[data-seccion='estrofa'] {
+  background: var(--estrofa);
+}
+.mapa__tramo[data-seccion='coro'] {
+  background: var(--coro);
+}
+.mapa__tramo[data-seccion='cierre'] {
+  background: var(--cierre);
+}
+
+/* El recuadro de lo que estás viendo: el mapa dice dónde estás parado. */
+.mapa__ventana {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  border: 1.5px solid var(--texto);
+  border-radius: 5px;
+  background: rgba(233, 238, 245, 0.1);
+  pointer-events: none;
+  transition: left 120ms linear;
+}
+
+/* ---------- La rejilla ---------- */
+
+.cancion {
+  position: relative;
+  display: flex;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: #0a0c12;
+  overflow: hidden;
+}
+
+.cancion__columna {
+  flex: none;
+  border-right: 1px solid var(--borde);
+  background: var(--panel);
+  z-index: 3;
+  overflow: hidden;
+}
+
+/* La caja de los nombres: se mueve con el scroll vertical de la rejilla. */
+.cancion__etiquetas {
+  will-change: transform;
+}
+
+/* El hueco que iguala la banda de partes. Va por encima de los nombres
+   porque, al desplazar, estos pasan por debajo de él. */
+.cancion__hueco {
+  position: relative;
+  z-index: 2;
+  background: var(--panel);
+  border-bottom: 1px solid var(--borde);
+}
+
+.cancion__etiqueta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  font-size: 12px;
+  color: var(--texto-suave);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.cancion__nombre {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cancion__scroller {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  /* Con muchas pistas la rejilla no cabe de alto: se desplaza por dentro,
+     y los nombres de la izquierda la siguen. */
+  overflow-y: auto;
+  scroll-snap-type: x proximity;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.cancion__scroller::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.cancion__scroller::-webkit-scrollbar-thumb {
+  background: var(--borde-vivo);
+  border-radius: 999px;
+}
+
+.cancion__lienzo {
+  position: relative;
+}
+
+/* ---------- Las partes, arriba ---------- */
+
+/* La banda de partes se queda arriba aunque se baje por las pistas: es lo
+   que dice en qué punto de la canción estás mirando. */
+.cancion__tramos {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  /* Opaca a propósito: las pistas se desplazan por debajo. */
+  background: #0a0c12;
+  border-bottom: 1px solid var(--borde);
+}
+
+.tramo {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 1px;
+  padding: 0 10px;
+  border: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.14);
+  background: transparent;
+  color: var(--texto-suave);
+  overflow: hidden;
+  scroll-snap-align: start;
+}
+
+.tramo:first-child {
+  border-left: none;
+}
+
+.tramo__nombre {
+  font-weight: 650;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+.tramo__dato {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--texto-tenue);
+}
+
+.tramo[data-seccion='intro'] {
+  color: var(--intro);
+}
+.tramo[data-seccion='estrofa'] {
+  color: var(--estrofa);
+}
+.tramo[data-seccion='coro'] {
+  color: var(--coro);
+}
+.tramo[data-seccion='cierre'] {
+  color: var(--cierre);
+}
+
+.tramo--elegido {
+  background: rgba(255, 255, 255, 0.055);
+  box-shadow: inset 0 -2px 0 currentColor;
+}
+
+/* ---------- Golpes y bloques ---------- */
+
+.cancion__golpes {
+  position: absolute;
+  left: 0;
+  pointer-events: none;
+}
+
+.cancion__bloques {
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+
+/* Transparente: lo que se ve son los golpes del canvas. Esto solo recibe
+   el toque y marca el bloque cuando está apagado o enfocado. */
+.bloque {
+  position: absolute;
+  border: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.07);
+  background: transparent;
+  padding: 0;
+  overflow: hidden;
+}
+
+.bloque[data-nivel='0'] {
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(255, 255, 255, 0.035) 0 6px,
+    transparent 6px 12px
+  );
+}
+
+.bloque:focus-visible {
+  outline: 2px solid var(--texto);
+  outline-offset: -2px;
+}
+
+/* Centrada y arriba, en una pastillita opaca. Pegada a un borde se confundía
+   con el bloque vecino, y sin fondo se perdía entre los golpes. */
+.bloque__nivel {
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(10, 12, 18, 0.8);
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  color: var(--texto-tenue);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.bloque[data-nivel='0'] .bloque__nivel {
+  color: #4e5668;
+}
+
+/* ---------- La voz ---------- */
+
+.cancion__voz {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px solid var(--borde);
+  background: rgba(122, 162, 255, 0.05);
+}
+
+.voz-barra {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  border: 1px solid var(--azul);
+  border-radius: 5px;
+  background: linear-gradient(90deg, rgba(122, 162, 255, 0.28), rgba(122, 162, 255, 0.12));
+  overflow: hidden;
+}
+
+.voz-barra--sin {
+  position: static;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding-left: 10px;
+  border: none;
+  background: none;
+}
+
+.voz-barra__texto {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: #cfdcff;
+  white-space: nowrap;
+}
+
+/* ---------- La cabeza lectora ---------- */
+
+.cancion__cabeza {
+  position: absolute;
+  top: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--texto);
+  box-shadow: 0 0 10px 1px rgba(233, 238, 245, 0.75);
+  z-index: 4;
+  pointer-events: none;
+}
+
+/* ---------- Señales de que hay más canción ---------- */
+
+.cancion__borde {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 44px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Apenas un velo: la gracia es que la parte siguiente se vea CORTADA,
+   no que se tape. Lo cortado es lo que invita a arrastrar. */
+.cancion__borde--der {
+  right: 0;
+  width: 26px;
+  background: linear-gradient(90deg, transparent, rgba(10, 12, 18, 0.55));
+}
+
+.volver {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  z-index: 5;
+  min-height: 36px;
+  padding: 0 16px;
+  border: 1px solid var(--texto);
+  border-radius: 999px;
+  background: var(--panel-alto);
+  color: var(--texto);
+  font-size: 12.5px;
+  font-weight: 600;
+  box-shadow: var(--sombra);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mapa__ventana {
+    transition: none;
+  }
+}
