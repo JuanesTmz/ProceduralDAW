@@ -4,7 +4,8 @@
  * y unas secciones (el arco). Todo serializable a JSON para guardar/cargar.
  */
 import type { NombreEscala } from '../generativo/escalas';
-import type { NombrePreset } from '../visual/presets';
+import type { NombreAlgoritmo } from '../visual/algoritmos/tipos';
+import type { FuenteDatos } from '../visual/datosVisual';
 import type { Track } from '../guia/pasos';
 
 /** Filas de la matriz tonal: 16 notas de la escala, de grave a agudo. */
@@ -152,8 +153,6 @@ export interface Seccion {
   factorTempo: number;
   /** Texto de la guía: qué le toca hacer a esta sección en el relato. */
   intencion: string;
-  /** Preset visual propio. Si no hay, usa el general del proyecto. */
-  presetVisual?: NombrePreset;
   /** El cierre baja de volumen progresivamente. */
   desvanecer: boolean;
 }
@@ -198,14 +197,34 @@ export interface SonidoPropio {
   duracion: number;
 }
 
-/** El visual reactivo: mismo criterio que la música, todo por reglas y semilla. */
+/**
+ * El visual: mismo criterio que la música —reglas, datos y semilla—, pero
+ * en imagen.
+ *
+ * Un algoritmo a la vez, con tres entradas que puede tener o no: lo que
+ * suena, una imagen leída como datos y una tabla. Los mandos se guardan por
+ * algoritmo, para que cambiar de obra y volver no pierda lo que se ajustó.
+ */
 export interface Visual {
-  preset: NombrePreset;
+  algoritmo: NombreAlgoritmo;
+  /** Los mandos de cada algoritmo, cada uno por su lado. */
+  parametros: Partial<Record<NombreAlgoritmo, Record<string, number>>>;
+  paleta: string;
+  /** Solo lo usa la constelación de glifos. */
+  alfabeto: string;
+  /** Cuánto le hace caso a la música (0..1). */
+  reaccion: number;
   /** URL local de la foto del tema. */
   imagenUrl?: string;
   nombreImagen?: string;
-  /** Cuánto se deforma la imagen con el sonido (0..1). */
-  mezclaImagen: number;
+  /** Cuánto manda la imagen sobre el algoritmo (0..1). */
+  influenciaImagen: number;
+  /** De dónde salen los datos que deforman la obra. */
+  fuenteDatos: FuenteDatos;
+  /** El CSV cargado, tal cual, para poder recalcular sin volver a pedirlo. */
+  csv?: string;
+  nombreDatos?: string;
+  influenciaDatos: number;
   /** Mostrar el monólogo sobre el visual. */
   textoVisible: boolean;
   /** Por defecto comparte la semilla de la música; se puede separar. */

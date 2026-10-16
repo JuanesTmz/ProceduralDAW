@@ -1,175 +1,215 @@
 /**
- * Motor visual: envuelve Hydra y lo mantiene al día.
+ * Motor visual: el que hace girar el bucle.
  *
- * Igual que con el audio, los componentes de React no hablan con Hydra:
- * le piden cosas a este motor ("usa este preset", "carga esta imagen")
- * y él se encarga del canvas y del bucle de dibujo.
+ * React no habla con los algoritmos. Le dice al motor qué algoritmo quiere,
+ * con qué mandos, con qué imagen y con qué datos, y el motor se encarga del
+ * lienzo, del tamaño y de los sesenta cuadros por segundo.
+ *
+ * Dos detalles que no son evidentes:
+ *
+ *  - **El lienzo se vuelve a crear al cambiar de algoritmo.** Un canvas
+ *    solo admite un tipo de contexto en toda su vida: el que pidió 2D no
+ *    puede dar WebGL después. Por eso el motor recibe un contenedor y no un
+ *    canvas, y planta uno nuevo cada vez.
+ *  - **La resolución interna no es la de la pantalla.** Se trabaja a un
+ *    tamaño acotado y el CSS lo estira: en la tablet del evento eso es la
+ *    diferencia entre ir fluido y arrastrarse, y a esta distancia no se
+ *    nota.
  */
-import Hydra from 'hydra-synth';
-import { crearRng, mezclarSemilla } from '../generativo/rng';
 import { analizador, type Bandas } from './analizador';
-import { aplicarPreset, type ContextoVisual, type NombrePreset } from './presets';
+import { algoritmoDe, fijarAlfabeto } from './algoritmos';
+import type { Algoritmo, Entorno, Instancia, NombreAlgoritmo } from './algoritmos/tipos';
+import type { CampoImagen } from './imagenDatos';
+import type { Pico } from './datosVisual';
 
-/** Resolución interna del canvas. Modesta a propósito: los PC del evento no son potentes. */
-export const ANCHO_VISUAL = 720;
-export const ALTO_VISUAL = 405;
+/** Lado mayor de la resolución interna. */
+const LADO_TACTIL = 720;
+const LADO_ESCRITORIO = 1100;
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+const BANDAS_QUIETAS: Bandas = { graves: 0, medios: 0, agudos: 0, amplitud: 0, golpe: 0 };
 
-interface Ajustes {
-  preset: NombrePreset;
+export interface Ajustes {
+  algoritmo: NombreAlgoritmo;
+  parametros: Record<string, number>;
+  paleta: string[];
+  alfabeto: string;
+  reaccion: number;
+  imagen: CampoImagen | null;
+  influenciaImagen: number;
+  picos: Pico[];
+  influenciaDatos: number;
+  movimientoDatos: number;
   semilla: number;
-  mezclaImagen: number;
-  intensidad: number;
-  /** El cierre apaga también la imagen. */
-  desvanecido: number;
 }
 
 class MotorVisual {
-  private hydra: any = null;
+  private contenedor: HTMLElement | null = null;
   private lienzo: HTMLCanvasElement | null = null;
-  private imagen: HTMLImageElement | null = null;
-  private urlImagen: string | undefined;
+  private instancia: Instancia | null = null;
+  private algoritmo: Algoritmo | null = null;
+  private observador: ResizeObserver | null = null;
+  private cuadro: number | null = null;
+  private inicio = 0;
+  private ultimo = 0;
+  private ancho = 1;
+  private alto = 1;
+  private pausado = false;
+
+  /** Si un algoritmo no arranca —WebGL ausente, por ejemplo—, se dice. */
+  fallo: string | null = null;
+  private avisarFallo: ((mensaje: string | null) => void) | null = null;
 
   private ajustes: Ajustes = {
-    preset: 'pulso',
+    algoritmo: 'flujo',
+    parametros: {},
+    paleta: ['#0d1014', '#b87a0d', '#ffb020', '#ff5d73', '#2ee6a8'],
+    alfabeto: 'sonora',
+    reaccion: 0.8,
+    imagen: null,
+    influenciaImagen: 0.75,
+    picos: [],
+    influenciaDatos: 0.7,
+    movimientoDatos: 0,
     semilla: 2310,
-    mezclaImagen: 0.6,
-    intensidad: 1,
-    desvanecido: 1,
   };
 
-  /** Firma del último preset montado: evita rearmar la cadena en cada cuadro. */
-  private firmaMontada = '';
-  private inicio = 0;
-  private cuadro: number | null = null;
-
-  get activo(): boolean {
-    return this.hydra !== null;
-  }
-
-  get canvas(): HTMLCanvasElement | null {
-    return this.lienzo;
-  }
-
-  /** Arranca Hydra sobre un canvas. Idempotente por canvas. */
-  iniciar(lienzo: HTMLCanvasElement): void {
-    if (this.lienzo === lienzo && this.hydra) return;
-    this.detener();
-
-    lienzo.width = ANCHO_VISUAL;
-    lienzo.height = ALTO_VISUAL;
-    this.lienzo = lienzo;
+  iniciar(contenedor: HTMLElement, alFallar: (mensaje: string | null) => void): void {
+    this.contenedor = contenedor;
+    this.avisarFallo = alFallar;
     this.inicio = performance.now();
+    this.ultimo = this.inicio;
 
-    this.hydra = new Hydra({
-      canvas: lienzo,
-      width: ANCHO_VISUAL,
-      height: ALTO_VISUAL,
-      // El audio lo analizamos nosotros desde Tone; el de Hydra sobra.
-      detectAudio: false,
-      // Sin variables globales: nada de ensuciar window.
-      makeGlobal: false,
-      autoLoop: true,
-    });
+    this.observador = new ResizeObserver(() => this.medir());
+    this.observador.observe(contenedor);
 
-    analizador.conectar();
-    this.firmaMontada = '';
-    this.montarPreset();
-    this.arrancarBucle();
+    this.montar();
+    this.cuadro = requestAnimationFrame(this.paso);
   }
 
   detener(): void {
-    if (this.cuadro !== null) {
-      cancelAnimationFrame(this.cuadro);
-      this.cuadro = null;
-    }
-    if (this.hydra) {
-      try {
-        this.hydra.synth?.hush?.();
-      } catch {
-        // Si Hydra ya se fue, no hay nada que apagar.
-      }
-    }
-    this.hydra = null;
+    if (this.cuadro !== null) cancelAnimationFrame(this.cuadro);
+    this.cuadro = null;
+    this.observador?.disconnect();
+    this.observador = null;
+    this.instancia?.destruir?.();
+    this.instancia = null;
+    this.lienzo?.remove();
     this.lienzo = null;
-    this.firmaMontada = '';
+    this.contenedor = null;
+    this.avisarFallo = null;
   }
 
-  /** El bucle solo mide el audio; de dibujar se encarga Hydra. */
-  private arrancarBucle(): void {
-    const paso = () => {
-      analizador.medir();
-      this.cuadro = requestAnimationFrame(paso);
-    };
-    this.cuadro = requestAnimationFrame(paso);
+  get activo(): boolean {
+    return this.cuadro !== null;
   }
 
-  actualizar(ajustes: Partial<Ajustes>): void {
-    this.ajustes = { ...this.ajustes, ...ajustes };
-    this.montarPreset();
+  pausar(pausado: boolean): void {
+    this.pausado = pausado;
   }
 
-  /**
-   * Rearma la cadena solo cuando cambia el preset o la semilla.
-   * Todo lo demás (intensidad, mezcla, bandas) entra por funciones vivas,
-   * así que no hace falta reconstruir nada para que reaccione.
-   */
-  private montarPreset(): void {
-    if (!this.hydra) return;
-    const { preset, semilla } = this.ajustes;
-    const firma = `${preset}:${semilla}:${this.imagen ? 'img' : 'sin'}`;
-    if (firma === this.firmaMontada) return;
-    this.firmaMontada = firma;
+  get enPausa(): boolean {
+    return this.pausado;
+  }
 
-    const rng = crearRng(mezclarSemilla(semilla, 'visual', preset));
-    const contexto: ContextoVisual = {
-      bandas: () => analizador.valores,
-      intensidad: () => this.ajustes.intensidad,
-      tiempo: () => (performance.now() - this.inicio) / 1000,
-      mezclaImagen: () => this.ajustes.mezclaImagen,
-      hayImagen: Boolean(this.imagen),
+  actualizar(cambios: Partial<Ajustes>): void {
+    const cambiaAlgoritmo =
+      cambios.algoritmo !== undefined && cambios.algoritmo !== this.ajustes.algoritmo;
+    this.ajustes = { ...this.ajustes, ...cambios };
+    if (cambiaAlgoritmo) this.montar();
+    else if (cambios.alfabeto && this.instancia) fijarAlfabeto(this.instancia, cambios.alfabeto);
+  }
+
+  /** El PNG de lo que se está viendo, para llevárselo. */
+  aPng(): string | null {
+    return this.lienzo?.toDataURL('image/png') ?? null;
+  }
+
+  // ------------------------------------------------------------------ dentro
+
+  private montar(): void {
+    const contenedor = this.contenedor;
+    if (!contenedor) return;
+
+    this.instancia?.destruir?.();
+    this.instancia = null;
+    this.lienzo?.remove();
+
+    const lienzo = document.createElement('canvas');
+    lienzo.className = 'obra__lienzo';
+    contenedor.appendChild(lienzo);
+    this.lienzo = lienzo;
+
+    this.algoritmo = algoritmoDe(this.ajustes.algoritmo);
+    try {
+      this.instancia = this.algoritmo.crear(lienzo);
+      this.fallo = null;
+    } catch (error) {
+      this.instancia = null;
+      this.fallo = error instanceof Error ? error.message : 'No se pudo arrancar el algoritmo';
+    }
+    this.avisarFallo?.(this.fallo);
+
+    fijarAlfabeto(this.instancia ?? ({} as Instancia), this.ajustes.alfabeto);
+    this.medir();
+  }
+
+  private medir(): void {
+    const contenedor = this.contenedor;
+    const lienzo = this.lienzo;
+    if (!contenedor || !lienzo) return;
+
+    const caja = contenedor.getBoundingClientRect();
+    const anchoCss = Math.max(1, caja.width);
+    const altoCss = Math.max(1, caja.height);
+    const tactil = matchMedia('(pointer: coarse)').matches;
+    const tope = tactil ? LADO_TACTIL : LADO_ESCRITORIO;
+    const escala = Math.min(1, tope / Math.max(anchoCss, altoCss));
+
+    this.ancho = Math.max(1, Math.round(anchoCss * escala));
+    this.alto = Math.max(1, Math.round(altoCss * escala));
+    lienzo.width = this.ancho;
+    lienzo.height = this.alto;
+    this.instancia?.redimensionar(this.ancho, this.alto);
+  }
+
+  private paso = (): void => {
+    this.cuadro = requestAnimationFrame(this.paso);
+    const instancia = this.instancia;
+    if (!instancia || this.pausado) return;
+
+    const ahora = performance.now();
+    const delta = Math.min(0.05, (ahora - this.ultimo) / 1000);
+    this.ultimo = ahora;
+
+    const bandas = analizador.conectado ? analizador.medir() : BANDAS_QUIETAS;
+    const a = this.ajustes;
+
+    const entorno: Entorno = {
+      ancho: this.ancho,
+      alto: this.alto,
+      tiempo: (ahora - this.inicio) / 1000,
+      delta,
+      bandas,
+      reaccion: a.reaccion,
+      imagen: a.imagen,
+      influenciaImagen: a.influenciaImagen,
+      picos: a.picos,
+      influenciaDatos: a.influenciaDatos,
+      movimientoDatos: a.movimientoDatos,
+      parametros: a.parametros,
+      paleta: a.paleta,
+      semilla: a.semilla,
     };
 
     try {
-      aplicarPreset(preset, this.hydra.synth, rng, contexto);
+      instancia.dibujar(entorno);
     } catch (error) {
-      console.warn('[SONORA] No se pudo montar el preset visual', error);
+      // Un algoritmo que revienta no puede llevarse la app por delante.
+      this.instancia = null;
+      this.fallo = error instanceof Error ? error.message : 'El algoritmo falló';
+      this.avisarFallo?.(this.fallo);
     }
-  }
-
-  /** Carga la foto del tema como fuente de Hydra. */
-  cargarImagen(url: string | undefined): void {
-    if (this.urlImagen === url) return;
-    this.urlImagen = url;
-
-    if (!url) {
-      this.imagen = null;
-      this.firmaMontada = '';
-      this.montarPreset();
-      return;
-    }
-
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      this.imagen = img;
-      this.hydra?.synth?.s0?.init({ src: img });
-      this.firmaMontada = '';
-      this.montarPreset();
-    };
-    img.src = url;
-  }
-
-  get bandas(): Bandas {
-    return analizador.valores;
-  }
+  };
 }
 
 export const motorVisual = new MotorVisual();
-
-// Solo en desarrollo: acceso desde la consola para diagnosticar el visual.
-if (import.meta.env.DEV) {
-  const global = globalThis as Record<string, any>;
-  global.__sonoraVisual = { motorVisual, analizador, interno: () => (motorVisual as any).hydra };
-}
