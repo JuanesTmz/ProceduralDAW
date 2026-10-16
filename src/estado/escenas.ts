@@ -68,6 +68,8 @@ function nuevaEscena(numero: number, respiro = false): Escena {
     vozDuracion: 0,
     duracionRespiro: 8,
     despuesDe: -1,
+    version: 0,
+    propuestasDesde: 0,
   };
 }
 
@@ -256,25 +258,35 @@ export function escenasASecciones(p: Proyecto): Seccion[] {
     const factorTempo = perfil.tempo;
     const segundos = escena.respiro ? escena.duracionRespiro : duracionVoz(escena) + 0.8;
     const compases = Math.max(1, Math.ceil(segundos / segundosPorVuelta(p, factorTempo)));
-    const cuantasCapas = Math.max(1, Math.round(ids.length * (0.25 + 0.75 * intensidad)));
-    const capasActivas = ids.slice(0, cuantasCapas);
+    let capasActivas: string[];
     const niveles: Record<string, number> = {};
-    for (const id of capasActivas) niveles[id] = escena.fuerza;
+    if (escena.niveles) {
+      // La escena se editó a mano: manda lo que dejó el estudiante.
+      capasActivas = ids.filter((id) => (escena.niveles?.[id] ?? 0) > 0);
+      for (const id of capasActivas) niveles[id] = escena.niveles[id];
+    } else {
+      const cuantasCapas = Math.max(1, Math.round(ids.length * (0.25 + 0.75 * intensidad)));
+      capasActivas = ids.slice(0, cuantasCapas);
+      for (const id of capasActivas) niveles[id] = escena.fuerza;
+    }
     return {
       id: escena.id,
       etiqueta: escena.nombre,
       modo: 'procedural',
       compases,
-      semilla: (p.semilla + i * 37) % 10000,
+      semilla: (p.semilla + i * 37 + escena.version * 1009) % 10000,
       intensidad,
       capasActivas,
       niveles,
-      melodiaActiva: intensidad > 0.2,
+      melodiaActiva: escena.niveles ? (escena.niveles.melodia ?? 2) > 0 : intensidad > 0.2,
       factorTempo,
       intencion: '',
       // La última parte se apaga sola, como un cierre.
       desvanecer: i === lista.length - 1 && lista.length > 1,
       escala: perfil.escala,
+      emocion: escena.emocion,
+      fuerza: escena.fuerza,
+      gesto: escena.gesto,
       voz:
         escena.vozUrl && !escena.respiro
           ? { url: escena.vozUrl, duracion: escena.vozDuracion }

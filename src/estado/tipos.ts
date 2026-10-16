@@ -164,6 +164,48 @@ export interface Seccion {
   escala?: NombreEscala;
   /** La voz que entra al empezar la sección (una escena grabada). */
   voz?: { url: string; duracion: number };
+  /** La emoción y la fuerza de la escena: son datos para las conexiones. */
+  emocion?: Emocion;
+  fuerza?: Fuerza;
+  /** El gesto que se tocó en vivo sobre esta escena (Música Urbana). */
+  gesto?: PuntoGesto[];
+}
+
+/** Un punto del gesto tocado en vivo: cuándo (0..1 de la escena) y dónde. */
+export interface PuntoGesto {
+  t: number;
+  /** 0 simple … 1 recargado. */
+  x: number;
+  /** 0 suave … 1 intenso. */
+  y: number;
+}
+
+/**
+ * Una conexión del lab de IA: «este parámetro se mueve según este dato».
+ * La fuente y el destino son claves de texto (ver estado/musica.ts) para
+ * poder nombrar archivos y pistas: 'archivo:<id>', 'golpes:<idFila>'.
+ */
+export interface Conexion {
+  id: string;
+  fuente: string;
+  destino: string;
+  /** 1 poco, 2 algo, 3 mucho. */
+  cantidad: 1 | 2 | 3;
+}
+
+/**
+ * Un archivo que el estudiante sube para sacarle datos. No se oye ni se
+ * ve: se usa lo que dice. De un sonido, su envolvente (qué tan fuerte va
+ * en cada momento); de una imagen, el brillo de cada columna leída de
+ * izquierda a derecha, y sus colores.
+ */
+export interface ArchivoDatos {
+  id: string;
+  nombre: string;
+  tipo: 'sonido' | 'imagen';
+  /** Valores 0..1 en el tiempo (sonido: 20 por segundo; imagen: por columna). */
+  valores: number[];
+  colores?: string[];
 }
 
 // ------------------------------------------------------------ El relato
@@ -197,6 +239,17 @@ export interface Escena {
   duracionRespiro: number;
   despuesDe: number;
   imagenUrl?: string;
+  /**
+   * Fuerza de cada capa SOLO en esta escena (0 apagada … 3 fuerte).
+   * Si falta, la escena usa lo general: la emoción y la fuerza deciden.
+   */
+  niveles?: Record<string, number>;
+  /** El gesto tocado en vivo sobre esta escena. */
+  gesto?: PuntoGesto[];
+  /** Qué versión de la máquina suena (lab de IA): cambia el azar, no las reglas. */
+  version: number;
+  /** Desde qué versión empiezan las tres propuestas que se muestran. */
+  propuestasDesde: number;
 }
 
 /** La historia: el corazón del reto. Sin esto, lo demás no tiene para qué. */
@@ -314,6 +367,12 @@ export interface Proyecto {
   escenas: Escena[];
   /** Los respiros, cada uno colgado detrás de una escena. */
   respiros: Escena[];
+  /** Las conexiones del lab de IA: valen para toda la pieza. */
+  conexiones: Conexion[];
+  /** Los archivos subidos como fuente de datos. */
+  archivosDatos: ArchivoDatos[];
+  /** El punto de partida sonoro elegido en la tarjeta General. */
+  preset: string;
 }
 
 /**

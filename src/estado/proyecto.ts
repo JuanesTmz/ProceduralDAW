@@ -409,6 +409,9 @@ export function crearProyectoInicial(): Proyecto {
     cortesEscena: [],
     escenas: [],
     respiros: [],
+    conexiones: [],
+    archivosDatos: [],
+    preset: 'pulso',
   };
 }
 

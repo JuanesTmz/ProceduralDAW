@@ -27,9 +27,10 @@ interface Props {
   id: string;
   alVolver: () => void;
   alIr: (id: string) => void;
+  alMusica: () => void;
 }
 
-export function DentroEscena({ id, alVolver, alIr }: Props) {
+export function DentroEscena({ id, alVolver, alIr, alMusica }: Props) {
   const { proyecto, actualizar } = useProyecto();
   const { sonando } = useReproduccion();
   const escena = buscarEscena(proyecto, id);
@@ -208,11 +209,15 @@ export function DentroEscena({ id, alVolver, alIr }: Props) {
 
           <span className="nv-espacio-v" />
 
-          <button type="button" className="nv-puerta" disabled title="Llega en la fase 2">
+          <button type="button" className="nv-puerta" onClick={alMusica}>
             <span className="nv-puerta__icono">♫</span>
             <span className="nv-puerta__texto">
               <strong>Música de la escena</strong>
-              <span className="nv-tenue">la sigue la emoción · editar llega en la fase 2</span>
+              {escena.niveles || escena.gesto ? (
+                <span className="nv-acento">editada en esta escena</span>
+              ) : (
+                <span className="nv-tenue">usa lo general · la mueve la emoción</span>
+              )}
             </span>
             <span className="nv-flecha">›</span>
           </button>

@@ -20,6 +20,7 @@ import {
   reordenar,
 } from '../estado/escenas';
 import { useOrdenArrastrable } from './useOrdenArrastrable';
+import { PRESETS } from '../estado/musica';
 import type { Escena } from '../estado/tipos';
 import { useReproduccion } from './useReproduccion';
 import { Onda } from './VozEscena';
@@ -51,7 +52,7 @@ export function ChipEmocion({ e }: { e: Escena }) {
   );
 }
 
-export function PasoEscenas({ alEntrar }: { alEntrar: (id: string) => void }) {
+export function PasoEscenas({ alEntrar, alGeneral }: { alEntrar: (id: string) => void; alGeneral: () => void }) {
   const { proyecto, actualizar } = useProyecto();
   const { seccion: sonandoAhora, progreso, sonando } = useReproduccion();
   const lista = recorrido(proyecto);
@@ -100,11 +101,17 @@ export function PasoEscenas({ alEntrar }: { alEntrar: (id: string) => void }) {
       </div>
 
       <div className="nv-tarjetas">
-        <button type="button" className="nv-tarjeta-general" disabled title="Llega en la fase 2">
-          <span className="nv-etiqueta nv-acento">GENERAL</span>
+        <button type="button" className="nv-tarjeta-general" onClick={alGeneral}>
+          <span className="nv-tarjeta-escena__arriba">
+            <span className="nv-etiqueta nv-acento">GENERAL</span>
+            <span className="nv-espacio" />
+            <span className="nv-flecha nv-acento">›</span>
+          </span>
           <strong>Toda la pieza</strong>
           <span className="nv-espacio-v" />
-          <span className="nv-tenue">Sonido e imagen de base</span>
+          <span className="nv-tenue nv-chico">
+            {PRESETS.find((x) => x.id === proyecto.preset)?.nombre ?? 'Sonido de base'}
+          </span>
         </button>
         {lista.map((e, i) => {
           const { color } = EMOCIONES[e.emocion];

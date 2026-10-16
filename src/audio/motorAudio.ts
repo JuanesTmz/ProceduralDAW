@@ -28,6 +28,7 @@ import {
   volumenDeIntensidad,
 } from '../generativo/motorGenerativo';
 import type { NombreEscala } from '../generativo/escalas';
+import { ESCALAS_POR_LUZ, VALOR_EMOCION } from '../estado/musica';
 import type {
   Efectos,
   Fila,
@@ -92,6 +93,17 @@ class MotorAudio {
   private desde = 0;
   private soloUna = false;
   private musicaApagada = false;
+  /** Lo que mueven las conexiones y el gesto: volumen de la música, aparte de todo lo demás. */
+  private modulador: Tone.Gain | null = null;
+  /** Lee qué tan fuerte va la voz, para usarla como dato. */
+  private medidorVoz: Tone.Meter | null = null;
+  /** Se enciende con cada bombo y se apaga sola: el bombo como dato. */
+  private envolventeBombo = 0;
+  /** Cuándo empezó la sección que suena y cuánto dura (segundos de audio). */
+  private inicioSeccionT = 0;
+  private duracionSeccionT = 1;
+  /** El gesto que se está tocando en vivo ahora mismo, si hay. */
+  private gestoVivo: { x: number; y: number } | null = null;
   private oyentesSeccion = new Set<OyenteSeccion>();
 
   /** La narración: va aparte de la música, sin efectos y sin el fade del cierre. */
@@ -166,7 +178,8 @@ class MotorAudio {
     // La intensidad de cada sección se aplica aquí, antes de los efectos.
     this.gananciaSeccion = new Tone.Gain(1).connect(this.filtro);
     this.agacharse = new Tone.Gain(1).connect(this.gananciaSeccion);
-    this.bus = new Tone.Gain(1).connect(this.agacharse);
+    this.modulador = new Tone.Gain(1).connect(this.agacharse);
+    this.bus = new Tone.Gain(1).connect(this.modulador);
 
     this.clic = new Tone.MembraneSynth({
       pitchDecay: 0.008,
@@ -193,6 +206,8 @@ class MotorAudio {
     // desvanecido del cierre son de la música, no del relato.
     this.gananciaNarrador = new Tone.Gain(1).connect(this.maestro);
     for (const reproductor of this.vocesEscena.values()) reproductor.connect(this.gananciaNarrador);
+    this.medidorVoz = new Tone.Meter({ normalRange: true, smoothing: 0.85 });
+    this.gananciaNarrador.connect(this.medidorVoz);
 
     const transporte = Tone.getTransport();
     transporte.bpm.value = this.proyecto?.bpm ?? 100;
@@ -349,6 +364,8 @@ class MotorAudio {
     }
     this.desde = 0;
     this.soloUna = false;
+    this.modulador?.gain.cancelScheduledValues(Tone.now());
+    if (this.modulador) this.modulador.gain.value = 1;
     this.paso = 0;
     this.vueltaEnSeccion = 0;
     this.indiceSeccion = 0;
@@ -413,8 +430,27 @@ class MotorAudio {
     const cuando =
       paso % 2 === 1 ? tiempo + (proyecto.swing ?? 0) * segundosPorPaso * 0.5 : tiempo;
 
+    // Lo que mueven las conexiones (lab de IA) y el gesto en vivo (Música Urbana).
+    const mod = seccion ? this.modular(seccion, tiempo) : null;
+    this.envolventeBombo *= 0.55;
+
     for (const fila of patron.filas) {
       const esRedoble = remate && fila.id === idRedoble;
+      // «Máquina» encendida en la capa: improvisa sobre lo dibujado, quita y agrega golpes.
+      const sinMaquina = mod?.golpes(fila.id) ?? { factor: 1, extra: 0 };
+      const golpes = fila.regla.activa
+        ? { factor: sinMaquina.factor * 0.82, extra: sinMaquina.extra + 0.22 }
+        : sinMaquina;
+      // Con el dato arriba, la máquina agrega golpes en los tiempos vacíos.
+      if (!fila.pasos[paso] && !esRedoble && golpes.extra > 0 && paso % 2 === 0) {
+        if (this.filaSuena(fila, patron.filas) && (!seccion || nivelDeCapa(seccion, fila.id) > 0)) {
+          if (debeSonar(semillaActiva + 77, fila.id, paso, this.vuelta, golpes.extra)) {
+            this.voces.get(fila.id)?.voz.disparar(cuando, 0.45 * (mod?.velocidad ?? 1));
+            if (fila.tipo === 'bombo') this.envolventeBombo = 1;
+          }
+        }
+        continue;
+      }
       if (!fila.pasos[paso] && !esRedoble) continue;
       if (!this.filaSuena(fila, patron.filas)) continue;
       // Sin sección (modo bucle) todo suena a tope; con sección manda su escalón.
@@ -423,7 +459,9 @@ class MotorAudio {
       const base = aMano
         ? PROBABILIDAD_NIVEL[nivel]
         : (fila.probabilidad[paso] ?? 1) * factorDensidad * PROBABILIDAD_NIVEL[nivel];
-      const probabilidad = esRedoble ? 1 : base * (ajuste?.probabilidad ?? 1);
+      const probabilidad = esRedoble
+        ? 1
+        : Math.min(1, base * (ajuste?.probabilidad ?? 1) * golpes.factor);
       if (!debeSonar(semillaActiva, fila.id, paso, this.vuelta, probabilidad)) continue;
 
       const velocidad =
@@ -431,18 +469,24 @@ class MotorAudio {
         acentoDePaso(paso, patron.cantidadPasos) *
         humanizar(semillaActiva, fila.id, paso, this.vuelta) *
         (ajuste?.velocidad ?? 1);
-      this.voces.get(fila.id)?.voz.disparar(cuando, Math.min(1, velocidad));
+      this.voces.get(fila.id)?.voz.disparar(cuando, Math.min(1, velocidad * (mod?.velocidad ?? 1)));
+      if (fila.tipo === 'bombo') this.envolventeBombo = 1;
     }
 
     const melodia = patron.melodia;
     const melodiaSuena = !melodia.silenciada && (!seccion || seccion.melodiaActiva);
     if (melodiaSuena) {
       // Se disparan juntas: en la matriz varias notas en la misma columna son un acorde.
+      const escala = mod?.escala ?? seccion?.escala ?? melodia.escala;
+      const probMelodia = (mod?.melodia ?? 1) * (melodia.regla.activa ? 0.78 : 1);
       const acorde = melodia.notas
         .filter((n) => n.paso === paso)
-        .map((n) =>
-          notaTone(semitonoDeGrado(n.grado, seccion?.escala ?? melodia.escala), melodia.octavaBase),
-        );
+        .filter((n) =>
+          probMelodia < 1
+            ? debeSonar(semillaActiva + 13, 'melodia', n.paso * 31 + n.grado, this.vuelta, probMelodia)
+            : true,
+        )
+        .map((n) => notaTone(semitonoDeGrado(n.grado, escala), melodia.octavaBase));
       if (acorde.length > 0) this.dispararMatriz(acorde, cuando);
     }
 
@@ -493,6 +537,8 @@ class MotorAudio {
     const ganancia = this.gananciaSeccion?.gain;
     if (!ganancia) return;
 
+    this.inicioSeccionT = tiempo;
+    this.duracionSeccionT = Math.max(0.5, this.duracionSeccion(seccion));
     const objetivo = volumenDeIntensidad(seccion.intensidad);
     ganancia.cancelScheduledValues(tiempo);
     ganancia.rampTo(objetivo, 0.12, tiempo);
@@ -507,6 +553,117 @@ class MotorAudio {
 
     this.aplicarTempo(seccion);
     this.lanzarVozEscena(seccion, tiempo);
+  }
+
+  /** Por dónde va la sección que suena, de 0 a 1. Lo usa el gesto en vivo. */
+  get fraccionSeccion(): number {
+    if (!this.estaSonando) return 0;
+    return Math.max(0, Math.min(1, (Tone.now() - this.inicioSeccionT) / this.duracionSeccionT));
+  }
+
+  /** El gesto que se está tocando en vivo (null al soltar). */
+  fijarGestoVivo(gesto: { x: number; y: number } | null): void {
+    this.gestoVivo = gesto;
+  }
+
+  /** El valor de un dato (0..1) en este instante. */
+  private valorFuente(clave: string, seccion: Seccion, tiempo: number): number {
+    const proyecto = this.proyecto;
+    if (!proyecto) return 0;
+    if (clave === 'emocion') return seccion.emocion ? VALOR_EMOCION[seccion.emocion] : 0.5;
+    if (clave === 'fuerza') return ((seccion.fuerza ?? 2) - 1) / 2;
+    if (clave === 'avance') return this.progresoPieza;
+    if (clave === 'voz') return Math.min(1, ((this.medidorVoz?.getValue() as number) || 0) * 3);
+    if (clave === 'bombo') return this.envolventeBombo;
+    if (clave.startsWith('archivo:')) {
+      const archivo = proyecto.archivosDatos.find((a) => a.id === clave.slice(8));
+      if (!archivo || archivo.valores.length === 0) return 0;
+      const n = archivo.valores.length;
+      if (archivo.tipo === 'sonido') {
+        const i = Math.floor(Math.max(0, tiempo - this.inicioPieza) * 20) % n;
+        return archivo.valores[i];
+      }
+      const t = Math.max(0, Math.min(0.999, (tiempo - this.inicioSeccionT) / this.duracionSeccionT));
+      return archivo.valores[Math.floor(t * n)];
+    }
+    return 0;
+  }
+
+  /** El gesto de la escena en este instante: el vivo manda sobre el grabado. */
+  private gestoEn(seccion: Seccion, tiempo: number): { x: number; y: number } | null {
+    if (this.gestoVivo) return this.gestoVivo;
+    const puntos = seccion.gesto;
+    if (!puntos || puntos.length === 0) return null;
+    const t = (tiempo - this.inicioSeccionT) / this.duracionSeccionT;
+    let i = 0;
+    while (i < puntos.length - 1 && puntos[i + 1].t <= t) i++;
+    const a = puntos[i];
+    const b = puntos[i + 1];
+    if (!b || b.t === a.t) return { x: a.x, y: a.y };
+    const k = Math.max(0, Math.min(1, (t - a.t) / (b.t - a.t)));
+    return { x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k };
+  }
+
+  /**
+   * Junta las conexiones y el gesto en lo que el paso necesita: cuánto
+   * cambian los golpes de cada pista, la melodía, la escala y la fuerza, y
+   * de paso mueve el brillo, el eco y el volumen de la música.
+   */
+  private modular(seccion: Seccion, tiempo: number) {
+    const proyecto = this.proyecto!;
+    const porDestino = new Map<string, { v: number; w: number }>();
+    for (const c of proyecto.conexiones) {
+      const v = this.valorFuente(c.fuente, seccion, tiempo);
+      const w = c.cantidad / 3;
+      const previo = porDestino.get(c.destino);
+      if (!previo) porDestino.set(c.destino, { v, w });
+      else porDestino.set(c.destino, { v: (previo.v + v) / 2, w: Math.max(previo.w, w) });
+    }
+    const mezcla = (desde: number, hacia: number, w: number) => desde + (hacia - desde) * w;
+    const gesto = this.gestoEn(seccion, tiempo);
+
+    let densidad = 1;
+    let extraGesto = 0;
+    let velocidad = 1;
+    let ganancia = 1;
+    if (gesto) {
+      densidad = 0.5 + gesto.x;
+      extraGesto = gesto.x > 0.6 ? (gesto.x - 0.6) * 1.2 : 0;
+      velocidad = 0.7 + 0.5 * gesto.y;
+      ganancia = 0.75 + 0.35 * gesto.y;
+    }
+
+    const volumen = porDestino.get('volumen');
+    if (volumen) ganancia *= mezcla(1, 0.35 + 0.65 * volumen.v, volumen.w);
+    const apartar = porDestino.get('apartar');
+    if (apartar) ganancia *= mezcla(1, 1 - 0.7 * apartar.v, apartar.w);
+    this.modulador?.gain.rampTo(ganancia, 0.06, tiempo);
+
+    const fx = proyecto.efectos;
+    const brillo = porDestino.get('brillo');
+    if (brillo || gesto) {
+      let frecuencia = fx.filtroFrecuencia;
+      if (brillo) frecuencia = mezcla(frecuencia, 250 * Math.pow(2, brillo.v * 6.3), brillo.w);
+      if (gesto) frecuencia = Math.min(frecuencia, 300 * Math.pow(2, gesto.y * 6));
+      this.filtro?.frequency.rampTo(Math.max(80, frecuencia), 0.08, tiempo);
+    }
+    const eco = porDestino.get('eco');
+    if (eco) this.delay?.wet.rampTo(mezcla(fx.delayCantidad, eco.v * 0.55, eco.w), 0.1, tiempo);
+
+    const escala = porDestino.get('escala');
+    const melodia = porDestino.get('melodia');
+    const luz = ESCALAS_POR_LUZ.length;
+    return {
+      velocidad,
+      escala: escala ? ESCALAS_POR_LUZ[Math.min(luz - 1, Math.floor(escala.v * luz))] : undefined,
+      melodia: (melodia ? mezcla(1, 0.2 + 1.2 * melodia.v, melodia.w) : 1) * Math.min(1, densidad),
+      golpes: (id: string) => {
+        const g = porDestino.get(`golpes:${id}`);
+        const factor = (g ? mezcla(1, 0.25 + 1.5 * g.v, g.w) : 1) * densidad;
+        const extra = (g && g.v > 0.55 ? (g.v - 0.55) * 2 * g.w * 0.6 : 0) + extraGesto;
+        return { factor, extra };
+      },
+    };
   }
 
   /**

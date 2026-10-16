@@ -12,6 +12,8 @@ import { useSincronizarAudio } from '../hooks/useSincronizarAudio';
 import type { Track } from '../guia/pasos';
 import { Barra, type Paso } from './Barra';
 import { DentroEscena } from './DentroEscena';
+import { MusicaEscena } from './MusicaEscena';
+import { aplicarPreset, conexionesIniciales } from '../estado/musica';
 import { PasoEscenas } from './PasoEscenas';
 import { PasoFuncion } from './PasoFuncion';
 import { PasoHistoria } from './PasoHistoria';
@@ -22,6 +24,10 @@ function ElegirLab() {
   const elegir = (track: Track) =>
     actualizar((p) => {
       p.track = track;
+      // La primera vez se arranca desde el preset: ya suena con golpes y melodía.
+      if (p.patron.melodia.notas.length === 0) aplicarPreset(p, p.preset);
+      // El lab de IA arranca con un ejemplo de conexiones que ya funciona.
+      if (track === 'ia' && p.conexiones.length === 0) p.conexiones = conexionesIniciales(p);
     });
   return (
     <div className="nv nv-lab-pantalla">
@@ -50,6 +56,7 @@ export function AppNarrativa() {
   const { proyecto } = useProyecto();
   const [paso, setPaso] = useState<Paso>('historia');
   const [escenaAbierta, setEscenaAbierta] = useState<string | null>(null);
+  const [enMusica, setEnMusica] = useState(false);
   useSincronizarAudio();
 
   // Barra espaciadora: escuchar o parar la pieza, salvo mientras se escribe.
@@ -69,6 +76,7 @@ export function AppNarrativa() {
 
   const ir = (p: Paso) => {
     setEscenaAbierta(null);
+    setEnMusica(false);
     setPaso(p);
   };
 
@@ -79,14 +87,29 @@ export function AppNarrativa() {
         {paso === 'historia' && <PasoHistoria alSeguir={() => ir('voz')} />}
         {paso === 'voz' && <PasoVoz alSeguir={() => ir('escenas')} />}
         {paso === 'escenas' &&
-          (escenaAbierta ? (
+          (escenaAbierta && enMusica ? (
+            <MusicaEscena
+              id={escenaAbierta}
+              alVolver={() => {
+                setEnMusica(false);
+                if (escenaAbierta === 'general') setEscenaAbierta(null);
+              }}
+            />
+          ) : escenaAbierta ? (
             <DentroEscena
               id={escenaAbierta}
               alVolver={() => setEscenaAbierta(null)}
               alIr={setEscenaAbierta}
+              alMusica={() => setEnMusica(true)}
             />
           ) : (
-            <PasoEscenas alEntrar={setEscenaAbierta} />
+            <PasoEscenas
+              alEntrar={setEscenaAbierta}
+              alGeneral={() => {
+                setEscenaAbierta('general');
+                setEnMusica(true);
+              }}
+            />
           ))}
         {paso === 'funcion' && <PasoFuncion />}
       </main>
