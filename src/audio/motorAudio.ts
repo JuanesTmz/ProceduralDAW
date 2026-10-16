@@ -54,6 +54,11 @@ export type OyentePaso = (paso: number) => void;
 /** Aviso al entrar en una sección nueva. -1 cuando la pieza termina. */
 export type OyenteSeccion = (indice: number) => void;
 
+/** Cuánto se sube la voz después de comprimirla. */
+const REALCE_VOZ = 1.8;
+/** A cuánto baja la música mientras habla la voz (1 = no baja). */
+const MUSICA_BAJO_VOZ = 0.32;
+
 class MotorAudio {
   private iniciado = false;
   private bus: Tone.Gain | null = null;
@@ -117,6 +122,7 @@ class MotorAudio {
   /** La narración: va aparte de la música, sin efectos y sin el fade del cierre. */
   private narrador: Tone.Player | null = null;
   private gananciaNarrador: Tone.Gain | null = null;
+  private limitador: Tone.Limiter | null = null;
   private urlNarracion: string | undefined;
   /** Instante del contexto de audio en que arrancó la pieza. */
   private inicioPieza = 0;
@@ -177,7 +183,9 @@ class MotorAudio {
     if (this.iniciado) return;
     await Tone.start();
 
-    this.maestro = new Tone.Gain(0.85).toDestination();
+    // El limitador del final deja que la voz suba sin que nada sature.
+    this.limitador = new Tone.Limiter(-1).toDestination();
+    this.maestro = new Tone.Gain(0.85).connect(this.limitador);
     this.reverb = new Tone.Reverb({ decay: 2.4, wet: 0.16 }).connect(this.maestro);
     this.delay = new Tone.FeedbackDelay({ delayTime: '8n', feedback: 0.25, wet: 0 }).connect(
       this.reverb,
@@ -215,7 +223,11 @@ class MotorAudio {
 
     // La voz cuelga del maestro, no del bus: el filtro, el eco y el
     // desvanecido del cierre son de la música, no del relato.
-    this.gananciaNarrador = new Tone.Gain(1).connect(this.maestro);
+    // La voz siempre por encima de la música: se comprime (las partes suaves
+    // suben, las fuertes no se disparan) y entra con más ganancia que la música.
+    const realceVoz = new Tone.Gain(REALCE_VOZ).connect(this.maestro);
+    const compresorVoz = new Tone.Compressor({ threshold: -26, ratio: 4, attack: 0.004, release: 0.18, knee: 8 }).connect(realceVoz);
+    this.gananciaNarrador = new Tone.Gain(1).connect(compresorVoz);
     for (const reproductor of this.vocesEscena.values()) reproductor.connect(this.gananciaNarrador);
     this.medidorVoz = new Tone.Meter({ normalRange: true, smoothing: 0.85 });
     this.gananciaNarrador.connect(this.medidorVoz);
@@ -793,7 +805,7 @@ class MotorAudio {
     const ganancia = this.agacharse?.gain;
     if (!ganancia) return;
     ganancia.cancelScheduledValues(tiempo);
-    ganancia.rampTo(0.55, 0.25, tiempo);
+    ganancia.rampTo(MUSICA_BAJO_VOZ, 0.25, tiempo);
     ganancia.rampTo(1, 0.9, entra + voz.duracion);
   }
 
