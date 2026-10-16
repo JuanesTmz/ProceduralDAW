@@ -54,7 +54,7 @@ export function VentanaSonidosPistas({ pista, alCerrar }: Props) {
   };
 
   return (
-    <Ventana titulo="Sonidos" nota="Elige una pista y toca el sonido con que quieres que suene" ancha alta alCerrar={alCerrar}>
+    <Ventana titulo="Sonidos" nota="Elige una pista y toca el sonido con que quieres que suene" ancha alta alCerrar={alCerrar} guia="ventana-sonidos">
       <div className="nv nv--incrustado nv-sonidos">
         <div className="nv-sonidos__pistas">
           <span className="nv-etiqueta nv-tenue">PISTAS</span>
@@ -94,6 +94,7 @@ export function VentanaSonidosPistas({ pista, alCerrar }: Props) {
           <button
             type="button"
             className={`nv-conectar ${elegida === NUEVA ? 'nv-conectar--activo' : ''}`}
+            data-tour="nueva-pista"
             onClick={() => setElegida(NUEVA)}
           >
             +  Nueva pista

@@ -121,6 +121,7 @@ export function VentanaMatriz({ alCerrar }: { alCerrar: () => void }) {
   return (
     <Ventana
       titulo="Matriz"
+      guia="ventana-matriz"
       nota={`${melodia.notas.length} ${melodia.notas.length === 1 ? 'nota' : 'notas'} · todo lo que pongas suena en escala`}
       color={COLOR_MATRIZ}
       ancha

@@ -1349,3 +1349,8 @@
   .nv-tour__foco, .nv-tour__burbuja { transition: none; }
   .nv-guia-boton--nueva { animation: none; }
 }
+/* El botón de la guía también vive en las ventanas, fuera de .nv: colores fijos. */
+.nv-guia-boton { background: #222634; border-color: #353b4f; color: #eceef4; }
+.nv-guia-boton:hover, .nv-guia-boton--nueva { border-color: #ffb020; }
+.nv-guia-boton__icono { background: #ffb020; }
+.ventana__cabecera .nv-guia-boton { align-self: center; flex: none; }

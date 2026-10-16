@@ -1,11 +1,11 @@
 /**
- * Lo que dice la guía en cada pantalla.
+ * Lo que dice la guía en cada pantalla y en cada ventana.
  *
- * Cada pantalla tiene su recorrido corto. Arranca solo la primera vez que
- * se entra y se repite con el botón «Guía». Un paso señala un elemento con
+ * Cada lugar tiene su recorrido. Arranca solo la primera vez que se entra
+ * y se repite con el botón «Guía». Un paso señala un elemento con
  * `objetivo` (un selector CSS); si ese elemento no está en pantalla, el paso
- * se salta. El texto va de tú a tú, corto; lo largo va en `detalle`, que
- * solo se abre si el estudiante lo pide.
+ * se salta solo. El texto va de tú a tú y muy masticado: qué es, para qué
+ * sirve y cómo se usa. Lo largo va en `detalle` («Explícame más»).
  *
  * Los textos empujan hacia lo que pide el reto: la historia primero, la
  * música que sigue el arco por reglas, el material propio y el visual que
@@ -26,11 +26,23 @@ export interface PasoTour {
   final?: string;
 }
 
-export type Pantalla = 'historia' | 'voz' | 'escenas' | 'escena-musica' | 'escena-visual' | 'funcion';
+export type Pantalla =
+  | 'historia'
+  | 'voz'
+  | 'escenas'
+  | 'escena-musica'
+  | 'escena-visual'
+  | 'funcion'
+  | 'ventana-golpes'
+  | 'ventana-matriz'
+  | 'ventana-pad'
+  | 'ventana-sonidos'
+  | 'ventana-datos';
 
 export function pasosDe(pantalla: Pantalla, track: Track | null): PasoTour[] {
   const ia = track === 'ia';
   switch (pantalla) {
+    // ------------------------------------------------------------ Historia
     case 'historia':
       return [
         {
@@ -38,115 +50,182 @@ export function pasosDe(pantalla: Pantalla, track: Track | null): PasoTour[] {
           seccion: 'BIENVENIDA',
           titulo: 'Van a contar Medellín',
           texto:
-            'En SONORA arman una pieza de <b>narrativa musical</b>: un monólogo de unas 100 palabras, dicho con su voz, con música y visual que lo acompañan. <b>Todo gira alrededor de la historia.</b>',
+            'En SONORA arman una pieza de <b>narrativa musical</b>: un monólogo corto, dicho con su voz, con <b>música</b> y <b>visual</b> que lo acompañan. No es hacer una canción: es <b>contar una historia</b> y que el sonido y la imagen la ayuden a contarse.',
           detalle:
-            'La música no es una canción aparte: está al servicio del relato. Se genera por reglas y cambia cuando la historia cambia. El visual reacciona al sonido. Al final, lo que se califica con más peso es que el relato valga la pena y se cuente con fuerza.',
+            'La música no va por su lado: se genera con reglas y cambia cuando la historia cambia. El visual se mueve con el sonido. Lo que más pesa al final es que la historia valga la pena y se cuente con fuerza. Por eso todo empieza aquí, escribiendo.',
         },
         {
           id: 'h.pasos',
           objetivo: '.nv-pasos',
           seccion: 'EL CAMINO',
-          titulo: 'Cuatro pasos, en orden',
+          titulo: 'Cuatro pasos, en este orden',
           texto:
-            '<b>Historia</b> (escribir), <b>Voz</b> (grabar), <b>Escenas</b> (música e imagen de cada parte) y <b>Función</b> (verla entera y exportarla). Pueden volver a cualquiera cuando quieran.',
+            '<b>1 Historia:</b> escriben y parten el texto. <b>2 Voz:</b> lo graban. <b>3 Escenas:</b> le dan música e imagen a cada parte. <b>4 Función:</b> la ven entera y la exportan. Pueden volver a cualquier paso cuando quieran: nada se pierde.',
         },
         {
           id: 'h.medidor',
           objetivo: '.nv-medidor',
           seccion: 'EL TIEMPO',
-          titulo: 'Máximo 2:30',
-          texto: 'Aquí ven cuánto dura la pieza. La voz pone el tiempo: si se pasan, recorten el texto.',
+          titulo: 'Máximo 2 minutos y medio',
+          texto:
+            'Esta barra dice cuánto dura la pieza. <b>La voz pone el tiempo</b>: cada escena dura lo que tarda en decirse. Si la barra se pone roja, se pasaron: recorten el texto o hablen un poco más rápido.',
+        },
+        {
+          id: 'h.escuchar',
+          objetivo: '.nv-barra .nv-boton--primario',
+          titulo: 'Escuchar en cualquier momento',
+          texto:
+            'Este botón (o la <b>barra espaciadora</b>) hace sonar la pieza completa. Úsenlo seguido: escuchar es la mejor forma de saber qué falta.',
+        },
+        {
+          id: 'h.lab',
+          objetivo: '.nv-lab',
+          titulo: 'Su Lab',
+          texto:
+            'Dice de qué Lab son. Cambia <b>cómo</b> arman la música y la imagen: en <b>IA</b> ponen reglas y conectan datos; en <b>Música Urbana</b> samplean y tocan con las manos. Se puede cambiar sin perder nada.',
         },
         {
           id: 'h.preguntas',
           objetivo: '.nv-historia__preguntas',
-          seccion: 'PASO 1',
-          titulo: 'Primero, qué van a contar',
+          seccion: 'PASO 1 · LA IDEA',
+          titulo: 'Primero: ¿qué van a contar?',
           texto:
-            'Una persona, una esquina, un recuerdo. Y respondan <b>por qué es de Medellín</b>: qué tiene que solo se entiende aquí.',
+            'Escriban en una frase de qué se trata: una persona, una esquina, un recuerdo, un objeto. Y abajo, <b>por qué es de Medellín</b>: qué tiene esa historia que solo se entiende aquí.',
           detalle:
-            'Esta respuesta la van a necesitar en la presentación: el jurado mira que el tema sea reconociblemente de Medellín y que ustedes sepan explicar por qué.',
+            'Esta segunda respuesta la van a necesitar en la presentación. El jurado mira que el tema sea reconociblemente de Medellín y que ustedes sepan explicar por qué. Si les cuesta responderla, quizás la historia todavía no es lo bastante suya.',
         },
         {
           id: 'h.monologo',
           objetivo: '.nv-historia__texto',
-          titulo: 'El monólogo',
+          seccion: 'PASO 1 · EL TEXTO',
+          titulo: 'El monólogo: unas 100 palabras',
           texto:
-            'Unas <b>100 palabras</b>, pensadas para <b>decirlas, no cantarlas</b>. Es el guion y el centro de todo. Si quieren ver cómo se ve uno, usen «Usar un ejemplo».',
+            'Es el guion de toda la pieza. Escríbanlo para <b>decirlo en voz alta, no para cantarlo</b>. El contador de arriba les dice si va bien de largo. ¿Quieren ver cómo se ve uno? Toquen «Usar un ejemplo».',
+          detalle:
+            'Inspírense en «Medellín en 100 palabras»: textos cortos que cuentan mucho. Funciona mejor una historia con un cambio adentro (algo pasa, algo se rompe, alguien llega) que una descripción quieta: ese cambio es lo que la música va a seguir.',
         },
         {
           id: 'h.partir',
           objetivo: '.nv-partir',
-          seccion: 'EL ARCO',
-          titulo: 'Pártanlo en escenas',
+          seccion: 'PASO 1 · EL ARCO',
+          titulo: 'Partan el texto en escenas',
           texto:
-            'Cada color es una escena. <b>Arrastren los límites</b> para decidir dónde empieza cada una, y usen − / + para tener más o menos.',
+            'Cada color es una <b>escena</b>. Las rayitas entre colores son los <b>límites</b>: <b>arrástrenlos</b> palabra por palabra para decidir dónde empieza y dónde termina cada escena.',
+        },
+        {
+          id: 'h.contador',
+          objetivo: '.nv-contador',
+          titulo: '¿Cuántas escenas?',
+          texto:
+            'Con <b>+</b> agregan una escena (parte la más larga donde termina una frase) y con <b>−</b> juntan las dos últimas. Entre 3 y 5 escenas suele funcionar bien para 100 palabras.',
           detalle:
-            'Partan donde la historia cambia: un giro, una sorpresa, un cambio de ánimo. Cada escena va a tener su emoción, y la música y el visual cambian con ella. Ese es el arco de su pieza.',
+            'Partan donde la historia <b>cambia</b>: un giro, una sorpresa, un cambio de ánimo. Cada escena va a tener su propia emoción, y la música y el visual cambian con ella. Esa secuencia de emociones es el <b>arco</b> de su pieza: el mapa de cómo cambia todo.',
           final: 'A escribir',
         },
       ];
+
+    // ------------------------------------------------------------ Voz
     case 'voz':
       return [
         {
           id: 'v.modo',
           objetivo: '[data-tour="modo-voz"]',
-          seccion: 'PASO 2',
-          titulo: 'Graben la voz',
+          seccion: 'PASO 2 · LA VOZ',
+          titulo: 'Dos formas de grabar',
           texto:
-            'Pueden grabar <b>escena por escena</b> o <b>todo de corrido</b> en una sola toma. Escojan lo que les quede más cómodo.',
+            '<b>Por escena:</b> graban cada escena aparte, una tras otra. <b>Todo de corrido:</b> leen el monólogo entero en una sola toma. Elijan la que les quede más cómoda; pueden cambiar después.',
           detalle:
-            'De corrido suena más natural; después la app reparte la grabación entre las escenas y ustedes corrigen los cortes arrastrando. Por escena es más fácil repetir solo la parte que salió mal.',
+            'De corrido suena más natural, porque no se corta el aire entre escenas; después la app reparte la grabación y ustedes corrigen los cortes. Por escena es más fácil repetir solo la parte que salió mal.',
         },
         {
           id: 'v.apuntador',
           objetivo: '.nv-apuntador',
           titulo: 'Lean desde aquí',
           texto:
-            'El texto aparece grande para leerlo mientras graban. Busquen un lugar callado y hablen cerca del micrófono.',
+            'El texto aparece en grande para leerlo mientras graban. Busquen un rincón callado, hablen cerca del micrófono y <b>cuenten</b>, no lean: el tono tiene que acompañar lo que pasa en la historia.',
           detalle:
-            'La voz es la columna de la pieza: todo lo demás se acomoda a ella. Que el tono acompañe la historia: no es leer, es contar.',
+            'La voz es la columna de la pieza: la música baja sola cuando ustedes hablan para que siempre se entienda, y todo el resto se acomoda a su tiempo. Una pausa bien puesta vale más que hablar rápido.',
+        },
+        {
+          id: 'v.reparto',
+          objetivo: '.nv-reparto',
+          titulo: 'Corregir dónde cambia cada escena',
+          texto:
+            'Si grabaron de corrido, aquí está la onda de su voz partida en escenas. <b>Arrastren los límites blancos</b> hasta donde de verdad cambia cada escena, y toquen un tramo para oírlo y comprobar.',
         },
         {
           id: 'v.grabar',
           objetivo: '.nv-apuntador__control',
-          titulo: 'Grabar y escuchar',
-          texto: 'Toquen el botón rojo para grabar y otra vez para parar. Escúchenla; si no les gusta, la repiten.',
+          titulo: 'Grabar, escuchar, repetir',
+          texto:
+            'El <b>botón rojo</b> empieza a grabar; tóquenlo otra vez para parar. Escuchen cómo quedó: si no les gusta, «Grabar de nuevo». Sin voz grabada la app calcula cuánto tardaría en decirse, pero la pieza final necesita su voz.',
           final: 'A grabar',
         },
       ];
+
+    // ------------------------------------------------------------ Escenas
     case 'escenas':
       return [
         {
           id: 'e.tarjetas',
           objetivo: '.nv-tarjetas',
-          seccion: 'PASO 3',
-          titulo: 'Sus escenas',
+          seccion: 'PASO 3 · LAS ESCENAS',
+          titulo: 'Sus escenas, en orden',
           texto:
-            '<b>Toquen una para entrar</b> y darle música e imagen. Arrástrenlas para cambiarlas de orden.',
+            'Cada tarjeta es una escena: su número, cuánto dura, su emoción y su fuerza. <b>Toquen una para entrar</b> y darle música e imagen.',
+        },
+        {
+          id: 'e.mover',
+          objetivo: '.nv-tarjeta-escena',
+          titulo: 'Cambiar el orden arrastrando',
+          texto:
+            '<b>Mantengan presionada una tarjeta y arrástrenla</b> a otro lugar. Las demás se corren solas. Ojo: mover una escena también mueve su texto en el monólogo.',
+          detalle:
+            'Sirve para probar otra forma de contar: empezar por el final, guardar la sorpresa para después. Si no les convence, la arrastran de vuelta.',
         },
         {
           id: 'e.general',
           objetivo: '.nv-tarjeta-general',
           titulo: 'General: el sonido de toda la pieza',
           texto:
-            'Empiecen por aquí: elijan un punto de partida y los sonidos. Después, dentro de cada escena, cambian solo lo que esa escena necesite.',
+            'Antes de entrar a las escenas, empiecen por aquí. En General eligen un <b>punto de partida</b>, el tempo y los sonidos que se van a oír en toda la pieza. Después, en cada escena, cambian solo lo que esa escena necesite.',
         },
         {
           id: 'e.respiro',
           objetivo: '[data-tour="respiro"]',
-          titulo: 'Respiros (si quieren)',
-          texto: 'Un respiro es un momento sin voz donde solo cuenta la música. Es opcional: pónganlo donde la historia pida una pausa.',
+          seccion: 'LOS RESPIROS',
+          titulo: '¿Qué es un respiro?',
+          texto:
+            'Un respiro es un momento <b>sin voz</b> donde solo suena la música (y se ve el visual). Es como una pausa en la historia para que lo que acaba de pasar se sienta. <b>Son opcionales</b>: si su historia no los pide, no los usen.',
+        },
+        {
+          id: 'e.respiro-donde',
+          objetivo: '[data-tour="respiro"]',
+          titulo: 'Al inicio, al final o en el medio',
+          texto:
+            '<b>Al inicio:</b> la música abre y prepara el ambiente antes de que hablen. <b>En el medio:</b> un silencio de voz después de un golpe fuerte de la historia. <b>Al final:</b> la música cierra y deja la última frase sonando en la cabeza.',
+          detalle:
+            'Este botón agrega un respiro y los lleva a editarlo. Pueden tener varios. Cada respiro dura entre 2 y 20 segundos (y cuenta en los 2:30).',
+        },
+        {
+          id: 'e.respiro-mover',
+          objetivo: '.nv-tarjeta-respiro',
+          titulo: 'Mover y quitar respiros',
+          texto:
+            'Un respiro es una tarjeta más: <b>arrástrenlo</b> entre las escenas para ponerlo donde quieran. La <b>×</b> de la esquina lo quita. Al tocarlo entran a cambiar cuánto dura y su emoción.',
         },
         {
           id: 'e.pieza',
           objetivo: '.nv-pieza',
+          seccion: 'TU PIEZA',
           titulo: 'Su pieza de un vistazo',
           texto:
-            'La voz, la música y la imagen de cada escena, en el tiempo. Denle <b>Escuchar</b> arriba para oírla entera y ver por dónde va.',
+            'Tres filas en el tiempo: la <b>voz</b> de cada escena, la <b>música</b> (más alta = más energía) y la <b>imagen</b>. Si una escena dice «falta», todavía no tiene voz grabada. Al darle Escuchar, una línea blanca muestra por dónde va.',
           final: 'Entrar a una escena',
         },
       ];
+
+    // ------------------------------------------------------------ Escena · Música
     case 'escena-musica':
       return [
         {
@@ -154,115 +233,179 @@ export function pasosDe(pantalla: Pantalla, track: Track | null): PasoTour[] {
           objetivo: '.nv-riel',
           seccion: 'DENTRO DE UNA ESCENA',
           titulo: 'Todas sus escenas, siempre a mano',
-          texto: 'Salten de una escena a otra desde aquí, sin volver atrás. Las marcas ♫ y ◐ dicen cuáles ya tocaron.',
+          texto:
+            'Desde esta columna saltan de una escena a otra sin volver atrás. La que está abierta se resalta, un puntito late en la que está sonando, y las marcas <b>♫</b> y <b>◐</b> dicen a cuáles ya les cambiaron música o imagen.',
+        },
+        {
+          id: 'm.presets',
+          objetivo: '.nv-presets',
+          seccion: 'GENERAL',
+          titulo: 'El punto de partida',
+          texto:
+            'Cinco mundos sonoros para arrancar: cada uno trae sus golpes, su melodía y su tempo. Toquen uno, escúchenlo y quédense con el que más se parezca a su historia. Después lo transforman.',
+          detalle:
+            'Cambiar de punto de partida reemplaza los golpes y la melodía, pero conserva las pistas con sonidos propios. El <b>Tempo</b> de la derecha es la velocidad de toda la pieza; cada emoción la acelera o la frena un poco.',
         },
         {
           id: 'm.sentir',
           objetivo: '.nv-sentir',
-          titulo: '¿Qué se siente?',
+          titulo: '¿Qué se siente en esta escena?',
           texto:
-            'La <b>emoción</b> y la <b>fuerza</b> de la escena mueven la música y la imagen a la vez: cambian la escala, el tempo, cuántas capas suenan, los colores.',
+            'Elijan la <b>emoción</b> (calma, alegría, tensión, nostalgia, misterio, euforia) y la <b>fuerza</b> (suave, media, fuerte). Con eso la música cambia sola: la escala, la velocidad, cuántos sonidos entran. Y el visual cambia de colores.',
           detalle:
-            'Esto es lo que hace que la música siga el arco de la historia: la misma música general suena distinta en una escena de calma que en una de tensión.',
+            'Esto es lo que hace que la música siga el arco: los mismos sonidos de General suenan distinto en una escena de calma que en una de tensión. En un respiro, aquí mismo cambian cuánto dura y lo mueven con ← →.',
         },
         {
           id: 'm.barra',
-          objetivo: '.nv-barra-escena',
-          titulo: 'La frase y su tiempo',
+          objetivo: '.nv-barra-escena__fila',
+          seccion: 'LA BARRA DE LA ESCENA',
+          titulo: 'Escuchar solo esta escena',
           texto:
-            '▶ hace sonar <b>solo esta escena</b>. Toquen o arrastren la barra para escuchar desde otro punto. Toquen una <b>palabra</b> para pegarle un sonido o un silencio justo cuando se dice.',
+            '<b>▶</b> hace sonar <b>solo esta escena</b>, no toda la pieza. La barra muestra la onda de su voz y una línea que avanza. <b>Toquen o arrastren la barra</b> para escuchar desde otro punto.',
+        },
+        {
+          id: 'm.cajitas',
+          objetivo: '.nv-barra-escena .nv-cajitas',
+          titulo: 'Cajitas: algo justo en una palabra',
+          texto:
+            '<b>Toquen una palabra</b> de la frase y elijan: <b>un sonido</b> (que suena justo cuando la dicen) o <b>silencio</b> (la música se calla un instante en esa palabra). La palabra queda marcada y aparece una rayita en la barra.',
+          detalle:
+            'Úsenlas para subrayar: un pito cuando dicen «bus», un silencio antes de la frase más dura. Para quitar una, toquen la palabra otra vez → «Quitar la cajita», o la × en la lista de abajo.',
         },
         {
           id: 'm.pestanas',
           objetivo: '.nv-selector--pestanas',
           titulo: 'Música y Visuales',
-          texto: 'Cada escena tiene dos partes. Ahora están en Música; la imagen se arma en Visuales.',
+          texto: 'Cada escena tiene dos partes. Están en <b>Música</b>; la imagen de la escena se arma en <b>Visuales</b>.',
         },
         {
           id: 'm.sonidos',
           objetivo: '[data-tour="sonidos"]',
-          seccion: 'LOS SONIDOS',
-          titulo: 'Con qué suena cada pista',
+          seccion: 'LAS HERRAMIENTAS',
+          titulo: 'Sonidos',
           texto:
-            'Aquí está la biblioteca y sus efectos. Toquen ▶ para oír un sonido y su nombre para usarlo. También pueden <b>grabar un efecto</b> o subir un archivo.',
-          detalle:
-            'Graben sonidos de su tema: una reja, un pito, la gente en la calle. Usar material propio con intención suma en la calificación.',
+            'Abre la ventana donde eligen <b>con qué suena cada pista</b>: la batería, los sonidos de la biblioteca o los efectos que ustedes graben. Adentro tiene su propia guía.',
         },
         ...(ia
           ? [
               {
+                id: 'm.datos',
+                objetivo: '[data-tour="datos"]',
+                titulo: 'Datos',
+                texto:
+                  'Abre la ventana donde deciden <b>qué se mueve solo</b> según un dato de la historia: la emoción, la fuerza, la voz… Es la parte más «IA» de su música. Adentro tiene su propia guía.',
+              },
+              {
                 id: 'm.lista-ia',
                 objetivo: '.nv-capas',
-                seccion: 'LAB IA',
-                titulo: 'Sus sonidos',
-                texto: 'Cada fila es un sonido de la pieza. El interruptor lo calla solo en esta escena.',
+                seccion: 'LAB IA · LOS SONIDOS',
+                titulo: 'La lista de sonidos',
+                texto:
+                  'Cada fila es un sonido de la pieza. <b>Suena con</b>: qué sonido tiene (tóquenlo para cambiarlo). <b>Lo mueve un dato</b>: si un dato lo controla. <b>En esta escena</b>: el interruptor lo calla solo aquí.',
               },
               {
                 id: 'm.pad',
                 objetivo: '.nv-capa--ia .nv-boton--ia',
-                titulo: 'El pad: la regla de cada sonido',
+                titulo: 'El Pad: la regla de cada sonido',
                 texto:
-                  'Abre una ventana con las 16 casillas y el cuadro: <b>a la derecha más golpes, hacia arriba más azar</b>. Ustedes no dibujan los golpes: ponen la regla y la máquina los reparte.',
+                  'Cada sonido tiene su botón <b>Pad</b>. Abre una ventana con sus 16 casillas y un cuadro: ustedes <b>no dibujan los golpes, ponen una regla</b> y la máquina los reparte. Adentro se explica paso a paso.',
                 detalle:
-                  'Esto es lo procedural: la música se genera por reglas y respira con el azar, así no es un loop fijo. Si mueven el pad dentro de una escena, el cambio vale solo para ella.',
-              },
-              {
-                id: 'm.datos',
-                objetivo: '[data-tour="datos"]',
-                titulo: 'Datos: que se mueva solo',
-                texto:
-                  'Elijan qué parámetros se mueven solos con un dato: la emoción, la voz, la fuerza o un archivo que suban. Lo demás lo ponen a mano.',
-                detalle:
-                  'Ejemplo: «Golpes del bombo · lo mueve La fuerza de la escena». En las escenas fuertes el bombo se llena; en las suaves, casi desaparece. Así la música sigue la historia sin que la editen escena por escena.',
+                  'Si abren el Pad desde General, lo que cambien vale para toda la pieza. Si lo abren dentro de una escena, vale <b>solo para esa escena</b>, y el botón dice «Pad · aquí».',
               },
             ]
           : [
               {
                 id: 'm.capas',
                 objetivo: '.nv-capas',
-                seccion: 'LAB MÚSICA URBANA',
-                titulo: 'Las capas de la escena',
+                seccion: 'LAB MÚSICA URBANA · LAS CAPAS',
+                titulo: 'Las capas',
                 texto:
-                  'Cambien el sonido de cada capa y cuánta fuerza tiene en esta escena. El interruptor <b>Máquina</b> hace que la capa improvise sobre lo que dibujaron.',
+                  'Cada fila es una capa de la música. <b>Sonido</b>: tóquenlo para cambiarlo por otro o por un efecto grabado por ustedes.',
+              },
+              {
+                id: 'm.fuerza-capa',
+                objetivo: '.nv-capa:not(.nv-capa--cabeza) .nv-selector--chico',
+                titulo: 'Cuánto suena cada capa aquí',
+                texto:
+                  '<b>Apagada, Suave, Media, Fuerte</b>: cuánto se oye esta capa <b>en esta escena</b>. Así una escena puede tener solo el bombo y otra todo junto. En General esto es un volumen para toda la pieza.',
                 detalle:
-                  'Incluyan al menos un elemento generativo: con Máquina encendida, la capa quita y agrega golpes sola, y la música no se repite igual.',
+                  'Cuando cambian algo aquí, la escena queda «editada»: arriba aparece «volver a lo general» para deshacerlo.',
+              },
+              {
+                id: 'm.maquina',
+                objetivo: '.nv-capa:not(.nv-capa--cabeza) .nv-interruptor',
+                titulo: 'Máquina: lo procedural',
+                texto:
+                  'Con la <b>Máquina</b> encendida, la capa <b>improvisa</b> sobre lo que dibujaron: quita unos golpes, agrega otros, y nunca suena dos veces igual.',
+                detalle:
+                  'El reto pide <b>al menos un elemento generativo</b>: algo que la máquina decida con reglas y azar. Prendan la Máquina en una o dos capas (el hi-hat o la percusión funcionan muy bien) y escuchen cómo respira.',
               },
               {
                 id: 'm.vivo',
-                objetivo: '.nv-musica__lado',
+                objetivo: '.nv-xy',
                 titulo: 'Tocar en vivo',
-                texto: 'Muevan el dedo en el cuadro mientras suena la escena. Si graban, lo que toquen queda guardado y suena igual cada vez.',
+                texto:
+                  'Muevan el dedo en el cuadro <b>mientras suena</b>: <b>hacia arriba</b> más intenso y brillante, <b>hacia abajo</b> más suave; <b>a la derecha</b> más recargado de golpes.',
+              },
+              {
+                id: 'm.grabar-gesto',
+                objetivo: '.nv-musica__lado .nv-boton--rojo',
+                titulo: 'Grabar lo que tocan',
+                texto:
+                  '«Grabar mientras suena» hace sonar la escena y guarda cada movimiento del dedo. Desde ahí la escena suena <b>siempre igual a como la tocaron</b>. Abajo ven el gesto grabado y lo pueden borrar.',
               },
             ]),
         {
           id: 'm.editar',
           objetivo: '[data-tour="editar"]',
-          titulo: 'Edición fina',
-          texto: 'Si quieren poner golpes o notas exactas a mano, aquí están la grilla de golpes y la matriz de melodía.',
+          seccion: 'EDICIÓN FINA',
+          titulo: 'Golpes y melodía a mano',
+          texto:
+            '<b>Editar golpes a mano</b> abre la grilla de casillas, para poner cada golpe exactamente donde quieran. <b>Editar melodía</b> abre la matriz de notas. Las dos tienen su guía adentro.',
           final: 'A sonar',
         },
       ];
+
+    // ------------------------------------------------------------ Escena · Visuales
     case 'escena-visual':
       return [
         {
           id: 'i.vista',
-          objetivo: '.nv-imagen__vista .nv-escenario, .nv-imagen__vista > :first-child',
+          objetivo: '.nv-imagen__vista > :first-child',
           seccion: 'VISUALES',
           titulo: 'El visual de la escena',
-          texto: 'Se dibuja solo y <b>reacciona al sonido</b>. Denle ▶ para verlo moverse con la música y la voz.',
+          texto:
+            'Se dibuja solo y <b>reacciona al sonido</b>: late con los golpes y respira con la voz. Denle ▶ arriba para verlo moverse con esta escena. El texto aparece mientras se dice.',
+        },
+        {
+          id: 'i.cajitas',
+          objetivo: '.nv-barra-escena .nv-cajitas',
+          titulo: 'Golpes de imagen en una palabra',
+          texto:
+            'Igual que en Música, <b>toquen una palabra</b>: aquí le pegan un <b>golpe de imagen</b> (destello, zoom, sacudón o corte) que pasa justo cuando la dicen.',
         },
         {
           id: 'i.estilos',
           objetivo: '.nv-estilos',
-          titulo: 'Estilo y paleta',
-          texto: 'Los mismos estilos de GenArt. El estilo y la paleta valen para toda la pieza; la emoción de cada escena tiñe los colores.',
+          titulo: 'El estilo',
+          texto:
+            'Cuatro estilos, los mismos de GenArt: <b>Campo de flujo</b>, <b>Nebulosa líquida</b>, <b>Ondas topográficas</b> y <b>Constelación de glifos</b>. El estilo vale para toda la pieza.',
+        },
+        {
+          id: 'i.paletas',
+          objetivo: '.nv-paletas',
+          titulo: 'La paleta',
+          texto:
+            'Los colores base de la obra. Encima, la <b>emoción de cada escena</b> los tiñe: por eso una escena de tensión se ve distinta de una de calma con la misma paleta.',
         },
         {
           id: 'i.foto',
           objetivo: '.nv-foto',
           titulo: 'Su foto como material',
-          texto: 'Suban una foto del tema: el visual la usa como material. Puede ser una por escena.',
-          detalle: 'El visual tiene que acompañar la historia, no ser un preset suelto. Una foto del lugar o del personaje lo ata al relato.',
+          texto:
+            'Suban una foto del tema: el visual la usa como <b>material</b>, sus luces y colores le dan forma al dibujo. Puede ser una distinta por escena.',
+          detalle:
+            'El visual tiene que acompañar la historia, no ser un fondo cualquiera. Una foto del lugar, del personaje o de un objeto de la historia lo ata al relato.',
         },
         ...(ia
           ? [
@@ -271,43 +414,349 @@ export function pasosDe(pantalla: Pantalla, track: Track | null): PasoTour[] {
                 objetivo: '.nv-parametros',
                 seccion: 'LAB IA',
                 titulo: 'Datos del visual',
-                texto: 'Igual que en la música: elijan qué mandos del visual se mueven solos con un dato y cuáles ponen a mano.',
+                texto:
+                  'Cada fila es un mando del estilo. <b>✋ A mano</b>: lo ponen ustedes con la barra. O toquen y elijan un <b>dato</b> (la voz, el bombo, la emoción…) para que se mueva solo mientras suena.',
+                detalle:
+                  'Ejemplo: «Velocidad · lo mueve La voz»: cuando hablan, el dibujo se acelera; en los silencios se calma. Poco, Algo y Mucho dicen cuánto manda el dato.',
                 final: 'A pintar',
               },
             ]
           : [
               {
-                id: 'i.jugar',
-                objetivo: '.nv-jugar',
+                id: 'i.reaccion',
+                objetivo: '.nv-imagen__lado .nv-selector--lleno',
                 seccion: 'LAB MÚSICA URBANA',
+                titulo: 'Cómo reacciona',
+                texto:
+                  '<b>Late con el bombo</b>: salta con cada golpe. <b>Respira con la voz</b>: se mueve cuando hablan. <b>Quieta</b>: casi no reacciona, para escenas calmadas.',
+              },
+              {
+                id: 'i.xy',
+                objetivo: '.nv-jugar .nv-xy',
                 titulo: 'Tocar el visual',
-                texto: 'Muevan el cuadro y toquen los golpes (destello, zoom…) mientras suena. Con «Grabar mientras suena» queda guardado en la escena.',
+                texto:
+                  'Muevan el dedo <b>mientras suena</b>: <b>arriba</b> más luminosa, <b>abajo</b> más oscura, <b>a la derecha</b> más caótica.',
+              },
+              {
+                id: 'i.pads',
+                objetivo: '.nv-pads',
+                titulo: 'Los golpes',
+                texto:
+                  'Cuatro botones para dar golpes de imagen en vivo: <b>Destello</b>, <b>Zoom</b>, <b>Sacudón</b> y <b>Corte</b>. Tóquenlos al ritmo de la música.',
+              },
+              {
+                id: 'i.grabar',
+                objetivo: '.nv-imagen__lado .nv-boton--rojo',
+                titulo: 'Grabar lo que tocan',
+                texto:
+                  '«Grabar mientras suena» guarda el cuadro y los golpes que toquen durante la escena, y desde ahí se ve <b>siempre así</b>. Si no les gusta, «borrar» y vuelven a grabar.',
                 final: 'A pintar',
               },
             ]),
       ];
+
+    // ------------------------------------------------------------ Función
     case 'funcion':
       return [
         {
           id: 'f.escenario',
           objetivo: '.nv-escenario',
-          seccion: 'PASO 4',
-          titulo: 'La función',
-          texto: 'Así se ve su pieza completa: el visual, la voz y el texto apareciendo mientras se dice.',
+          seccion: 'PASO 4 · LA FUNCIÓN',
+          titulo: 'Su pieza completa',
+          texto:
+            'Así se va a ver en la presentación: el visual de cada escena, su voz, la música y el texto apareciendo mientras se dice. Denle <b>Ver la pieza</b>.',
+        },
+        {
+          id: 'f.progreso',
+          objetivo: '.nv-progreso',
+          titulo: 'Por dónde va',
+          texto: 'Cada tramo es una escena, con su color de emoción. Se van llenando mientras suena.',
         },
         {
           id: 'f.musica',
           objetivo: '.nv-pie .nv-selector',
           titulo: 'Con y sin música',
-          texto: 'Escúchenla sin música y con música. ¿Qué le aporta el sonido a la historia?',
-          detalle: 'Esa pregunta es parte de la reflexión que les van a pedir: si la música y el visual sirvieron al relato, y en qué se parece generar con reglas a cómo genera una IA.',
+          texto:
+            'Escúchenla <b>sin música</b> (solo la voz) y después <b>con música</b>. ¿Qué cambia? ¿La música ayuda a contar o distrae?',
+          detalle:
+            'Esa pregunta es parte de la reflexión que les van a pedir: si la música y el visual sirvieron a la historia, qué hizo el azar, y en qué se parece generar con reglas a cómo genera una IA. Anoten lo que noten.',
         },
         {
           id: 'f.exportar',
           objetivo: '[data-tour="exportar"]',
           titulo: 'Exportar el video',
-          texto: 'La pieza suena entera una vez y sale un video para presentar o compartir. No cambien de pantalla mientras graba.',
+          texto:
+            'La pieza suena entera una vez y se graba como video (.webm), que se descarga solo. <b>No cambien de pantalla</b> mientras graba. Ese video es su entrega.',
           final: '¡A presentar!',
+        },
+      ];
+
+    // ------------------------------------------------------------ Ventana: Golpes
+    case 'ventana-golpes':
+      return [
+        {
+          id: 'g.que',
+          seccion: 'CELDAS DE GOLPES',
+          titulo: 'Poner los golpes a mano',
+          texto:
+            'Aquí deciden <b>en qué momento exacto</b> suena cada golpe de una pista. Es la forma más directa de armar un ritmo: casilla por casilla.',
+        },
+        {
+          id: 'g.celdas',
+          objetivo: '.golpes__celda .celdas',
+          titulo: 'Las casillas',
+          texto:
+            'Cada casilla es un pedacito de tiempo. La fila completa es <b>una vuelta</b> del ritmo, que se repite una y otra vez. <b>Toquen una casilla</b> para poner un golpe (se pinta) y otra vez para quitarlo. <b>Arrastren el dedo</b> para pintar o borrar varias seguidas.',
+          detalle:
+            'Las casillas un poco más marcadas son el <b>pulso</b>: donde uno movería la cabeza. Un bombo en esas casillas suena firme; golpes fuera del pulso le dan swing. Mientras suena, una línea muestra por qué casilla va.',
+        },
+        {
+          id: 'g.datos',
+          objetivo: '.golpes__datos',
+          titulo: 'Cuántos golpes y cuántas casillas',
+          texto:
+            'Dice cuántos golpes tiene la pista. <b>16, 32 o 64</b> cambia cuántas casillas tiene la vuelta: con más casillas pueden poner golpes más seguidos y finos.',
+        },
+        {
+          id: 'g.sonido',
+          objetivo: '.sonidos-elegir',
+          titulo: 'Con qué suena esta pista',
+          texto: 'Elijan el sonido de la pista: la batería de la app (<b>Percusión</b>) o los efectos que grabaron (<b>Propios</b>).',
+        },
+        {
+          id: 'g.pistas',
+          objetivo: '.golpes .pistas',
+          titulo: 'Cambiar de pista',
+          texto:
+            'Se arma <b>una pista a la vez</b>. Toquen otra en esta lista para dibujarle sus golpes. «+ Nueva» crea una pista nueva: le eligen sonido, le dibujan golpes y la agregan a la canción.',
+        },
+        {
+          id: 'g.pie',
+          objetivo: '.ventana__pie',
+          titulo: 'Escuchar mientras dibujan',
+          texto:
+            '<b>▶ Solo este</b> hace sonar solo esta pista. <b>▶ Con los demás</b> la hace sonar con todo. «Quitar de la canción» borra la pista entera.',
+          detalle:
+            'En el Lab IA estas casillas también las puede llenar el <b>Pad</b> con una regla. Si después lo mueven, el Pad reparte los golpes otra vez y reemplaza lo que dibujaron aquí.',
+          final: 'A dibujar golpes',
+        },
+      ];
+
+    // ------------------------------------------------------------ Ventana: Matriz
+    case 'ventana-matriz':
+      return [
+        {
+          id: 'x.que',
+          seccion: 'MATRIZ DE MELODÍA',
+          titulo: 'La melodía, casilla por casilla',
+          texto:
+            'Aquí arman la melodía: las notas que suenan sobre los golpes. Es como las celdas de golpes, pero con <b>altura</b>: arriba notas agudas, abajo graves.',
+        },
+        {
+          id: 'x.notas',
+          objetivo: '.matriz-rejilla__notas',
+          titulo: 'Cada fila es una nota',
+          texto:
+            'A la izquierda está el nombre de cada nota. Las filas están elegidas para que <b>todo suene afinado</b>: no hay notas «feas», pongan lo que pongan.',
+        },
+        {
+          id: 'x.celdas',
+          objetivo: '.matriz-rejilla__celdas',
+          titulo: 'Poner notas',
+          texto:
+            'De izquierda a derecha es el tiempo (una vuelta, como en los golpes). <b>Toquen una casilla</b> para poner una nota y otra vez para quitarla. Varias notas en la <b>misma columna</b> suenan juntas: un acorde.',
+          detalle:
+            'Truco para empezar: pongan pocas notas, separadas, que suban y bajen poco a poco. Una melodía simple deja lugar a la voz. Recuerden que la voz es lo principal.',
+        },
+        {
+          id: 'x.escala',
+          objetivo: '.matriz-ventana .pistas__lista',
+          titulo: 'La escala: el color de la melodía',
+          texto:
+            'La escala decide qué notas hay en las filas. <b>Mayor</b> suena luminosa, <b>Menor</b> triste, <b>Frigia</b> tensa, <b>Dórica</b> nostálgica, <b>Pentatónica</b> suelta.',
+          detalle:
+            'En la pieza, la emoción de cada escena cambia la escala sola. Lo que eligen aquí es la escala de base.',
+        },
+        {
+          id: 'x.instrumento',
+          objetivo: '.matriz-ventana .nv-instrumento',
+          titulo: 'Con qué suena la melodía',
+          texto:
+            'El <b>sintetizador</b>, un sonido de la app (marimba, piano…) o <b>un efecto suyo</b>. Cualquier sonido se <b>afina solo</b> en cada fila: su voz diciendo «ah», un silbido o una botella pueden tocar la melodía. Con ▶ lo escuchan antes de elegirlo.',
+          detalle:
+            'Con un sonido propio, la app escucha en qué nota está y lo afina desde ahí. Si dice que no encontró un tono claro (pasa con golpes y ruidos), elijan la nota a mano en «Tu sonido está en».',
+        },
+        {
+          id: 'x.pie',
+          objetivo: '.ventana__pie',
+          titulo: 'Escuchar y limpiar',
+          texto: '<b>▶</b> hace sonar la melodía. El botón rojo borra todas las notas para empezar de cero.',
+          final: 'A tocar notas',
+        },
+      ];
+
+    // ------------------------------------------------------------ Ventana: Pad (IA)
+    case 'ventana-pad':
+      return [
+        {
+          id: 'p.que',
+          seccion: 'EL PAD · LO PROCEDURAL',
+          titulo: 'Una regla en vez de golpes',
+          texto:
+            'Aquí no dibujan golpe por golpe: <b>ponen una regla</b> y la máquina reparte los golpes según esa regla. Eso es la música <b>procedural</b>: se genera, no se escribe nota por nota.',
+          detalle:
+            'Es la misma idea con la que generan muchas IA: no guardan la canción, guardan reglas y un poco de azar, y con eso producen algo nuevo cada vez. Por eso su música no es un loop fijo.',
+        },
+        {
+          id: 'p.tira',
+          objetivo: '.tira--grande',
+          titulo: 'Las 16 casillas: el resultado',
+          texto:
+            'Esta tira muestra <b>cómo quedan repartidos los golpes</b> en una vuelta. <b>Casilla llena</b>: suena siempre. <b>Casilla clarita</b>: suena <b>a veces</b> (el azar decide en cada vuelta). Casilla oscura: silencio.',
+        },
+        {
+          id: 'p.cuenta',
+          objetivo: '.tira__cuenta',
+          titulo: 'El resumen',
+          texto: 'Cuántos golpes tiene la vuelta y cuántos de ellos suenan solo a veces.',
+        },
+        {
+          id: 'p.x',
+          objetivo: '.nv-pad__cuadro',
+          titulo: 'Hacia la derecha: más golpes',
+          texto:
+            'Arrastren el punto <b>a la derecha</b> y la pista tiene <b>más golpes</b>; a la izquierda, menos. La máquina los reparte <b>lo más parejo posible</b>, por eso casi cualquier posición suena bien.',
+          detalle:
+            'Ese reparto parejo se llama ritmo euclidiano: es el que está detrás de muchos ritmos tradicionales del mundo, como el tresillo o la clave del son.',
+        },
+        {
+          id: 'p.y',
+          objetivo: '.nv-pad__cuadro',
+          titulo: 'Hacia arriba: más azar',
+          texto:
+            '<b>Abajo</b> la pista suena <b>siempre igual</b>, firme. <b>Arriba</b> entra el <b>azar</b>: algunos golpes suenan a veces sí y a veces no, y aparecen golpes de relleno. La pista <b>respira</b> y nunca se repite igual.',
+          detalle:
+            'Prueben las cuatro esquinas: abajo-izquierda, pocos golpes y firmes; abajo-derecha, muchos y machacados; arriba-izquierda, pocos y sueltos; arriba-derecha, lleno y caótico. Escuchen con ▶ de la barra de la escena mientras lo mueven.',
+        },
+        {
+          id: 'p.alcance',
+          objetivo: '.ventana__nota',
+          titulo: '¿Para toda la pieza o solo aquí?',
+          texto:
+            'Aquí arriba dice a qué afecta. Abierto desde <b>General</b>: cambia toda la pieza. Abierto <b>dentro de una escena</b>: cambia <b>solo esa escena</b>, y abajo aparece «Volver a lo general» para deshacerlo.',
+          detalle:
+            'Una buena receta: en General dejen una regla tranquila, y en las escenas fuertes muevan el Pad a la derecha y arriba. Así la música crece con la historia.',
+        },
+        {
+          id: 'p.pie',
+          objetivo: '.ventana__pie',
+          titulo: 'Oír el sonido',
+          texto: '«Oír el sonido» toca un golpe suelto para recordar cómo suena esta pista.',
+          final: 'A poner reglas',
+        },
+      ];
+
+    // ------------------------------------------------------------ Ventana: Sonidos
+    case 'ventana-sonidos':
+      return [
+        {
+          id: 's.pistas',
+          objetivo: '.nv-sonidos__pistas',
+          seccion: 'SONIDOS',
+          titulo: 'Primero elijan una pista',
+          texto:
+            'A la izquierda están todas las pistas de la música. <b>Toquen una</b> y a la derecha eligen con qué suena. La <b>×</b> que aparece al lado quita esa pista.',
+        },
+        {
+          id: 's.oir',
+          objetivo: '.nv-sonido__oir',
+          titulo: '▶ para oír, nombre para usar',
+          texto:
+            'Cada sonido tiene dos partes: <b>▶ lo hace sonar</b> sin cambiar nada, para probar. <b>Tocar el nombre lo pone en la pista</b> elegida (queda marcado con ✓).',
+        },
+        {
+          id: 's.grupos',
+          objetivo: '.nv-sonidos__catalogo',
+          titulo: 'La biblioteca',
+          texto:
+            '<b>Batería:</b> bombo, redoblante, hi-hat… <b>Percusión:</b> conga, clave, güiro… <b>Sonidos de ciudad:</b> lluvia, tráfico, metro, gente. <b>Para melodías:</b> instrumentos que también sirven como golpe.',
+        },
+        {
+          id: 's.propios',
+          objetivo: '.nv-sonidos__propios',
+          titulo: 'Sus efectos',
+          texto:
+            '<b>Grabar un efecto</b>: graben un sonido de su entorno (una reja, un pito, una olla). <b>Subir un archivo</b>: usen un audio que ya tengan. Después lo <b>recortan</b> (lo verde es lo que queda), le ponen nombre y queda puesto en la pista.',
+          detalle:
+            'Aquí solo se graban efectos para la música; la voz del monólogo se graba en el paso Voz. Usar sonidos propios del tema, con intención, suma en la calificación.',
+        },
+        {
+          id: 's.melodia',
+          objetivo: '.nv-sonidos__pistas .nv-sonidos__pista:last-of-type',
+          titulo: 'La melodía también',
+          texto:
+            'Si eligen <b>Melodía</b>, a la derecha aparecen los instrumentos para la melodía, y también pueden usar un efecto suyo: <b>se afina solo</b> en cada nota.',
+        },
+        {
+          id: 's.nueva',
+          objetivo: '[data-tour="nueva-pista"]',
+          titulo: 'Agregar una pista',
+          texto:
+            '<b>+ Nueva pista</b> y después toquen un sonido: se crea una pista con ese sonido. Arranca vacía: denle golpes con el Pad (IA) o en «Editar golpes a mano».',
+          final: 'A buscar sonidos',
+        },
+      ];
+
+    // ------------------------------------------------------------ Ventana: Datos (IA)
+    case 'ventana-datos':
+      return [
+        {
+          id: 'd.que',
+          seccion: 'DATOS',
+          titulo: 'Que la música se mueva sola',
+          texto:
+            'Aquí deciden qué partes de la música <b>cambian solas</b> según un dato de su historia. Así la música sigue el relato sin que tengan que editar escena por escena.',
+          detalle:
+            'Esto es lo que hace un sistema que «dirige con datos»: ustedes eligen la relación (este dato mueve esto) y la máquina la aplica en cada momento. Valen para toda la pieza.',
+        },
+        {
+          id: 'd.fila',
+          objetivo: '.nv-parametro',
+          titulo: 'Cada fila, un parámetro',
+          texto:
+            'Cada fila es algo que puede cambiar: los golpes de cada sonido, las notas de la melodía, el brillo, el eco… Las filas con una raya de color a la izquierda ya las mueve un dato.',
+        },
+        {
+          id: 'd.elegir',
+          objetivo: '.nv-parametro .nv-desplegable',
+          titulo: 'A mano o con un dato',
+          texto:
+            'Toquen aquí y elijan. <b>✋ A mano</b>: lo ponen ustedes. O un dato: <b>La emoción</b>, <b>La fuerza de la escena</b>, <b>El avance de la historia</b> (sube del principio al final), <b>La voz</b> (cuando hablan), <b>El bombo</b> (en cada golpe).',
+          detalle:
+            'Ejemplos: «Golpes · Bombo ← La fuerza»: en escenas fuertes el bombo se llena. «La música se aparta ← La voz»: cuando hablan, la música baja. «Brillo ← El avance»: el sonido se abre a medida que avanza la historia.',
+        },
+        {
+          id: 'd.cantidad',
+          objetivo: '.nv-parametro--dato .nv-selector--ia',
+          titulo: 'Poco, Algo, Mucho',
+          texto: 'Cuánto manda el dato. Con <b>Poco</b> el cambio es sutil; con <b>Mucho</b> se nota clarísimo.',
+        },
+        {
+          id: 'd.mano',
+          objetivo: '.nv-parametro__mano',
+          titulo: 'El valor a mano',
+          texto:
+            'Si un parámetro está «a mano», esta barra lo fija. Los golpes y la melodía «a mano» se ponen en su <b>Pad</b>.',
+        },
+        {
+          id: 'd.archivos',
+          objetivo: '.nv-subir',
+          titulo: 'Datos de sus archivos',
+          texto:
+            'Suban <b>un sonido o una imagen</b> para sacarle datos: de un sonido, su ritmo; de una imagen, su brillo de izquierda a derecha. Aparece como un dato más en la lista de cada fila.',
+          detalle:
+            'No se usa el sonido ni la foto en sí: se convierten en números. Una foto de las lomas puede dibujar la forma de la melodía; el audio de un bus puede marcar el ritmo del brillo.',
+          final: 'A conectar datos',
         },
       ];
   }

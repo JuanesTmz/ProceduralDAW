@@ -106,6 +106,7 @@ export function MusicaEscena({ escena, indice }: Props) {
       {herramienta?.tipo === 'datos' && (
         <Ventana
           titulo="Datos"
+          guia="ventana-datos"
           nota="Elige qué parámetros se mueven solos con un dato. Valen para toda la pieza."
           ancha
           alCerrar={cerrar}

@@ -239,6 +239,7 @@ function VentanaPad({ id, escena, alCerrar }: { id: string; escena: Escena | nul
       nota={escena ? `Solo para la escena «${escena.respiro ? 'Respiro' : escena.nombre}»` : 'Para toda la pieza'}
       color={pista.color}
       ancha
+      guia="ventana-pad"
       alCerrar={alCerrar}
       pie={
         <>

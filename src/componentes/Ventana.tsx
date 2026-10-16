@@ -12,6 +12,8 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import type { ReactNode } from 'react';
+import { Guia } from '../narrativa/Guia';
+import type { Pantalla } from '../narrativa/pasosGuia';
 
 interface Props {
   titulo: string;
@@ -26,9 +28,11 @@ interface Props {
   /** Para las que tienen que llenar el alto: la rejilla, el cuadro X/Y. */
   alta?: boolean;
   children: ReactNode;
+  /** El tour de esta ventana: pone el botón «Guía» y arranca solo la primera vez. */
+  guia?: Pantalla;
 }
 
-export function Ventana({ titulo, nota, color, alCerrar, pie, ancha, alta, children }: Props) {
+export function Ventana({ titulo, nota, color, alCerrar, pie, ancha, alta, children, guia }: Props) {
   const caja = useRef<HTMLDivElement>(null);
   const devolverFoco = useRef<HTMLElement | null>(null);
 
@@ -39,6 +43,8 @@ export function Ventana({ titulo, nota, color, alCerrar, pie, ancha, alta, child
     caja.current?.focus();
 
     const alTeclear = (e: KeyboardEvent) => {
+      // Con la guía abierta, Escape cierra la guía y no la ventana.
+      if (e.key === 'Escape' && document.querySelector('.nv-tour')) return;
       if (e.key === 'Escape') {
         e.stopPropagation();
         cerrar();
@@ -92,6 +98,7 @@ export function Ventana({ titulo, nota, color, alCerrar, pie, ancha, alta, child
             <h2 className="ventana__titulo">{titulo}</h2>
             {nota && <span className="ventana__nota">{nota}</span>}
           </div>
+          {guia && <Guia pantalla={guia} />}
           <button type="button" className="ventana__cerrar" onClick={cerrar} aria-label="Cerrar">
             ✕
           </button>

@@ -229,6 +229,7 @@ export function VentanaGolpes({ inicial, alCerrar }: Props) {
   return (
     <Ventana
       titulo="Golpes"
+      guia="ventana-golpes"
       nota={nombre ? `Estás armando ${nombre}` : 'Elige un sonido y dibuja su patrón'}
       color={color}
       ancha
