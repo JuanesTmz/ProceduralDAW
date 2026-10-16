@@ -12,6 +12,7 @@ import { nuevoId, palabrasDe } from '../estado/proyecto';
 import { buscarEscena } from '../estado/escenas';
 import { NOMBRE_GOLPE, ORDEN_GOLPES } from '../estado/imagen';
 import { SONOTECA } from '../audio/sonoteca';
+import { MenuFlotante } from './MenuFlotante';
 import type { Cajita, Escena } from '../estado/tipos';
 
 const COLOR: Record<Cajita['tipo'], string> = { sonido: '#ffb020', silencio: '#8b91a5', imagen: '#ff7ab8' };
@@ -35,6 +36,8 @@ export function FraseConCajitas({ escena, tipos = ['sonido', 'silencio', 'imagen
   const { proyecto, actualizar } = useProyecto();
   const [abierta, setAbierta] = useState<number | null>(null);
   const [menu, setMenu] = useState<'inicio' | 'sonido' | 'imagen'>('inicio');
+  /** La palabra tocada: el menú flota pegado a ella. */
+  const [ancla, setAncla] = useState<HTMLElement | null>(null);
   const palabras = palabrasDe(escena.texto);
   const cajitas = escena.cajitas ?? [];
   const deLaPalabra = (i: number) => cajitas.find((c) => c.palabra === i && tipos.includes(c.tipo));
@@ -66,15 +69,21 @@ export function FraseConCajitas({ escena, tipos = ['sonido', 'silencio', 'imagen
                 type="button"
                 className={`nv-cajitas__palabra ${c ? 'nv-cajitas__palabra--con' : ''} ${abierta === i ? 'nv-cajitas__palabra--abierta' : ''} ${dichas >= 0 ? (i < dichas ? 'nv-cajitas__palabra--dicha' : 'nv-cajitas__palabra--espera') : ''}`}
                 style={c ? { color: COLOR[c.tipo], borderColor: COLOR[c.tipo] } : undefined}
-                onClick={() => {
+                onClick={(ev) => {
                   setAbierta(abierta === i ? null : i);
+                  setAncla(ev.currentTarget);
                   setMenu('inicio');
                 }}
               >
                 {palabra}
               </button>
-              {abierta === i && (
-                <span className="nv-lista-flotante nv-cajitas__menu">
+              {' '}
+            </span>
+          );
+        })}
+      </p>
+      {abierta !== null && ancla && (
+        <MenuFlotante ancla={ancla} className="nv-cajitas__menu" alCerrar={() => setAbierta(null)}>
                   {menu === 'inicio' && (
                     <>
                       {tipos.includes('sonido') && (
@@ -83,7 +92,7 @@ export function FraseConCajitas({ escena, tipos = ['sonido', 'silencio', 'imagen
                         </button>
                       )}
                       {tipos.includes('silencio') && (
-                        <button type="button" onClick={() => poner(i, { tipo: 'silencio' })}>
+                        <button type="button" onClick={() => poner(abierta, { tipo: 'silencio' })}>
                           <span className="nv-cajitas__icono" style={{ color: COLOR.silencio }}>◌</span> Silencio: la música se calla
                         </button>
                       )}
@@ -92,8 +101,8 @@ export function FraseConCajitas({ escena, tipos = ['sonido', 'silencio', 'imagen
                           <span className="nv-cajitas__icono" style={{ color: COLOR.imagen }}>◐</span> Un golpe de imagen
                         </button>
                       )}
-                      {c && (
-                        <button type="button" className="nv-rojo" onClick={() => poner(i, null)}>
+                      {deLaPalabra(abierta) && (
+                        <button type="button" className="nv-rojo" onClick={() => poner(abierta, null)}>
                           × Quitar la cajita
                         </button>
                       )}
@@ -101,22 +110,18 @@ export function FraseConCajitas({ escena, tipos = ['sonido', 'silencio', 'imagen
                   )}
                   {menu === 'sonido' &&
                     sonidos.map((s) => (
-                      <button key={s.url} type="button" onClick={() => poner(i, { tipo: 'sonido', url: s.url, nombre: s.nombre })}>
+                      <button key={s.url} type="button" onClick={() => poner(abierta, { tipo: 'sonido', url: s.url, nombre: s.nombre })}>
                         {s.nombre}
                       </button>
                     ))}
                   {menu === 'imagen' &&
                     ORDEN_GOLPES.map((g) => (
-                      <button key={g} type="button" onClick={() => poner(i, { tipo: 'imagen', golpe: g })}>
+                      <button key={g} type="button" onClick={() => poner(abierta, { tipo: 'imagen', golpe: g })}>
                         {NOMBRE_GOLPE[g]}
                       </button>
                     ))}
-                </span>
-              )}{' '}
-            </span>
-          );
-        })}
-      </p>
+        </MenuFlotante>
+      )}
       {cajitas.some((c) => tipos.includes(c.tipo)) && (
         <div className="nv-fichas">
           {cajitas
