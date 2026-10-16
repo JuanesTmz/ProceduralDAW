@@ -49,7 +49,7 @@ export function VentanaSonidosPistas({ pista, alCerrar }: Props) {
       actualizar((p) => ponerSonido(p, elegida, valor));
     }
     // Suena al elegirlo. La batería la toca el motor cuando ya tiene el sonido nuevo.
-    if (url) void new Audio(url).play();
+    if (url) oirUrl(url);
     else window.setTimeout(() => void motorAudio.escucharFila(id), 150);
   };
 
@@ -115,7 +115,7 @@ export function VentanaSonidosPistas({ pista, alCerrar }: Props) {
             <>
               <Grupo titulo="Batería">
                 {KIT.map((t) => (
-                  <Ficha key={t} activa={actual === t} onClick={() => elegir(t)}>
+                  <Ficha key={t} activa={actual === t} onClick={() => elegir(t)} alOir={() => void motorAudio.probarTipo(t)}>
                     {NOMBRES_SONIDO[t]}
                   </Ficha>
                 ))}
@@ -123,7 +123,7 @@ export function VentanaSonidosPistas({ pista, alCerrar }: Props) {
               {(['percusion', 'ciudad', 'melodico'] as const).map((g) => (
                 <Grupo key={g} titulo={NOMBRE_GRUPO[g]}>
                   {SONOTECA.filter((x) => x.grupo === g).map((x) => (
-                    <Ficha key={x.id} activa={actual === `sonoteca:${x.id}`} onClick={() => elegir(`sonoteca:${x.id}`, x.url)}>
+                    <Ficha key={x.id} activa={actual === `sonoteca:${x.id}`} onClick={() => elegir(`sonoteca:${x.id}`, x.url)} alOir={() => oirUrl(x.url)}>
                       {x.nombre}
                     </Ficha>
                   ))}
@@ -150,13 +150,37 @@ function Grupo({ titulo, children }: { titulo: string; children: React.ReactNode
   );
 }
 
-function Ficha({ activa, onClick, children }: { activa: boolean; onClick: () => void; children: React.ReactNode }) {
+/** Un sonido: ▶ lo hace sonar sin elegirlo; el nombre lo pone en la pista. */
+function Ficha({
+  activa,
+  onClick,
+  alOir,
+  children,
+}: {
+  activa: boolean;
+  onClick: () => void;
+  alOir: () => void;
+  children: React.ReactNode;
+}) {
   return (
-    <button type="button" className={`nv-sonido ${activa ? 'nv-sonido--activo' : ''}`} onClick={onClick}>
-      {activa ? '✓ ' : '▶ '}
-      {children}
-    </button>
+    <span className={`nv-sonido ${activa ? 'nv-sonido--activo' : ''}`}>
+      <button type="button" className="nv-sonido__oir" aria-label="Escuchar" title="Escuchar sin elegir" onClick={alOir}>
+        ▶
+      </button>
+      <button type="button" className="nv-sonido__elegir" onClick={onClick} title="Usar este sonido">
+        {activa && '✓ '}
+        {children}
+      </button>
+    </span>
   );
+}
+
+/** Oye un archivo de sonido sin elegirlo. Si ya sonaba otro, lo corta. */
+let muestra: HTMLAudioElement | null = null;
+function oirUrl(url: string) {
+  muestra?.pause();
+  muestra = new Audio(url);
+  void muestra.play();
 }
 
 /**
@@ -212,11 +236,16 @@ function EfectosPropios({ actual, alUsar }: { actual: string; alUsar?: (id: stri
       <div className="nv-sonidos__fichas">
         {proyecto.sonidos.map((s) =>
           alUsar ? (
-            <Ficha key={s.id} activa={actual === `propio:${s.id}`} onClick={() => alUsar(s.id, s.url)}>
+            <Ficha key={s.id} activa={actual === `propio:${s.id}`} onClick={() => alUsar(s.id, s.url)} alOir={() => oirUrl(s.url)}>
               🎙 {s.nombre}
             </Ficha>
           ) : (
-            <span key={s.id} className="nv-sonido nv-sonido--quieto">🎙 {s.nombre}</span>
+            <span key={s.id} className="nv-sonido nv-sonido--quieto">
+              <button type="button" className="nv-sonido__oir" aria-label="Escuchar" onClick={() => oirUrl(s.url)}>
+                ▶
+              </button>
+              <span className="nv-sonido__elegir">🎙 {s.nombre}</span>
+            </span>
           ),
         )}
         {proyecto.sonidos.length === 0 && (

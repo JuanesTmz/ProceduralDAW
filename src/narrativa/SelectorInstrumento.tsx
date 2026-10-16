@@ -9,6 +9,22 @@ import { useProyecto } from '../estado/ProyectoContext';
 import { SONOTECA } from '../audio/sonoteca';
 import { detectarNota, nombreNota, NOTAS_ELEGIBLES } from '../audio/afinador';
 
+/** Oye un sonido sin elegirlo. Si ya sonaba otro, lo corta. */
+let muestra: HTMLAudioElement | null = null;
+function oir(url: string) {
+  muestra?.pause();
+  muestra = new Audio(url);
+  void muestra.play();
+}
+
+function Oir({ url }: { url: string }) {
+  return (
+    <button type="button" className="nv-instrumento__oir" aria-label="Escuchar" title="Escuchar sin elegir" onClick={() => oir(url)}>
+      ▶
+    </button>
+  );
+}
+
 export function SelectorInstrumento() {
   const { proyecto, actualizar } = useProyecto();
   const { melodia } = proyecto.patron;
@@ -61,17 +77,19 @@ export function SelectorInstrumento() {
             Sintetizador
           </button>
           {melodicos.map((x) => (
-            <button
-              key={x.id}
-              type="button"
-              className={actual(x.url) ? 'nv-instrumento__activo' : ''}
-              onClick={() => {
-                usar(x.url, x.nombre, x.nota ?? 'C4');
-                setAviso(null);
-              }}
-            >
-              {x.nombre}
-            </button>
+            <span key={x.id} className="nv-instrumento__par">
+              <Oir url={x.url} />
+              <button
+                type="button"
+                className={actual(x.url) ? 'nv-instrumento__activo' : ''}
+                onClick={() => {
+                  usar(x.url, x.nombre, x.nota ?? 'C4');
+                  setAviso(null);
+                }}
+              >
+                {x.nombre}
+              </button>
+            </span>
           ))}
         </div>
       </div>
@@ -82,14 +100,16 @@ export function SelectorInstrumento() {
             <span className="nv-instrumento__nota">Graba un sonido (tu voz, un silbido, un objeto) y aquí se vuelve instrumento.</span>
           )}
           {proyecto.sonidos.map((x) => (
-            <button
-              key={x.id}
-              type="button"
-              className={`nv-instrumento__propio ${actual(x.url) ? 'nv-instrumento__activo' : ''}`}
-              onClick={() => void usarPropio(x.url, x.nombre)}
-            >
-              🎙 {x.nombre}
-            </button>
+            <span key={x.id} className="nv-instrumento__par">
+              <Oir url={x.url} />
+              <button
+                type="button"
+                className={`nv-instrumento__propio ${actual(x.url) ? 'nv-instrumento__activo' : ''}`}
+                onClick={() => void usarPropio(x.url, x.nombre)}
+              >
+                🎙 {x.nombre}
+              </button>
+            </span>
           ))}
         </div>
       </div>

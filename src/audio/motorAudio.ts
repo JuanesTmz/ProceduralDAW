@@ -1000,6 +1000,21 @@ class MotorAudio {
    * Usa la ganancia que ya tiene la fila, así lo que se oye al editar
    * es exactamente lo que se oirá al reproducir.
    */
+  /** Voces sueltas para oír un sonido de la batería antes de elegirlo. */
+  private muestrario = new Map<TipoSonido, VozPercusion>();
+
+  /** Hace sonar un sonido de la batería sin ponerlo en ninguna pista. */
+  async probarTipo(tipo: TipoSonido): Promise<void> {
+    await this.iniciar();
+    let voz = this.muestrario.get(tipo);
+    if (!voz) {
+      voz = crearVoz(tipo);
+      if (this.maestro) voz.salida.connect(this.maestro);
+      this.muestrario.set(tipo, voz);
+    }
+    voz.disparar(Tone.now() + 0.01, 1);
+  }
+
   async escucharFila(id: string): Promise<void> {
     await this.iniciar();
     this.voces.get(id)?.voz.disparar(Tone.now(), 1);

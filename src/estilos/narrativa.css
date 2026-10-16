@@ -1242,3 +1242,18 @@
 .nv-pad { gap: 12px; }
 .nv-pad__cuadro { width: 100%; max-width: 340px; align-self: center; }
 .nv-pad__nota { margin: 0; text-align: center; font-size: 13px; color: #8b91a5; }
+
+/* ---------- escuchar antes de elegir ---------- */
+.nv-sonido { display: inline-flex; align-items: stretch; padding: 0; overflow: hidden; }
+.nv-sonido__oir {
+  padding: 8px 10px;
+  border-right: 1px solid #ffffff14;
+  color: var(--nv-suave);
+  font-size: 11px;
+}
+.nv-sonido__oir:hover { background: #ffffff14; color: var(--nv-texto); }
+.nv-sonido__elegir { padding: 8px 12px; text-align: left; }
+.nv-sonido--activo .nv-sonido__oir { color: var(--nv-acento); border-color: #ffb02055; }
+.nv-instrumento__par { display: inline-flex; gap: 2px; }
+.nv-instrumento__fichas .nv-instrumento__oir { padding: 8px 10px; background: transparent; border-color: #ffffff22; color: #8b91a5; font-size: 11px; }
+.nv-instrumento__fichas .nv-instrumento__oir:hover { color: #eceef4; background: #ffffff14; }
