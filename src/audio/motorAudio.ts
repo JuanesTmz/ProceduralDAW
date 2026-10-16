@@ -84,6 +84,14 @@ class MotorAudio {
   private vueltaEnSeccion = 0;
   private terminando = false;
   private gananciaSeccion: Tone.Gain | null = null;
+  /** Baja la música mientras habla la voz de una escena, y la sube al terminar. */
+  private agacharse: Tone.Gain | null = null;
+  /** Una grabación por escena, guardada por su url. */
+  private vocesEscena = new Map<string, Tone.Player>();
+  /** Desde qué sección arranca la pieza, y si para al terminarla. */
+  private desde = 0;
+  private soloUna = false;
+  private musicaApagada = false;
   private oyentesSeccion = new Set<OyenteSeccion>();
 
   /** La narración: va aparte de la música, sin efectos y sin el fade del cierre. */
@@ -99,6 +107,10 @@ class MotorAudio {
   private generacionPieza = 0;
   /** Instante en que entra la voz. Lo usa el texto cinético para sincronizarse. */
   private inicioNarracion = 0;
+
+  get musicaSilenciada() {
+    return this.musicaApagada;
+  }
 
   get estaIniciado() {
     return this.iniciado;
@@ -153,7 +165,8 @@ class MotorAudio {
     this.filtro = new Tone.Filter({ type: 'lowpass', frequency: 18000, Q: 0.6 }).connect(this.delay);
     // La intensidad de cada sección se aplica aquí, antes de los efectos.
     this.gananciaSeccion = new Tone.Gain(1).connect(this.filtro);
-    this.bus = new Tone.Gain(1).connect(this.gananciaSeccion);
+    this.agacharse = new Tone.Gain(1).connect(this.gananciaSeccion);
+    this.bus = new Tone.Gain(1).connect(this.agacharse);
 
     this.clic = new Tone.MembraneSynth({
       pitchDecay: 0.008,
@@ -221,7 +234,7 @@ class MotorAudio {
     const transporte = Tone.getTransport();
     this.paso = 0;
     this.vuelta = 0;
-    this.indiceSeccion = 0;
+    this.indiceSeccion = this.modo === 'pieza' ? this.desde : 0;
     this.vueltaEnSeccion = 0;
     this.terminando = false;
 
@@ -232,10 +245,10 @@ class MotorAudio {
     this.generacionPieza += 1;
 
     if (this.modo === 'pieza') {
-      const primera = this.proyecto?.secciones[0];
+      const primera = this.proyecto?.secciones[this.desde];
       if (primera) this.aplicarSeccion(primera, inicio);
-      this.avisarSeccion(0);
-      this.lanzarNarracion();
+      this.avisarSeccion(this.desde);
+      if (this.desde === 0) this.lanzarNarracion();
     } else {
       this.gananciaSeccion?.gain.cancelScheduledValues(Tone.now());
       this.gananciaSeccion?.gain.rampTo(1, 0.05);
@@ -292,6 +305,24 @@ class MotorAudio {
     else void Tone.loaded().then(arrancar);
   }
 
+  /** Toca la pieza entera, de la primera escena a la última. */
+  async reproducirPieza(): Promise<void> {
+    if (this.estaSonando) this.detener();
+    this.modo = 'pieza';
+    this.desde = 0;
+    this.soloUna = false;
+    await this.reproducir();
+  }
+
+  /** Toca una sola escena de la pieza, y para al terminarla. */
+  async reproducirEscena(indice: number): Promise<void> {
+    if (this.estaSonando) this.detener();
+    this.modo = 'pieza';
+    this.desde = Math.max(0, indice);
+    this.soloUna = true;
+    await this.reproducir();
+  }
+
   /** Bucle del patrón, o recorrido completo por el arco. */
   cambiarModo(modo: ModoReproduccion): void {
     if (this.modo === modo) return;
@@ -310,6 +341,13 @@ class MotorAudio {
     this.generacionPieza += 1;
     this.inicioNarracion = 0;
     if (this.narrador?.state === 'started') this.narrador.stop();
+    for (const voz of this.vocesEscena.values()) if (voz.state === 'started') voz.stop();
+    if (this.agacharse) {
+      this.agacharse.gain.cancelScheduledValues(Tone.now());
+      this.agacharse.gain.value = 1;
+    }
+    this.desde = 0;
+    this.soloUna = false;
     this.paso = 0;
     this.vueltaEnSeccion = 0;
     this.indiceSeccion = 0;
@@ -401,7 +439,9 @@ class MotorAudio {
       // Se disparan juntas: en la matriz varias notas en la misma columna son un acorde.
       const acorde = melodia.notas
         .filter((n) => n.paso === paso)
-        .map((n) => notaTone(semitonoDeGrado(n.grado, melodia.escala), melodia.octavaBase));
+        .map((n) =>
+          notaTone(semitonoDeGrado(n.grado, seccion?.escala ?? melodia.escala), melodia.octavaBase),
+        );
       if (acorde.length > 0) this.dispararMatriz(acorde, cuando);
     }
 
@@ -431,6 +471,10 @@ class MotorAudio {
 
     this.indiceSeccion += 1;
     this.vueltaEnSeccion = 0;
+    if (this.soloUna) {
+      this.terminarPieza(tiempo);
+      return;
+    }
 
     const siguiente = proyecto.secciones[this.indiceSeccion];
     if (!siguiente) {
@@ -461,6 +505,43 @@ class MotorAudio {
     }
 
     this.aplicarTempo(seccion);
+    this.lanzarVozEscena(seccion, tiempo);
+  }
+
+  /**
+   * La voz de una escena entra justo al empezar su sección, y mientras
+   * habla la música se agacha un poco para dejarla oír.
+   */
+  private lanzarVozEscena(seccion: Seccion, tiempo: number): void {
+    const voz = seccion.voz;
+    if (!voz) return;
+    const reproductor = this.vocesEscena.get(voz.url);
+    if (!reproductor?.loaded) return;
+    const entra = tiempo + 0.15;
+    if (reproductor.state === 'started') reproductor.stop(tiempo);
+    reproductor.start(entra);
+    const ganancia = this.agacharse?.gain;
+    if (!ganancia) return;
+    ganancia.cancelScheduledValues(tiempo);
+    ganancia.rampTo(0.55, 0.25, tiempo);
+    ganancia.rampTo(1, 0.9, entra + voz.duracion);
+  }
+
+  /** Prepara un reproductor por cada voz de escena y suelta los que sobran. */
+  private cargarVocesEscenas(secciones: Seccion[]): void {
+    if (!this.gananciaNarrador) return;
+    const urls = new Set(secciones.flatMap((s) => (s.voz ? [s.voz.url] : [])));
+    for (const [url, reproductor] of this.vocesEscena) {
+      if (!urls.has(url)) {
+        reproductor.dispose();
+        this.vocesEscena.delete(url);
+      }
+    }
+    for (const url of urls) {
+      if (!this.vocesEscena.has(url)) {
+        this.vocesEscena.set(url, new Tone.Player({ url }).connect(this.gananciaNarrador));
+      }
+    }
   }
 
   /**
@@ -554,6 +635,7 @@ class MotorAudio {
     this.gananciaMatriz?.gain.rampTo(melodiaAudible ? melodia.volumen : 0, 0.03);
 
     this.cargarNarracion(proyecto.narracion.audioUrl);
+    this.cargarVocesEscenas(proyecto.secciones);
     this.gananciaNarrador?.gain.rampTo(proyecto.narracion.volumen, 0.05);
 
     this.ajustarVolumenMaestro(proyecto.volumenMaestro);
@@ -660,6 +742,12 @@ class MotorAudio {
     const entrada = this.voces.get(id);
     if (!entrada) return;
     entrada.ganancia.gain.rampTo(volumen, 0.02);
+  }
+
+  /** Apaga solo la música y deja la voz: para oír qué le aporta el sonido al relato. */
+  silenciarMusica(silencio: boolean): void {
+    this.musicaApagada = silencio;
+    this.bus?.gain.rampTo(silencio ? 0 : 1, 0.15);
   }
 
   ajustarVolumenMaestro(volumen: number): void {

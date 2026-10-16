@@ -1,10 +1,10 @@
 import { ProveedorProyecto } from './estado/ProyectoContext';
-import { AppShell } from './componentes/AppShell';
+import { AppNarrativa } from './narrativa/AppNarrativa';
 
 export default function App() {
   return (
     <ProveedorProyecto>
-      <AppShell />
+      <AppNarrativa />
     </ProveedorProyecto>
   );
 }

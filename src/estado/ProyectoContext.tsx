@@ -7,6 +7,7 @@ import { createContext, useCallback, useContext, useMemo, useState } from 'react
 import type { ReactNode } from 'react';
 import type { Proyecto } from './tipos';
 import { crearProyectoInicial } from './proyecto';
+import { escenasASecciones } from './escenas';
 
 interface ContextoProyecto {
   proyecto: Proyecto;
@@ -23,6 +24,8 @@ export function ProveedorProyecto({ children }: { children: ReactNode }) {
     setProyecto((anterior) => {
       const borrador = structuredClone(anterior) as Proyecto;
       receta(borrador);
+      // Con relato, las secciones del motor salen siempre de las escenas.
+      if (borrador.escenas.length > 0) borrador.secciones = escenasASecciones(borrador);
       return borrador;
     });
   }, []);

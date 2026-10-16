@@ -120,7 +120,12 @@ export interface Patron {
   melodia: Melodia;
 }
 
-export type NombreSeccion = 'intro' | 'estrofa' | 'coro' | 'cierre';
+/**
+ * El nombre de una sección del motor. Antes eran cuatro fijas (intro,
+ * estrofa, coro, cierre); con las escenas del relato son tantas como el
+ * estudiante quiera, y el id de cada una es el de su escena.
+ */
+export type NombreSeccion = string;
 
 /**
  * Cómo se produce el material de una sección.
@@ -155,6 +160,43 @@ export interface Seccion {
   intencion: string;
   /** El cierre baja de volumen progresivamente. */
   desvanecer: boolean;
+  /** Escala propia de la sección; si falta, manda la de la melodía. */
+  escala?: NombreEscala;
+  /** La voz que entra al empezar la sección (una escena grabada). */
+  voz?: { url: string; duracion: number };
+}
+
+// ------------------------------------------------------------ El relato
+
+/** Lo que siente una escena. Mueve la música y, más adelante, la imagen. */
+export type Emocion = 'calma' | 'alegria' | 'tension' | 'nostalgia' | 'misterio' | 'euforia';
+
+/** 1 suave, 2 media, 3 fuerte. */
+export type Fuerza = 1 | 2 | 3;
+
+/**
+ * Una escena del relato: un trozo del monólogo con su voz, su emoción,
+ * su fuerza y su foto. Es la unidad de toda la app.
+ *
+ * Un respiro es una escena sin voz: la música cuenta sola. Va en su propia
+ * lista porque no sale del texto, y `despuesDe` dice detrás de qué escena
+ * se coloca (-1 = al principio).
+ */
+export interface Escena {
+  id: string;
+  nombre: string;
+  /** El trozo de monólogo que le toca. Vacío en un respiro. */
+  texto: string;
+  respiro: boolean;
+  emocion: Emocion;
+  fuerza: Fuerza;
+  /** URL local de la voz grabada para esta escena. */
+  vozUrl?: string;
+  vozDuracion: number;
+  /** Solo en respiros: cuánto dura, en segundos. */
+  duracionRespiro: number;
+  despuesDe: number;
+  imagenUrl?: string;
 }
 
 /** La historia: el corazón del reto. Sin esto, lo demás no tiene para qué. */
@@ -263,6 +305,15 @@ export interface Proyecto {
   secciones: Seccion[];
   /** Lo que el estudiante grabó en el Estudio. */
   sonidos: SonidoPropio[];
+  /**
+   * Índices de palabra donde empieza una escena nueva (sin contar la 0).
+   * De aquí salen las escenas con voz: partir el texto es partir la pieza.
+   */
+  cortesEscena: number[];
+  /** Las escenas con voz, en orden. Se rehacen solas al mover los cortes. */
+  escenas: Escena[];
+  /** Los respiros, cada uno colgado detrás de una escena. */
+  respiros: Escena[];
 }
 
 /**

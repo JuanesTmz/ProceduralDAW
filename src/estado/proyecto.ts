@@ -367,7 +367,7 @@ export function crearProyectoInicial(): Proyecto {
   return {
     nombre: 'Mi pieza',
     track: null,
-    modoReproduccion: 'patron',
+    modoReproduccion: 'pieza',
     historia: { que: '', porQue: '' },
     narracion: {
       texto: '',
@@ -406,6 +406,9 @@ export function crearProyectoInicial(): Proyecto {
     },
     secciones: crearSecciones(semilla, patron.filas.map((f) => f.id)),
     sonidos: [],
+    cortesEscena: [],
+    escenas: [],
+    respiros: [],
   };
 }
 
