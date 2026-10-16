@@ -16,7 +16,9 @@ import {
   EMOCIONES,
   intensidadDeEscena,
   recorrido,
+  reordenar,
 } from '../estado/escenas';
+import { useOrdenArrastrable } from './useOrdenArrastrable';
 import type { Escena } from '../estado/tipos';
 import { useReproduccion } from './useReproduccion';
 import { Onda } from './VozEscena';
@@ -52,6 +54,11 @@ export function PasoEscenas({ alEntrar }: { alEntrar: (id: string) => void }) {
   const { proyecto, actualizar } = useProyecto();
   const { seccion: sonandoAhora, progreso, sonando } = useReproduccion();
   const lista = recorrido(proyecto);
+  const { manejadores, agarrada } = useOrdenArrastrable(
+    lista.map((e) => e.id),
+    (orden) => actualizar((p) => reordenar(p, orden)),
+    alEntrar,
+  );
 
   if (lista.length === 0) {
     return (
@@ -73,7 +80,7 @@ export function PasoEscenas({ alEntrar }: { alEntrar: (id: string) => void }) {
       <div className="nv-cabeza">
         <div>
           <h1 className="nv-titulo">{proyecto.nombre === 'Mi pieza' ? 'Tus escenas' : proyecto.nombre}</h1>
-          <p className="nv-sub">Toca una escena para entrar.</p>
+          <p className="nv-sub">Toca una escena para entrar · arrástrala para cambiarla de orden.</p>
         </div>
         <span className="nv-espacio" />
         <button
@@ -103,27 +110,31 @@ export function PasoEscenas({ alEntrar }: { alEntrar: (id: string) => void }) {
           const activa = i === sonandoAhora;
           if (e.respiro) {
             return (
-              <button
+              <div
                 key={e.id}
-                type="button"
-                className={`nv-tarjeta-respiro ${activa ? 'nv-activa' : ''}`}
-                style={{ borderColor: color }}
-                onClick={() => alEntrar(e.id)}
+                role="button"
+                tabIndex={0}
+                className={`nv-tarjeta-respiro ${activa ? 'nv-activa' : ''} ${agarrada === i ? 'nv-agarrada' : ''}`}
+                {...manejadores(i)}
+                style={{ ...manejadores(i).style, borderColor: color }}
+                onKeyDown={(ev) => ev.key === 'Enter' && alEntrar(e.id)}
               >
                 <span className="nv-etiqueta" style={{ color }}>RESPIRO</span>
                 <span className="nv-mono nv-tenue">{formatearReloj(duraciones[i] ?? 0)}</span>
                 <span className="nv-espacio-v" />
                 <span className="nv-tenue nv-italica">sin voz</span>
-              </button>
+              </div>
             );
           }
           numero += 1;
           return (
-            <button
+            <div
               key={e.id}
-              type="button"
-              className={`nv-tarjeta-escena ${activa ? 'nv-activa' : ''}`}
-              onClick={() => alEntrar(e.id)}
+              role="button"
+              tabIndex={0}
+              className={`nv-tarjeta-escena ${activa ? 'nv-activa' : ''} ${agarrada === i ? 'nv-agarrada' : ''}`}
+              {...manejadores(i)}
+              onKeyDown={(ev) => ev.key === 'Enter' && alEntrar(e.id)}
             >
               <span className="nv-tarjeta-escena__arriba">
                 <span className="nv-miniatura" style={{ background: fondoEscena(e) }} />
@@ -140,7 +151,7 @@ export function PasoEscenas({ alEntrar }: { alEntrar: (id: string) => void }) {
                 <ChipEmocion e={e} />
                 {!e.vozUrl && <span className="nv-tenue nv-chico">sin voz grabada</span>}
               </span>
-            </button>
+            </div>
           );
         })}
       </div>

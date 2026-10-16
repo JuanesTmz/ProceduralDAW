@@ -99,6 +99,90 @@ export function sincronizarEscenas(p: Proyecto): void {
   }
 }
 
+/** Mueve el límite número `k` a la palabra `indice`, sin cruzar a sus vecinos. */
+export function moverCorte(p: Proyecto, k: number, indice: number): void {
+  const total = palabrasDe(p.narracion.texto).length;
+  const cortes = [...p.cortesEscena].sort((a, b) => a - b);
+  const minimo = (cortes[k - 1] ?? 0) + 1;
+  const maximo = (cortes[k + 1] ?? total) - 1;
+  cortes[k] = Math.max(minimo, Math.min(maximo, indice));
+  p.cortesEscena = cortes;
+  sincronizarEscenas(p);
+}
+
+/**
+ * Una escena más: parte la más larga, buscando el final de frase más
+ * cercano a su mitad para que el corte caiga en un lugar natural.
+ */
+export function agregarCorte(p: Proyecto): void {
+  const palabras = palabrasDe(p.narracion.texto);
+  const limites = [0, ...[...p.cortesEscena].sort((a, b) => a - b), palabras.length];
+  let mejor = -1;
+  let largo = 1;
+  for (let i = 0; i < limites.length - 1; i++) {
+    const l = limites[i + 1] - limites[i];
+    if (l > largo) {
+      largo = l;
+      mejor = i;
+    }
+  }
+  if (mejor < 0) return;
+  const desde = limites[mejor];
+  const hasta = limites[mejor + 1];
+  const mitad = Math.round((desde + hasta) / 2);
+  let corte = mitad;
+  let distancia = Infinity;
+  for (let i = desde + 1; i < hasta; i++) {
+    if (/[.,;:!?…]$/.test(palabras[i - 1]) && Math.abs(i - mitad) < distancia) {
+      distancia = Math.abs(i - mitad);
+      corte = i;
+    }
+  }
+  p.cortesEscena = [...p.cortesEscena, corte];
+  sincronizarEscenas(p);
+}
+
+/** Una escena menos: junta la última con la anterior. */
+export function quitarCorte(p: Proyecto, k?: number): void {
+  const cortes = [...p.cortesEscena].sort((a, b) => a - b);
+  cortes.splice(k ?? cortes.length - 1, 1);
+  p.cortesEscena = cortes;
+  sincronizarEscenas(p);
+}
+
+/**
+ * Cambia el orden de la pieza. Las escenas con voz arrastran su trozo de
+ * texto: el monólogo se reescribe en el orden nuevo, así el texto y la
+ * pieza nunca se contradicen. Los respiros se cuelgan de la escena que
+ * les queda delante.
+ */
+export function reordenar(p: Proyecto, ids: string[]): void {
+  const porId = new Map(recorrido(p).map((e) => [e.id, e]));
+  const nueva = ids.map((id) => porId.get(id)).filter((e): e is Escena => Boolean(e));
+  const conVoz = nueva.filter((e) => !e.respiro);
+  p.narracion.texto = conVoz.map((e) => e.texto).join(' ');
+  const cortes: number[] = [];
+  let acumulado = 0;
+  conVoz.forEach((e, i) => {
+    if (i > 0) cortes.push(acumulado);
+    acumulado += palabrasDe(e.texto).length;
+  });
+  p.cortesEscena = cortes;
+  p.escenas = conVoz;
+  let ultima = -1;
+  const respiros: Escena[] = [];
+  for (const e of nueva) {
+    if (e.respiro) {
+      e.despuesDe = ultima;
+      respiros.push(e);
+    } else {
+      ultima += 1;
+    }
+  }
+  p.respiros = respiros;
+  sincronizarEscenas(p);
+}
+
 /** Pone o quita un corte antes de la palabra `indice`. */
 export function alternarCorte(p: Proyecto, indice: number): void {
   if (p.cortesEscena.includes(indice)) {
@@ -233,8 +317,4 @@ export function cargarEjemplo(p: Proyecto): void {
     e.emocion = emocion;
     e.fuerza = fuerza;
   });
-  const r = nuevaEscena(0, true);
-  r.emocion = 'tension';
-  r.despuesDe = 2;
-  p.respiros.push(r);
 }
