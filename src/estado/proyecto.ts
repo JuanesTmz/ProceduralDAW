@@ -379,9 +379,9 @@ export function crearProyectoInicial(): Proyecto {
       cortes: [0, 0, 0],
     },
     visual: {
-      algoritmo: 'flujo',
+      algoritmo: 'nebulosa',
       parametros: {},
-      paleta: 'sonora',
+      paleta: 'nebulosa',
       alfabeto: 'sonora',
       reaccion: 0.8,
       influenciaImagen: 0.75,
@@ -410,6 +410,7 @@ export function crearProyectoInicial(): Proyecto {
     escenas: [],
     respiros: [],
     conexiones: [],
+    conexionesVisual: [],
     archivosDatos: [],
     preset: 'pulso',
   };

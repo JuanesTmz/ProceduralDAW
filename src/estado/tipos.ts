@@ -250,7 +250,16 @@ export interface Escena {
   version: number;
   /** Desde qué versión empiezan las tres propuestas que se muestran. */
   propuestasDesde: number;
+  /** Música Urbana: cómo reacciona la imagen al sonido en esta escena. */
+  reaccion?: ReaccionVisual;
+  /** Música Urbana: el gesto tocado sobre la imagen (quieta↔caótica, oscura↔luminosa). */
+  gestoVisual?: PuntoGesto[];
+  /** Música Urbana: los golpes visuales tocados en vivo, con su momento (0..1). */
+  golpesVisuales?: { t: number; tipo: GolpeVisual }[];
 }
+
+export type ReaccionVisual = 'bombo' | 'voz' | 'quieta';
+export type GolpeVisual = 'destello' | 'zoom' | 'sacudon' | 'corte';
 
 /** La historia: el corazón del reto. Sin esto, lo demás no tiene para qué. */
 export interface Historia {
@@ -325,6 +334,8 @@ export interface Visual {
   /** Por defecto comparte la semilla de la música; se puede separar. */
   semillaPropia: boolean;
   semilla: number;
+  /** Colores sacados de una imagen del estudiante; mandan sobre la paleta. */
+  paletaPropia?: string[];
 }
 
 /** Bucle del patrón, o recorrido completo por las secciones. */
@@ -369,6 +380,8 @@ export interface Proyecto {
   respiros: Escena[];
   /** Las conexiones del lab de IA: valen para toda la pieza. */
   conexiones: Conexion[];
+  /** Las conexiones del lab de IA que mueven la imagen. */
+  conexionesVisual: Conexion[];
   /** Los archivos subidos como fuente de datos. */
   archivosDatos: ArchivoDatos[];
   /** El punto de partida sonoro elegido en la tarjeta General. */

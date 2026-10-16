@@ -24,9 +24,10 @@ interface Props {
   /** El id de la escena, o 'general' para toda la pieza. */
   id: string;
   alVolver: () => void;
+  alImagen: () => void;
 }
 
-export function MusicaEscena({ id, alVolver }: Props) {
+export function MusicaEscena({ id, alVolver, alImagen }: Props) {
   const { proyecto, actualizar } = useProyecto();
   const { sonando } = useReproduccion();
   const [herramienta, setHerramienta] = useState<Herramienta | null>(null);
@@ -56,6 +57,14 @@ export function MusicaEscena({ id, alVolver }: Props) {
           <h1 className="nv-titulo">{escena ? (escena.respiro ? 'Respiro' : escena.nombre) : 'General'}</h1>
         </div>
         <span className="nv-espacio" />
+        <div className="nv-selector">
+          <button type="button" className="nv-selector__op nv-selector__op--activa">
+            ♫  Música
+          </button>
+          <button type="button" className="nv-selector__op" onClick={alImagen}>
+            ◐  Imagen
+          </button>
+        </div>
         <button type="button" className="nv-boton" onClick={escuchar}>
           {sonando ? '■  Parar' : escena ? '▶  Escuchar esta escena' : '▶  Escuchar la pieza'}
         </button>

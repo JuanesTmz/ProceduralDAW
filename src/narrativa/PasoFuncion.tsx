@@ -1,8 +1,8 @@
 /**
  * Paso 4: la función. Ver la pieza como se va a presentar.
  *
- * En esta fase el escenario muestra la foto de la escena que suena (o su
- * color) y su frase. El visual generativo y reactivo entra en la fase 3.
+ * El escenario es el visual generativo de la pieza: sigue a la escena que
+ * suena, reacciona al sonido y muestra la frase mientras se dice.
  * «Sin música» deja solo la voz, para oír qué le aporta el sonido al relato.
  */
 import { useState } from 'react';
@@ -10,7 +10,7 @@ import { motorAudio } from '../audio/motorAudio';
 import { useProyecto } from '../estado/ProyectoContext';
 import { duracionSeccion } from '../estado/proyecto';
 import { EMOCIONES, recorrido } from '../estado/escenas';
-import { fondoEscena } from './PasoEscenas';
+import { Escenario } from './Escenario';
 import { useReproduccion } from './useReproduccion';
 
 export function PasoFuncion() {
@@ -40,12 +40,9 @@ export function PasoFuncion() {
 
   return (
     <div className="nv-pagina nv-pagina--fija">
-      <div className="nv-escenario" style={{ background: fondoEscena(actual) }}>
-        <div className="nv-escenario__velo" />
-        <p className="nv-escenario__texto">
-          {actual.respiro ? '' : sonando ? actual.texto : lista.find((e) => !e.respiro)?.texto}
-        </p>
-        <span className="nv-etiqueta" style={{ color: EMOCIONES[actual.emocion].color }}>
+      <div className="nv-escenario">
+        <Escenario escenaFija={lista[0]?.id} />
+        <span className="nv-etiqueta nv-escenario__nombre" style={{ color: EMOCIONES[actual.emocion].color }}>
           {sonando ? actual.nombre.toUpperCase() : 'LISTO PARA EMPEZAR'}
         </span>
       </div>

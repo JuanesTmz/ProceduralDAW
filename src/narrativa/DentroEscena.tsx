@@ -28,9 +28,10 @@ interface Props {
   alVolver: () => void;
   alIr: (id: string) => void;
   alMusica: () => void;
+  alImagen: () => void;
 }
 
-export function DentroEscena({ id, alVolver, alIr, alMusica }: Props) {
+export function DentroEscena({ id, alVolver, alIr, alMusica, alImagen }: Props) {
   const { proyecto, actualizar } = useProyecto();
   const { sonando } = useReproduccion();
   const escena = buscarEscena(proyecto, id);
@@ -221,11 +222,15 @@ export function DentroEscena({ id, alVolver, alIr, alMusica }: Props) {
             </span>
             <span className="nv-flecha">›</span>
           </button>
-          <button type="button" className="nv-puerta" disabled title="Llega en la fase 3">
+          <button type="button" className="nv-puerta" onClick={alImagen}>
             <span className="nv-puerta__icono">◐</span>
             <span className="nv-puerta__texto">
               <strong>Imagen de la escena</strong>
-              <span className="nv-tenue">editar llega en la fase 3</span>
+              {escena.gestoVisual || escena.golpesVisuales || escena.reaccion ? (
+                <span className="nv-acento">editada en esta escena</span>
+              ) : (
+                <span className="nv-tenue">usa lo general · la mueve la emoción</span>
+              )}
             </span>
             <span className="nv-flecha">›</span>
           </button>

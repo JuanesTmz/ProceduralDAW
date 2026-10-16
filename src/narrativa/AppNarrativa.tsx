@@ -13,6 +13,8 @@ import type { Track } from '../guia/pasos';
 import { Barra, type Paso } from './Barra';
 import { DentroEscena } from './DentroEscena';
 import { MusicaEscena } from './MusicaEscena';
+import { ImagenEscena } from './ImagenEscena';
+import { conexionesVisualIniciales } from '../estado/imagen';
 import { aplicarPreset, conexionesIniciales } from '../estado/musica';
 import { PasoEscenas } from './PasoEscenas';
 import { PasoFuncion } from './PasoFuncion';
@@ -28,6 +30,9 @@ function ElegirLab() {
       if (p.patron.melodia.notas.length === 0) aplicarPreset(p, p.preset);
       // El lab de IA arranca con un ejemplo de conexiones que ya funciona.
       if (track === 'ia' && p.conexiones.length === 0) p.conexiones = conexionesIniciales(p);
+      if (track === 'ia' && p.conexionesVisual.length === 0) {
+        p.conexionesVisual = conexionesVisualIniciales(p.visual.algoritmo);
+      }
     });
   return (
     <div className="nv nv-lab-pantalla">
@@ -56,7 +61,7 @@ export function AppNarrativa() {
   const { proyecto } = useProyecto();
   const [paso, setPaso] = useState<Paso>('historia');
   const [escenaAbierta, setEscenaAbierta] = useState<string | null>(null);
-  const [enMusica, setEnMusica] = useState(false);
+  const [editor, setEditor] = useState<'musica' | 'imagen' | null>(null);
   useSincronizarAudio();
 
   // Barra espaciadora: escuchar o parar la pieza, salvo mientras se escribe.
@@ -76,7 +81,7 @@ export function AppNarrativa() {
 
   const ir = (p: Paso) => {
     setEscenaAbierta(null);
-    setEnMusica(false);
+    setEditor(null);
     setPaso(p);
   };
 
@@ -87,27 +92,40 @@ export function AppNarrativa() {
         {paso === 'historia' && <PasoHistoria alSeguir={() => ir('voz')} />}
         {paso === 'voz' && <PasoVoz alSeguir={() => ir('escenas')} />}
         {paso === 'escenas' &&
-          (escenaAbierta && enMusica ? (
-            <MusicaEscena
-              id={escenaAbierta}
-              alVolver={() => {
-                setEnMusica(false);
-                if (escenaAbierta === 'general') setEscenaAbierta(null);
-              }}
-            />
+          (escenaAbierta && editor ? (
+            editor === 'musica' ? (
+              <MusicaEscena
+                id={escenaAbierta}
+                alVolver={() => {
+                  setEditor(null);
+                  if (escenaAbierta === 'general') setEscenaAbierta(null);
+                }}
+                alImagen={() => setEditor('imagen')}
+              />
+            ) : (
+              <ImagenEscena
+                id={escenaAbierta}
+                alVolver={() => {
+                  setEditor(null);
+                  if (escenaAbierta === 'general') setEscenaAbierta(null);
+                }}
+                alMusica={() => setEditor('musica')}
+              />
+            )
           ) : escenaAbierta ? (
             <DentroEscena
               id={escenaAbierta}
               alVolver={() => setEscenaAbierta(null)}
               alIr={setEscenaAbierta}
-              alMusica={() => setEnMusica(true)}
+              alMusica={() => setEditor('musica')}
+              alImagen={() => setEditor('imagen')}
             />
           ) : (
             <PasoEscenas
               alEntrar={setEscenaAbierta}
               alGeneral={() => {
                 setEscenaAbierta('general');
-                setEnMusica(true);
+                setEditor('musica');
               }}
             />
           ))}

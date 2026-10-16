@@ -11,18 +11,9 @@ import { useState } from 'react';
 import { motorAudio } from '../audio/motorAudio';
 import { useProyecto } from '../estado/ProyectoContext';
 import { buscarEscena, EMOCIONES } from '../estado/escenas';
-import {
-  COLOR_GRUPO,
-  destino,
-  destinosDe,
-  fraseConexion,
-  fuente,
-  fuentesDe,
-  leerArchivoDatos,
-  NOMBRE_CANTIDAD,
-  nuevaConexion,
-} from '../estado/musica';
-import type { Conexion, Escena } from '../estado/tipos';
+import { COLOR_GRUPO, destinosDe, fraseConexion, fuente } from '../estado/musica';
+import type { Escena } from '../estado/tipos';
+import { BandejaFuentes, conectar, ListaConexiones } from './Conexiones';
 import type { Herramienta } from './MusicaEscena';
 import { useReproduccion } from './useReproduccion';
 import { Onda } from './VozEscena';
@@ -33,40 +24,10 @@ interface Props {
   alAbrir: (h: Herramienta) => void;
 }
 
-type Punta = 'fuente' | 'destino';
-
 export function MusicaIA({ escena, indice, alAbrir }: Props) {
   const { proyecto, actualizar } = useProyecto();
   const [aMano, setAMano] = useState(false);
-  const [abierto, setAbierto] = useState<{ id: string; punta: Punta } | null>(null);
-  const [leyendo, setLeyendo] = useState(false);
-  const fuentes = fuentesDe(proyecto);
   const destinos = destinosDe(proyecto);
-
-  const cambiar = (id: string, receta: (c: Conexion) => void) =>
-    actualizar((p) => {
-      const c = p.conexiones.find((x) => x.id === id);
-      if (c) receta(c);
-    });
-
-  const conectarDesde = (clave: string) => {
-    const usados = new Set(proyecto.conexiones.map((c) => c.destino));
-    const libre = destinos.find((d) => !usados.has(d.clave)) ?? destinos[0];
-    actualizar((p) => p.conexiones.push(nuevaConexion(clave, libre.clave)));
-  };
-
-  const subir = async (archivo: File | undefined) => {
-    if (!archivo) return;
-    setLeyendo(true);
-    try {
-      const datos = await leerArchivoDatos(archivo);
-      actualizar((p) => p.archivosDatos.push(datos));
-    } finally {
-      setLeyendo(false);
-    }
-  };
-
-  const colorFuente = (clave: string) => COLOR_GRUPO[fuente(proyecto, clave)?.grupo ?? 'relato'];
 
   return (
     <div className="nv-musica">
@@ -83,111 +44,7 @@ export function MusicaIA({ escena, indice, alAbrir }: Props) {
             ✎ {aMano ? 'Ajustando a mano  ✕' : 'Ajustar a mano'}
           </button>
         </div>
-
-        <div className="nv-conexiones" onClick={() => setAbierto(null)}>
-          {proyecto.conexiones.length === 0 && (
-            <p className="nv-tenue nv-italica">
-              Todavía no hay conexiones. Toca una fuente de la derecha para crear una.
-            </p>
-          )}
-          {proyecto.conexiones.map((c) => {
-            const f = fuente(proyecto, c.fuente);
-            const d = destino(proyecto, c.destino);
-            const col = colorFuente(c.fuente);
-            return (
-              <div key={c.id} className="nv-conexion">
-                <div className="nv-conexion__fila">
-                  <div className="nv-desplegable">
-                    <button
-                      type="button"
-                      className="nv-ficha"
-                      style={{ color: col, background: `${col}22`, borderColor: `${col}88` }}
-                      onClick={(ev) => {
-                        ev.stopPropagation();
-                        setAbierto(abierto?.id === c.id && abierto.punta === 'fuente' ? null : { id: c.id, punta: 'fuente' });
-                      }}
-                    >
-                      <span className="nv-punto" style={{ background: col }} />
-                      {f?.etiqueta ?? '¿qué dato?'} ▾
-                    </button>
-                    {abierto?.id === c.id && abierto.punta === 'fuente' && (
-                      <div className="nv-lista-flotante" onClick={(ev) => ev.stopPropagation()}>
-                        {fuentes.map((x) => (
-                          <button
-                            key={x.clave}
-                            type="button"
-                            onClick={() => {
-                              cambiar(c.id, (k) => (k.fuente = x.clave));
-                              setAbierto(null);
-                            }}
-                          >
-                            <span className="nv-punto" style={{ background: COLOR_GRUPO[x.grupo] }} />
-                            {x.etiqueta}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <span className="nv-tenue nv-chico">mueve →</span>
-                  <div className="nv-desplegable">
-                    <button
-                      type="button"
-                      className="nv-ficha nv-ficha--destino"
-                      onClick={(ev) => {
-                        ev.stopPropagation();
-                        setAbierto(abierto?.id === c.id && abierto.punta === 'destino' ? null : { id: c.id, punta: 'destino' });
-                      }}
-                    >
-                      {d?.etiqueta ?? '¿qué cosa?'} ▾
-                    </button>
-                    {abierto?.id === c.id && abierto.punta === 'destino' && (
-                      <div className="nv-lista-flotante" onClick={(ev) => ev.stopPropagation()}>
-                        {destinos.map((x) => (
-                          <button
-                            key={x.clave}
-                            type="button"
-                            onClick={() => {
-                              cambiar(c.id, (k) => (k.destino = x.clave));
-                              setAbierto(null);
-                            }}
-                          >
-                            {x.etiqueta}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <span className="nv-espacio" />
-                  <div className="nv-selector nv-selector--ia">
-                    {([1, 2, 3] as const).map((n) => (
-                      <button
-                        key={n}
-                        type="button"
-                        className={`nv-selector__op ${c.cantidad === n ? 'nv-selector__op--activa' : ''}`}
-                        onClick={() => cambiar(c.id, (k) => (k.cantidad = n))}
-                      >
-                        {NOMBRE_CANTIDAD[n]}
-                      </button>
-                    ))}
-                  </div>
-                  <button
-                    type="button"
-                    className="nv-quitar nv-quitar--fila"
-                    aria-label="Quitar conexión"
-                    onClick={() => actualizar((p) => (p.conexiones = p.conexiones.filter((x) => x.id !== c.id)))}
-                  >
-                    ×
-                  </button>
-                </div>
-                <span className="nv-tenue nv-italica nv-chico">{fraseConexion(proyecto, c)}</span>
-              </div>
-            );
-          })}
-          <button type="button" className="nv-conectar" onClick={() => conectarDesde('emocion')}>
-            +  Conectar
-          </button>
-        </div>
-
+        <ListaConexiones clave="conexiones" destinos={destinos} frase={(c) => fraseConexion(proyecto, c)} />
         {escena && !escena.respiro && <Propuestas escena={escena} indice={indice} />}
       </div>
 
@@ -195,58 +52,9 @@ export function MusicaIA({ escena, indice, alAbrir }: Props) {
         {aMano ? (
           <AMano alAbrir={alAbrir} />
         ) : (
-          <>
-            <strong className="nv-subtitulo">Fuentes de datos</strong>
-            <span className="nv-tenue nv-chico">Toca una para conectarla.</span>
-            {(['relato', 'sonido'] as const).map((g) => (
-              <div key={g} className="nv-grupo-fuentes">
-                <span className="nv-etiqueta nv-tenue">{g === 'relato' ? 'DEL RELATO' : 'DEL SONIDO'}</span>
-                <div className="nv-fichas">
-                  {fuentes
-                    .filter((f) => f.grupo === g)
-                    .map((f) => (
-                      <button
-                        key={f.clave}
-                        type="button"
-                        className="nv-ficha nv-ficha--chica"
-                        style={{ color: COLOR_GRUPO[g], background: `${COLOR_GRUPO[g]}1f` }}
-                        onClick={() => conectarDesde(f.clave)}
-                      >
-                        <span className="nv-punto" style={{ background: COLOR_GRUPO[g] }} />
-                        {f.etiqueta}
-                      </button>
-                    ))}
-                </div>
-              </div>
-            ))}
-            <div className="nv-grupo-fuentes">
-              <span className="nv-etiqueta nv-tenue">DE TUS ARCHIVOS</span>
-              {proyecto.archivosDatos.map((a) => (
-                <button
-                  key={a.id}
-                  type="button"
-                  className="nv-archivo"
-                  onClick={() => conectarDesde(`archivo:${a.id}`)}
-                >
-                  <span className="nv-archivo__onda">
-                    <Onda semilla={a.id} color={COLOR_GRUPO.archivo} barras={18} />
-                  </span>
-                  <span className="nv-archivo__texto">
-                    <strong>{a.nombre}</strong>
-                    <span className="nv-tenue">{a.tipo === 'sonido' ? 'ritmo · volumen' : 'brillo · colores'}</span>
-                  </span>
-                </button>
-              ))}
-              <label className="nv-subir">
-                {leyendo ? 'Leyendo…' : '+ Subir un sonido o una imagen'}
-                <input type="file" accept="audio/*,image/*" hidden onChange={(ev) => void subir(ev.target.files?.[0])} />
-              </label>
-            </div>
-            <span className="nv-espacio-v" />
-            <span className="nv-tenue nv-chico nv-italica">
-              Del archivo no se usa el sonido ni la foto: se le sacan datos.
-            </span>
-          </>
+          <BandejaFuentes
+            alConectar={(clave) => actualizar((p) => p.conexiones.push(conectar(p.conexiones, destinos, clave)))}
+          />
         )}
       </aside>
     </div>

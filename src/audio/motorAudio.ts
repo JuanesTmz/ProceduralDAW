@@ -29,6 +29,7 @@ import {
 } from '../generativo/motorGenerativo';
 import type { NombreEscala } from '../generativo/escalas';
 import { ESCALAS_POR_LUZ, VALOR_EMOCION } from '../estado/musica';
+import { analizador } from '../visual/analizador';
 import type {
   Efectos,
   Fila,
@@ -211,6 +212,8 @@ class MotorAudio {
 
     const transporte = Tone.getTransport();
     transporte.bpm.value = this.proyecto?.bpm ?? 100;
+    // El visual escucha la salida final: lo mismo que oye el estudiante.
+    analizador.conectar();
     this.iniciado = true;
 
     if (this.proyecto) this.sincronizar(this.proyecto);
@@ -559,6 +562,19 @@ class MotorAudio {
   get fraccionSeccion(): number {
     if (!this.estaSonando) return 0;
     return Math.max(0, Math.min(1, (Tone.now() - this.inicioSeccionT) / this.duracionSeccionT));
+  }
+
+  /** Segundos desde que empezó la sección que suena. */
+  get segundosEnSeccion(): number {
+    if (!this.estaSonando) return 0;
+    return Math.max(0, Tone.now() - this.inicioSeccionT);
+  }
+
+  /** El valor de un dato ahora mismo, en la sección que suena (para el visual). */
+  datoActual(clave: string): number {
+    const seccion = this.proyecto?.secciones[this.indiceSeccion];
+    if (!seccion || !this.estaSonando) return 0;
+    return this.valorFuente(clave, seccion, Tone.now());
   }
 
   /** El gesto que se está tocando en vivo (null al soltar). */

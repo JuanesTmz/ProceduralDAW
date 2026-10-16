@@ -836,3 +836,94 @@
 .nv-gesto { display: flex; flex-direction: column; gap: 6px; padding: 10px; border-radius: 10px; background: var(--nv-s2); }
 .nv-gesto__barras { height: 34px; display: flex; align-items: flex-end; gap: 2px; }
 .nv-gesto__barras span { flex: 1; background: var(--nv-mu); opacity: 0.8; border-radius: 1px; }
+
+/* ---------- imagen ---------- */
+.nv-obra {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #07080c;
+  transition: filter 0.12s;
+}
+.nv-obra__lienzo, .nv-obra__lienzo canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.nv-obra__lienzo canvas { display: block; }
+.nv-obra__destello { position: absolute; inset: 0; pointer-events: none; opacity: 0; }
+.nv-destello--blanco { animation: nv-flash-blanco 0.45s ease-out; }
+.nv-destello--negro { animation: nv-flash-negro 0.35s steps(2, end); }
+@keyframes nv-flash-blanco { from { opacity: 0.85; background: #fff; } to { opacity: 0; background: #fff; } }
+@keyframes nv-flash-negro { from { opacity: 1; background: #000; } to { opacity: 0; background: #000; } }
+.nv-golpe--zoom { animation: nv-zoom 0.5s cubic-bezier(.2,.8,.2,1); }
+.nv-golpe--sacudon { animation: nv-sacudon 0.4s linear; }
+@keyframes nv-zoom { 0% { transform: scale(1.12); } 100% { transform: scale(1); } }
+@keyframes nv-sacudon {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-10px, 4px); }
+  40% { transform: translate(9px, -6px); }
+  60% { transform: translate(-6px, 6px); }
+  80% { transform: translate(5px, -3px); }
+}
+.nv-obra__texto {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  bottom: 9%;
+  margin: 0;
+  text-align: center;
+  font-size: clamp(18px, 2.6vw, 38px);
+  font-weight: 700;
+  line-height: 1.3;
+  color: #ffffff38;
+  text-shadow: 0 2px 18px #000c;
+  pointer-events: none;
+}
+.nv-obra__texto span { transition: color 0.25s; }
+.nv-obra__palabra--dicha { color: #fff; }
+.nv-escenario { position: relative; flex: 1; min-height: 0; display: flex; align-items: stretch; justify-content: stretch; padding: 0; background: none; }
+.nv-escenario__nombre { position: absolute; top: 16px; left: 18px; z-index: 3; letter-spacing: 0.2em; text-shadow: 0 1px 8px #000; }
+
+.nv-imagen { flex: 1; min-height: 0; display: grid; grid-template-columns: 1.05fr 1fr; gap: 16px; }
+.nv-imagen__vista { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.nv-imagen__lado { display: flex; flex-direction: column; gap: 14px; overflow: auto; }
+.nv-estilos { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.nv-estilo {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 6px;
+  border-radius: 10px;
+  background: var(--nv-s1);
+  border: 1px solid transparent;
+  font-size: 11px;
+  color: var(--nv-suave);
+  text-align: left;
+}
+.nv-estilo__muestra { height: 30px; border-radius: 6px; }
+.nv-estilo--flujo .nv-estilo__muestra { background: linear-gradient(135deg, #012a4a, #00b4d8, #caf0f8); }
+.nv-estilo--nebulosa .nv-estilo__muestra { background: linear-gradient(135deg, #3a0ca3, #b5179e, #ff6b81); }
+.nv-estilo--ondas .nv-estilo__muestra { background: repeating-linear-gradient(160deg, #0b2545 0 6px, #5e60ce 6px 8px, #80ffdb 8px 9px); }
+.nv-estilo--glifos .nv-estilo__muestra { background: radial-gradient(circle, #b7e4c7 1px, transparent 1.5px) 0 0 / 6px 6px, #081c15; }
+.nv-estilo--activo { border-color: var(--nv-acento); color: var(--nv-texto); font-weight: 600; }
+.nv-paletas { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.nv-paleta { display: inline-flex; border-radius: 6px; overflow: hidden; border: 2px solid transparent; }
+.nv-paleta span { width: 12px; height: 20px; }
+.nv-paleta--activa { border-color: #fff; }
+.nv-muestras { display: flex; width: 100%; height: 22px; border-radius: 4px; overflow: hidden; }
+.nv-muestras span { flex: 1; }
+.nv-mu { color: var(--nv-mu); }
+.nv-enlace-label { cursor: pointer; font-weight: 600; font-size: 12px; }
+.nv-selector__op--mu { background: #ff7ab830; color: var(--nv-mu); }
+.nv-jugar { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: stretch; }
+.nv-xy--chico { aspect-ratio: auto; min-height: 150px; }
+.nv-pads { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.nv-pad {
+  border-radius: 12px;
+  background: var(--nv-s3);
+  border: 1px solid var(--nv-linea);
+  font-weight: 700;
+  min-height: 64px;
+  touch-action: manipulation;
+  transition: transform 0.08s, background 0.1s;
+}
+.nv-pad:active { transform: scale(0.94); background: #ff7ab840; border-color: var(--nv-mu); }
