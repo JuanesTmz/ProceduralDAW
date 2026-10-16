@@ -1,13 +1,14 @@
 /**
- * Lab de IA: la música se arma con reglas, como en la versión anterior.
+ * Lab de IA: la música se arma con reglas.
  *
- * Cada pista es una tira de 16 casillas que muestra cómo quedan repartidos
- * sus golpes, y un cuadro que la gobierna: a la derecha más golpes, hacia
- * arriba más azar. En General el cuadro vale para toda la pieza; dentro de
- * una escena, lo que se mueve vale solo para ella.
+ * La vista es una lista limpia de sonidos. Cada uno tiene su botón «Pad»,
+ * que abre la ventana de siempre: la tira de 16 casillas con cómo quedan
+ * repartidos sus golpes y el cuadro que los gobierna (a la derecha más
+ * golpes, hacia arriba más azar). En General vale para toda la pieza;
+ * dentro de una escena, solo para ella.
  *
- * Los sonidos se eligen en la ventana Sonidos, y qué parámetros se mueven
- * solos con un dato, en la ventana Datos.
+ * Los sonidos se eligen en la ventana Sonidos, y qué se mueve solo con un
+ * dato, en la ventana Datos.
  */
 import { useEffect, useState } from 'react';
 import { motorAudio } from '../audio/motorAudio';
@@ -17,6 +18,7 @@ import { COLOR_GRUPO, fuente, moverReglaGeneral } from '../estado/musica';
 import { nivelDeCapa } from '../generativo/motorGenerativo';
 import type { Escena, Proyecto } from '../estado/tipos';
 import { CuadroXY } from '../componentes/CuadroXY';
+import { Ventana } from '../componentes/Ventana';
 import type { Parametro } from './ParametrosDatos';
 import { ID_MELODIA } from './VentanaSonidosPistas';
 
@@ -40,17 +42,16 @@ interface Pista {
   propia: boolean;
 }
 
-export function MusicaIA({ escena, alSonidos }: Props) {
-  const { proyecto, actualizar } = useProyecto();
-  const [elegida, setElegida] = useState(proyecto.patron.filas[0]?.id ?? ID_MELODIA);
-  const [paso, setPaso] = useState(-1);
-  useEffect(() => motorAudio.alCambiarPaso(setPaso), []);
-
+/** Las pistas tal como suenan en la escena (o en General). */
+function usarPistas(escena: Escena | null): Pista[] {
+  const { proyecto } = useProyecto();
   const { patron } = proyecto;
   const n = patron.cantidadPasos;
   const seccion = escena ? proyecto.secciones.find((s) => s.id === escena.id) : undefined;
-
-  const pistas: Pista[] = [
+  const m = patron.melodia;
+  const notas = seccion?.notas ?? m.notas;
+  const rm = escena?.reglas?.melodia ?? m.regla;
+  return [
     ...patron.filas.map((f) => {
       const propios = seccion?.pasosFilas?.[f.id];
       const pasos = propios?.pasos ?? f.pasos;
@@ -59,7 +60,7 @@ export function MusicaIA({ escena, alSonidos }: Props) {
       return {
         id: f.id,
         nombre: f.nombre,
-        sonido: f.tipo === 'sample' ? f.nombre : 'batería',
+        sonido: f.tipo === 'sample' ? f.nombre : 'Batería',
         color: f.color,
         casillas: pasos.map((on, i) => (!on ? 0 : (prob[i] ?? 1) > 0.92 ? 2 : 1)),
         golpes: r.golpes,
@@ -68,38 +69,30 @@ export function MusicaIA({ escena, alSonidos }: Props) {
         propia: Boolean(escena?.reglas?.[f.id]),
       };
     }),
-    (() => {
-      const m = patron.melodia;
-      const notas = seccion?.notas ?? m.notas;
-      const r = escena?.reglas?.melodia ?? m.regla;
-      return {
-        id: ID_MELODIA,
-        nombre: 'Melodía',
-        sonido: m.instrumento === 'sample' ? m.nombreSample ?? 'tu sonido' : 'sintetizador',
-        color: COLOR_MELODIA,
-        casillas: Array.from({ length: n }, (_, i) => (notas.some((x) => x.paso === i) ? 2 : 0)),
-        golpes: r.golpes,
-        azar: r.azar,
-        suena: seccion ? seccion.melodiaActiva : true,
-        propia: Boolean(escena?.reglas?.melodia),
-      };
-    })(),
+    {
+      id: ID_MELODIA,
+      nombre: 'Melodía',
+      sonido: m.instrumento === 'sample' ? m.nombreSample ?? 'Tu sonido' : 'Sintetizador',
+      color: COLOR_MELODIA,
+      casillas: Array.from({ length: n }, (_, i) => (notas.some((x) => x.paso === i) ? 2 : 0)),
+      golpes: rm.golpes,
+      azar: rm.azar,
+      suena: seccion ? seccion.melodiaActiva : true,
+      propia: Boolean(escena?.reglas?.melodia),
+    },
   ];
-  const actual = pistas.find((p) => p.id === elegida) ?? pistas[0];
-  const datoDe = (id: string) => {
-    const c = proyecto.conexiones.find((x) => x.destino === (id === ID_MELODIA ? 'melodia' : `golpes:${id}`));
-    return c ? fuente(proyecto, c.fuente) : undefined;
-  };
+}
 
-  const mover = (x: number, y: number) =>
-    actualizar((p) => {
-      const e = escena && buscarEscena(p, escena.id);
-      if (e) {
-        e.reglas = { ...(e.reglas ?? {}), [actual.id]: { golpes: x, azar: y } };
-      } else {
-        moverReglaGeneral(p, actual.id, x, y);
-      }
-    });
+function usarDato(id: string) {
+  const { proyecto } = useProyecto();
+  const c = proyecto.conexiones.find((x) => x.destino === (id === ID_MELODIA ? 'melodia' : `golpes:${id}`));
+  return c ? fuente(proyecto, c.fuente) : undefined;
+}
+
+export function MusicaIA({ escena, alSonidos }: Props) {
+  const { actualizar } = useProyecto();
+  const pistas = usarPistas(escena);
+  const [pad, setPad] = useState<string | null>(null);
 
   const alternarSuena = (id: string) =>
     actualizar((p) => {
@@ -115,127 +108,196 @@ export function MusicaIA({ escena, alSonidos }: Props) {
       e.niveles[id] = (e.niveles[id] ?? 0) > 0 ? 0 : 2;
     });
 
-  const cuantos = actual.casillas.filter(Boolean).length;
-  const aVeces = actual.casillas.filter((c) => c === 1).length;
-  const dato = datoDe(actual.id);
+  return (
+    <div className="nv-tarjeta nv-musica__principal">
+      <strong className="nv-subtitulo">{escena ? 'Sonidos de esta escena' : 'Sonidos de toda la pieza'}</strong>
+      <div className="nv-capas">
+        <div className="nv-capa nv-capa--ia nv-capa--cabeza">
+          <span>Sonido</span>
+          <span>Suena con</span>
+          <span>Lo mueve un dato</span>
+          <span>{escena ? 'En esta escena' : ''}</span>
+          <span>Pad</span>
+        </div>
+        {pistas.map((p) => (
+          <FilaPista
+            key={p.id}
+            pista={p}
+            escena={escena}
+            alSonidos={() => alSonidos(p.id)}
+            alSuena={() => alternarSuena(p.id)}
+            alPad={() => setPad(p.id)}
+          />
+        ))}
+      </div>
+      <span className="nv-tenue nv-chico">
+        {escena
+          ? 'Lo que muevas en el pad de una escena vale solo para ella.'
+          : 'Esto es el sonido de toda la pieza. Dentro de cada escena puedes cambiarlo solo para ella.'}
+      </span>
+      {pad && <VentanaPad id={pad} escena={escena} alCerrar={() => setPad(null)} />}
+    </div>
+  );
+}
+
+function FilaPista({
+  pista,
+  escena,
+  alSonidos,
+  alSuena,
+  alPad,
+}: {
+  pista: Pista;
+  escena: Escena | null;
+  alSonidos: () => void;
+  alSuena: () => void;
+  alPad: () => void;
+}) {
+  const dato = usarDato(pista.id);
+  return (
+    <div className={`nv-capa nv-capa--ia ${pista.suena ? '' : 'nv-capa--muda'}`}>
+      <span className="nv-capa__nombre">
+        <span className="nv-punto" style={{ background: pista.color }} />
+        {pista.nombre}
+      </span>
+      <button
+        type="button"
+        className={`nv-select nv-select--boton ${pista.sonido !== 'Batería' && pista.sonido !== 'Sintetizador' ? 'nv-select--propio' : ''}`}
+        onClick={alSonidos}
+        title="Cambiar el sonido"
+      >
+        ♪ {pista.sonido} ▾
+      </button>
+      <span>
+        {dato ? (
+          <span className="nv-chip nv-chip--chico" style={{ color: COLOR_GRUPO[dato.grupo] }}>
+            ↯ {dato.etiqueta}
+          </span>
+        ) : (
+          <span className="nv-tenue nv-chico">—</span>
+        )}
+      </span>
+      <span>
+        {escena && (
+          <button
+            type="button"
+            role="switch"
+            aria-checked={pista.suena}
+            className={`nv-interruptor nv-interruptor--ia ${pista.suena ? 'nv-interruptor--on' : ''}`}
+            title={pista.suena ? 'Suena en esta escena' : 'Callada en esta escena'}
+            onClick={alSuena}
+          >
+            <span />
+          </button>
+        )}
+      </span>
+      <button
+        type="button"
+        className={`nv-boton nv-boton--chico nv-boton--ia ${pista.propia ? 'nv-boton--ia-activo' : ''}`}
+        onClick={alPad}
+        title="Abrir el pad de este sonido"
+      >
+        ⊞ Pad{pista.propia ? ' · aquí' : ''}
+      </button>
+    </div>
+  );
+}
+
+/** La ventana del pad de un sonido: la tira repartida arriba y el cuadro que la gobierna. */
+function VentanaPad({ id, escena, alCerrar }: { id: string; escena: Escena | null; alCerrar: () => void }) {
+  const { proyecto, actualizar } = useProyecto();
+  const pista = usarPistas(escena).find((p) => p.id === id);
+  const dato = usarDato(id);
+  const [paso, setPaso] = useState(-1);
+  useEffect(() => motorAudio.alCambiarPaso(setPaso), []);
+  if (!pista) return null;
+
+  const n = proyecto.patron.cantidadPasos;
+  const cuantos = pista.casillas.filter(Boolean).length;
+  const aVeces = pista.casillas.filter((c) => c === 1).length;
+  const esMelodia = id === ID_MELODIA;
+
+  const mover = (x: number, y: number) =>
+    actualizar((p) => {
+      const e = escena && buscarEscena(p, escena.id);
+      if (e) e.reglas = { ...(e.reglas ?? {}), [id]: { golpes: x, azar: y } };
+      else moverReglaGeneral(p, id, x, y);
+    });
+
+  const volverGeneral = () =>
+    actualizar((p) => {
+      const e = escena && buscarEscena(p, escena.id);
+      if (e?.reglas) {
+        delete e.reglas[id];
+        if (Object.keys(e.reglas).length === 0) e.reglas = undefined;
+      }
+    });
 
   return (
-    <div className="nv-musica">
-      <div className="nv-tarjeta nv-musica__principal nv-pistas">
-        {pistas.map((p) => {
-          const d = datoDe(p.id);
-          return (
-            <div
-              key={p.id}
-              role="button"
-              tabIndex={0}
-              className={`nv-pista ${p.id === actual.id ? 'nv-pista--activa' : ''} ${p.suena ? '' : 'nv-pista--muda'}`}
-              style={{ ['--color' as string]: p.color }}
-              onClick={() => setElegida(p.id)}
-              onKeyDown={(ev) => ev.key === 'Enter' && setElegida(p.id)}
-            >
-              <span className="nv-pista__nombre">
-                <span className="nv-punto" style={{ background: p.color }} />
-                <strong>{p.nombre}</strong>
-              </span>
-              <button
-                type="button"
-                className="nv-pista__sonido"
-                title="Cambiar el sonido"
-                onClick={(ev) => {
-                  ev.stopPropagation();
-                  alSonidos(p.id);
-                }}
-              >
-                ♪ {p.sonido}
-              </button>
-              <div className="nv-tira">
-                {p.casillas.map((c, i) => (
-                  <span key={i} className="nv-tira__casilla" data-estado={c} data-cabeza={i === paso ? 'si' : undefined} />
-                ))}
-              </div>
-              <span className="nv-pista__marcas">
-                {d && (
-                  <span className="nv-chip nv-chip--chico" style={{ color: COLOR_GRUPO[d.grupo] }}>
-                    ↯ {d.etiqueta}
-                  </span>
-                )}
-                {p.propia && <span className="nv-chip nv-chip--chico nv-ia">solo aquí</span>}
-              </span>
-              {escena && (
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={p.suena}
-                  className={`nv-interruptor ${p.suena ? 'nv-interruptor--on' : ''}`}
-                  title={p.suena ? 'Suena en esta escena' : 'Callada en esta escena'}
-                  onClick={(ev) => {
-                    ev.stopPropagation();
-                    alternarSuena(p.id);
-                  }}
-                >
-                  <span />
-                </button>
-              )}
-            </div>
-          );
-        })}
-        <span className="nv-tenue nv-chico">
-          {escena
-            ? 'El interruptor de la derecha calla una pista solo en esta escena.'
-            : 'Esto es el sonido de toda la pieza. Dentro de cada escena puedes cambiarlo solo para ella.'}
-        </span>
-      </div>
-
-      <aside className="nv-tarjeta nv-musica__lado nv-regla" style={{ ['--color' as string]: actual.color }}>
-        <div className="nv-campo__fila">
-          <strong className="nv-subtitulo" style={{ color: actual.color }}>
-            {actual.nombre}
-          </strong>
-          <span className="nv-espacio" />
-          {actual.propia && escena && (
-            <button
-              type="button"
-              className="nv-chip nv-chip--borde"
-              onClick={() =>
-                actualizar((p) => {
-                  const e = buscarEscena(p, escena.id);
-                  if (e?.reglas) {
-                    delete e.reglas[actual.id];
-                    if (Object.keys(e.reglas).length === 0) e.reglas = undefined;
-                  }
-                })
-              }
-            >
-              volver a lo general
+    <Ventana
+      titulo={`Pad · ${pista.nombre}`}
+      nota={escena ? `Solo para la escena «${escena.respiro ? 'Respiro' : escena.nombre}»` : 'Para toda la pieza'}
+      color={pista.color}
+      ancha
+      alCerrar={alCerrar}
+      pie={
+        <>
+          {!esMelodia && (
+            <button type="button" className="boton" onClick={() => void motorAudio.escucharFila(id)}>
+              ▶ Oír el sonido
             </button>
           )}
+          {escena && pista.propia && (
+            <button type="button" className="boton" onClick={volverGeneral}>
+              Volver a lo general
+            </button>
+          )}
+        </>
+      }
+    >
+      <div className="procedural-ventana nv-pad">
+        <div className="tira tira--grande" style={{ color: pista.color }}>
+          {pista.casillas.map((estado, i) => (
+            <span key={i} className="tira__casilla" data-estado={estado} data-cabeza={i === paso ? 'si' : undefined} />
+          ))}
         </div>
-        <span className="nv-tenue nv-chico">
-          {actual.id === ID_MELODIA
-            ? `${cuantos} ${cuantos === 1 ? 'nota' : 'notas'} por vuelta`
-            : `${cuantos} de ${n} golpes${aVeces ? ` · ${aVeces} suenan a veces` : ' · todos suenan siempre'}`}
-        </span>
-        <div className="nv-regla__cuadro">
+        <p className="tira__cuenta">
+          {esMelodia ? (
+            <>
+              <strong>{cuantos}</strong> {cuantos === 1 ? 'nota' : 'notas'} por vuelta
+            </>
+          ) : (
+            <>
+              <strong>{cuantos}</strong> de {n} golpes
+              {aVeces > 0 ? (
+                <>
+                  {' · '}
+                  <strong>{aVeces}</strong> suenan a veces
+                </>
+              ) : (
+                ' · todos suenan siempre'
+              )}
+            </>
+          )}
+        </p>
+        <div className="nv-pad__cuadro">
           <CuadroXY
-            x={actual.golpes}
-            y={actual.azar}
-            color={actual.color}
+            x={pista.golpes}
+            y={pista.azar}
+            color={pista.color}
             activo
-            etiqueta={`Regla de ${actual.nombre}: a la derecha más golpes, hacia arriba más azar`}
+            etiqueta={`Pad de ${pista.nombre}: a la derecha más golpes, hacia arriba más azar`}
             alMover={mover}
           />
         </div>
-        {dato && (
-          <span className="nv-chico" style={{ color: COLOR_GRUPO[dato.grupo] }}>
-            ↯ Además, {dato.etiqueta.toLowerCase()} le quita o le pone golpes mientras suena.
-          </span>
-        )}
-        <span className="nv-tenue nv-chico">
-          {escena ? 'Lo que muevas aquí vale solo para esta escena.' : 'Lo que muevas aquí vale para toda la pieza.'}
-        </span>
-      </aside>
-    </div>
+        <p className="nv-pad__nota">
+          A la derecha más golpes, hacia arriba más azar.
+          {dato && (
+            <span style={{ color: COLOR_GRUPO[dato.grupo] }}> Además, {dato.etiqueta.toLowerCase()} le quita o le pone golpes mientras suena.</span>
+          )}
+        </p>
+      </div>
+    </Ventana>
   );
 }
 
@@ -246,14 +308,14 @@ export function parametrosMusica(
 ): { titulo: string; parametros: Parametro[] }[] {
   return [
     {
-      titulo: 'Las pistas',
+      titulo: 'Los sonidos',
       parametros: [
         ...proyecto.patron.filas.map((f) => ({
           clave: `golpes:${f.id}`,
           etiqueta: `Golpes · ${f.nombre}`,
-          notaMano: 'lo pones en el cuadro',
+          notaMano: 'lo pones en su pad',
         })),
-        { clave: 'melodia', etiqueta: 'Notas de la melodía', notaMano: 'lo pones en el cuadro' },
+        { clave: 'melodia', etiqueta: 'Notas de la melodía', notaMano: 'lo pones en su pad' },
       ],
     },
     {

@@ -1233,3 +1233,12 @@
   font: inherit;
 }
 .nv-pista .nv-interruptor--on { background: var(--nv-ia); }
+
+/* ---------- IA: lista de sonidos + ventana del pad ---------- */
+.nv-pestana > .nv-musica__principal { flex: 1; }
+.nv-capa--ia { grid-template-columns: 130px 200px 1fr 110px 120px; }
+.nv-capa--muda .nv-capa__nombre, .nv-capa--muda .nv-select { opacity: 0.4; }
+.nv-interruptor--ia.nv-interruptor--on { background: var(--nv-ia); }
+.nv-pad { gap: 12px; }
+.nv-pad__cuadro { width: 100%; max-width: 340px; align-self: center; }
+.nv-pad__nota { margin: 0; text-align: center; font-size: 13px; color: #8b91a5; }
