@@ -162,13 +162,15 @@ export interface Seccion {
   desvanecer: boolean;
   /** Escala propia de la sección; si falta, manda la de la melodía. */
   escala?: NombreEscala;
-  /** La voz que entra al empezar la sección (una escena grabada). */
-  voz?: { url: string; duracion: number };
+  /** La voz que entra al empezar la sección (una escena grabada, o un tramo de la de corrido). */
+  voz?: { url: string; duracion: number; desde?: number };
   /** La emoción y la fuerza de la escena: son datos para las conexiones. */
   emocion?: Emocion;
   fuerza?: Fuerza;
   /** El gesto que se tocó en vivo sobre esta escena (Música Urbana). */
   gesto?: PuntoGesto[];
+  /** Las cajitas con su momento en segundos desde que empieza la voz. */
+  cajitas?: (Cajita & { t: number })[];
 }
 
 /** Un punto del gesto tocado en vivo: cuándo (0..1 de la escena) y dónde. */
@@ -235,6 +237,8 @@ export interface Escena {
   /** URL local de la voz grabada para esta escena. */
   vozUrl?: string;
   vozDuracion: number;
+  /** Si la voz es un tramo de la grabación de corrido: desde qué segundo. */
+  vozDesde?: number;
   /** Solo en respiros: cuánto dura, en segundos. */
   duracionRespiro: number;
   despuesDe: number;
@@ -250,6 +254,8 @@ export interface Escena {
   version: number;
   /** Desde qué versión empiezan las tres propuestas que se muestran. */
   propuestasDesde: number;
+  /** Las cajitas pegadas a sus palabras. */
+  cajitas?: Cajita[];
   /** Música Urbana: cómo reacciona la imagen al sonido en esta escena. */
   reaccion?: ReaccionVisual;
   /** Música Urbana: el gesto tocado sobre la imagen (quieta↔caótica, oscura↔luminosa). */
@@ -259,6 +265,20 @@ export interface Escena {
 }
 
 export type ReaccionVisual = 'bombo' | 'voz' | 'quieta';
+
+/**
+ * Una cajita pegada a una palabra: algo que pasa justo cuando la voz la
+ * dice. Un sonido (foley), un silencio de la música o un golpe de imagen.
+ */
+export interface Cajita {
+  id: string;
+  /** Índice de la palabra dentro de la escena. */
+  palabra: number;
+  tipo: 'sonido' | 'silencio' | 'imagen';
+  url?: string;
+  nombre?: string;
+  golpe?: GolpeVisual;
+}
 export type GolpeVisual = 'destello' | 'zoom' | 'sacudon' | 'corte';
 
 /** La historia: el corazón del reto. Sin esto, lo demás no tiene para qué. */
@@ -386,6 +406,10 @@ export interface Proyecto {
   archivosDatos: ArchivoDatos[];
   /** El punto de partida sonoro elegido en la tarjeta General. */
   preset: string;
+  /** Cómo se grabó la voz: escena por escena o todo de corrido. */
+  modoVoz: 'escena' | 'corrido';
+  /** La grabación de corrido, que se reparte entre las escenas. */
+  vozCorrida?: { url: string; duracion: number };
 }
 
 /**

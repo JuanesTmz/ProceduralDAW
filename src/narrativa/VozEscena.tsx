@@ -37,9 +37,9 @@ export function VozEscena({ escena, grande = false }: { escena: Escena; grande?:
     actualizar((p) => {
       const e = p.escenas.find((x) => x.id === escena.id);
       if (!e) return;
-      if (e.vozUrl) URL.revokeObjectURL(e.vozUrl);
       e.vozUrl = g.url;
       e.vozDuracion = g.duracion;
+      e.vozDesde = undefined;
     });
   });
   const grabando = estado === 'grabando';
@@ -51,9 +51,18 @@ export function VozEscena({ escena, grande = false }: { escena: Escena; grande?:
       setOyendo(false);
       return;
     }
-    audio.current = new Audio(escena.vozUrl);
-    audio.current.onended = () => setOyendo(false);
-    void audio.current.play();
+    const a = new Audio(escena.vozUrl);
+    audio.current = a;
+    a.onended = () => setOyendo(false);
+    // Un tramo de la grabación de corrido: suena solo su parte.
+    if (escena.vozDesde !== undefined) {
+      a.currentTime = escena.vozDesde;
+      window.setTimeout(() => {
+        a.pause();
+        setOyendo(false);
+      }, escena.vozDuracion * 1000);
+    }
+    void a.play();
     setOyendo(true);
   };
 

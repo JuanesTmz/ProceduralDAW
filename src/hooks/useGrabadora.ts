@@ -5,6 +5,7 @@
  * compartidos del evento, un micrófono tomado por una pestaña es un problema.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { crearUrl } from '../estado/guardado';
 
 export type EstadoGrabadora = 'inactiva' | 'pidiendo' | 'grabando' | 'sin-permiso' | 'sin-soporte';
 
@@ -66,7 +67,7 @@ export function useGrabadora(alTerminar: (grabacion: Grabacion) => void) {
         setEstado('inactiva');
         setSegundos(0);
         if (blob.size > 0) {
-          alTerminarRef.current({ url: URL.createObjectURL(blob), duracion });
+          alTerminarRef.current({ url: crearUrl(blob), duracion });
         }
       };
 

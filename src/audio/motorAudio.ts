@@ -103,6 +103,11 @@ class MotorAudio {
   /** Cuándo empezó la sección que suena y cuánto dura (segundos de audio). */
   private inicioSeccionT = 0;
   private duracionSeccionT = 1;
+  /** Las cajitas de silencio callan la música aquí, sin tocar lo demás. */
+  private silenciador: Tone.Gain | null = null;
+  /** Los sonidos de las cajitas: no se agachan con la voz, acompañan la palabra. */
+  private gananciaCajitas: Tone.Gain | null = null;
+  private sueltas = new Map<string, Tone.Player>();
   /** El gesto que se está tocando en vivo ahora mismo, si hay. */
   private gestoVivo: { x: number; y: number } | null = null;
   private oyentesSeccion = new Set<OyenteSeccion>();
@@ -179,7 +184,10 @@ class MotorAudio {
     // La intensidad de cada sección se aplica aquí, antes de los efectos.
     this.gananciaSeccion = new Tone.Gain(1).connect(this.filtro);
     this.agacharse = new Tone.Gain(1).connect(this.gananciaSeccion);
-    this.modulador = new Tone.Gain(1).connect(this.agacharse);
+    this.silenciador = new Tone.Gain(1).connect(this.agacharse);
+    this.modulador = new Tone.Gain(1).connect(this.silenciador);
+    this.gananciaCajitas = new Tone.Gain(0.9).connect(this.maestro);
+    for (const r of this.sueltas.values()) r.connect(this.gananciaCajitas);
     this.bus = new Tone.Gain(1).connect(this.modulador);
 
     this.clic = new Tone.MembraneSynth({
@@ -369,6 +377,9 @@ class MotorAudio {
     this.soloUna = false;
     this.modulador?.gain.cancelScheduledValues(Tone.now());
     if (this.modulador) this.modulador.gain.value = 1;
+    this.silenciador?.gain.cancelScheduledValues(Tone.now());
+    if (this.silenciador) this.silenciador.gain.value = 1;
+    for (const r of this.sueltas.values()) if (r.state === 'started') r.stop();
     this.paso = 0;
     this.vueltaEnSeccion = 0;
     this.indiceSeccion = 0;
@@ -556,6 +567,42 @@ class MotorAudio {
 
     this.aplicarTempo(seccion);
     this.lanzarVozEscena(seccion, tiempo);
+    this.lanzarCajitas(seccion, tiempo);
+  }
+
+  /** Agenda lo que pasa en cada palabra con cajita: un sonido o un silencio. */
+  private lanzarCajitas(seccion: Seccion, tiempo: number): void {
+    for (const c of seccion.cajitas ?? []) {
+      const momento = tiempo + 0.15 + c.t;
+      if (c.tipo === 'sonido' && c.url) {
+        const r = this.sueltas.get(c.url);
+        if (r?.loaded) r.start(momento);
+      } else if (c.tipo === 'silencio') {
+        const g = this.silenciador?.gain;
+        if (!g) continue;
+        g.setValueAtTime(1, Math.max(tiempo, momento - 0.05));
+        g.linearRampToValueAtTime(0, momento + 0.04);
+        g.setValueAtTime(0, momento + 1.4);
+        g.linearRampToValueAtTime(1, momento + 1.9);
+      }
+    }
+  }
+
+  /** Prepara los sonidos de las cajitas. */
+  private cargarSueltas(secciones: Seccion[]): void {
+    const urls = new Set(secciones.flatMap((s) => (s.cajitas ?? []).flatMap((c) => (c.url ? [c.url] : []))));
+    for (const [url, r] of this.sueltas) {
+      if (!urls.has(url)) {
+        r.dispose();
+        this.sueltas.delete(url);
+      }
+    }
+    for (const url of urls) {
+      if (this.sueltas.has(url)) continue;
+      const r = new Tone.Player({ url });
+      if (this.gananciaCajitas) r.connect(this.gananciaCajitas);
+      this.sueltas.set(url, r);
+    }
   }
 
   /** Por dónde va la sección que suena, de 0 a 1. Lo usa el gesto en vivo. */
@@ -698,8 +745,11 @@ class MotorAudio {
       if (reproductor.state === 'started') reproductor.stop();
       const ahora = Tone.now();
       // Si terminó de cargar tarde, entra por donde iba y no desde el principio.
-      if (entra >= ahora) reproductor.start(entra);
-      else if (ahora - entra < voz.duracion) reproductor.start(ahora, ahora - entra);
+      const desde = voz.desde ?? 0;
+      if (entra >= ahora) reproductor.start(entra, desde, voz.duracion);
+      else if (ahora - entra < voz.duracion) {
+        reproductor.start(ahora, desde + (ahora - entra), voz.duracion - (ahora - entra));
+      }
     };
     if (reproductor.loaded) arrancar();
     else void Tone.loaded().then(arrancar);
@@ -799,6 +849,7 @@ class MotorAudio {
   sincronizar(proyecto: Proyecto): void {
     this.proyecto = proyecto;
     this.cargarVocesEscenas(proyecto.secciones);
+    this.cargarSueltas(proyecto.secciones);
     if (!this.iniciado || !this.bus) return;
 
     this.aplicarTempo();

@@ -12,6 +12,7 @@ import { formatearReloj } from '../estado/proyecto';
 import { EMOCIONES } from '../estado/escenas';
 import { useGrabadora } from '../hooks/useGrabadora';
 import { Onda } from './VozEscena';
+import { VozCorrida } from './VozCorrida';
 
 export function PasoVoz({ alSeguir }: { alSeguir: () => void }) {
   const { proyecto, actualizar } = useProyecto();
@@ -29,9 +30,9 @@ export function PasoVoz({ alSeguir }: { alSeguir: () => void }) {
     actualizar((p) => {
       const e = p.escenas.find((x) => x.id === id);
       if (!e) return;
-      if (e.vozUrl) URL.revokeObjectURL(e.vozUrl);
       e.vozUrl = g.url;
       e.vozDuracion = g.duracion;
+      e.vozDesde = undefined;
     });
   });
 
@@ -73,13 +74,37 @@ export function PasoVoz({ alSeguir }: { alSeguir: () => void }) {
       <div className="nv-cabeza">
         <div>
           <h1 className="nv-titulo">Graba tu voz</h1>
-          <p className="nv-sub">Una escena a la vez. Léela despacio: se dice, no se canta.</p>
+          <p className="nv-sub">
+            {proyecto.modoVoz === 'corrido'
+              ? 'Todo el monólogo de una vez; después marcas dónde cambia cada escena.'
+              : 'Una escena a la vez. Léela despacio: se dice, no se canta.'}
+          </p>
         </div>
         <span className="nv-espacio" />
-        <span className="nv-tenue">
-          {grabadas} de {escenas.length} grabadas
-        </span>
+        {proyecto.modoVoz === 'escena' && (
+          <span className="nv-tenue">
+            {grabadas} de {escenas.length} grabadas
+          </span>
+        )}
+        <div className="nv-selector">
+          {(['escena', 'corrido'] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              disabled={grabando}
+              className={`nv-selector__op ${proyecto.modoVoz === m ? 'nv-selector__op--activa' : ''}`}
+              onClick={() => actualizar((p) => (p.modoVoz = m))}
+            >
+              {m === 'escena' ? 'Por escena' : 'Todo de corrido'}
+            </button>
+          ))}
+        </div>
       </div>
+
+      {proyecto.modoVoz === 'corrido' ? (
+        <VozCorrida alSeguir={alSeguir} />
+      ) : (
+      <>
 
       <nav className="nv-pasos-voz" aria-label="Escenas">
         {escenas.map((e, i) => {
@@ -157,6 +182,8 @@ export function PasoVoz({ alSeguir }: { alSeguir: () => void }) {
           )}
         </div>
       </section>
+      </>
+      )}
     </div>
   );
 }

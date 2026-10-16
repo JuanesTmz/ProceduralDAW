@@ -84,6 +84,8 @@ export function Escenario({ escenaFija, texto = true }: Props) {
     let cuadro = 0;
     let fraccionPrevia = 0;
     let seccionPrevia = -2;
+    let reveladasPrevias = 0;
+    let escenaPrevia = '';
 
     const campoDe = (url: string | undefined): CampoImagen | null => {
       if (!url) return null;
@@ -185,6 +187,14 @@ export function Escenario({ escenaFija, texto = true }: Props) {
       const reveladas = sonando
         ? Math.min(palabras.length, Math.ceil((motorAudio.segundosEnSeccion / Math.max(0.5, voz)) * palabras.length))
         : palabras.length;
+      // Las cajitas de imagen golpean cuando la voz llega a su palabra.
+      if (sonando && escena.id === escenaPrevia && escena.cajitas) {
+        for (const c of escena.cajitas) {
+          if (c.tipo === 'imagen' && c.golpe && c.palabra >= reveladasPrevias && c.palabra < reveladas) golpear(c.golpe);
+        }
+      }
+      reveladasPrevias = escena.id === escenaPrevia ? reveladas : 0;
+      escenaPrevia = escena.id;
       setFrase((f) =>
         f.id === escena.id && f.reveladas === reveladas && f.palabras.length === palabras.length
           ? f

@@ -8,6 +8,7 @@
  */
 import { motorAudio } from '../audio/motorAudio';
 import { useProyecto } from '../estado/ProyectoContext';
+import { crearUrl } from '../estado/guardado';
 import { formatearReloj } from '../estado/proyecto';
 import {
   buscarEscena,
@@ -22,6 +23,7 @@ import type { Escena, Fuerza } from '../estado/tipos';
 import { fondoEscena } from './PasoEscenas';
 import { useReproduccion } from './useReproduccion';
 import { VozEscena } from './VozEscena';
+import { FraseConCajitas } from './FraseConCajitas';
 
 interface Props {
   id: string;
@@ -60,7 +62,7 @@ export function DentroEscena({ id, alVolver, alIr, alMusica, alImagen }: Props) 
 
   const elegirFoto = (archivo: File | undefined) => {
     if (!archivo) return;
-    const url = URL.createObjectURL(archivo);
+    const url = crearUrl(archivo);
     cambiar((e) => {
       if (e.imagenUrl) URL.revokeObjectURL(e.imagenUrl);
       e.imagenUrl = url;
@@ -149,7 +151,7 @@ export function DentroEscena({ id, alVolver, alIr, alMusica, alImagen }: Props) 
             </>
           ) : (
             <>
-              <p className="nv-dentro__texto">{escena.texto}</p>
+              <FraseConCajitas escena={escena} />
               <span className="nv-tenue nv-chico">
                 Para cambiar el texto o dónde empieza la escena, vuelve al paso Historia.
               </span>

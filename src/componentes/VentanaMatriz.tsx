@@ -12,6 +12,7 @@
 import { useEffect, useRef } from 'react';
 import { motorAudio } from '../audio/motorAudio';
 import { useProyecto } from '../estado/ProyectoContext';
+import { SelectorInstrumento } from '../narrativa/SelectorInstrumento';
 import { useCabezaLectora } from '../hooks/useCabezaLectora';
 import { usePintarArrastrando } from '../hooks/usePintarArrastrando';
 import { FILAS_MATRIZ } from '../estado/tipos';
@@ -30,13 +31,6 @@ const ESCALAS: NombreEscala[] = ['menorPentatonica', 'menor', 'dorica', 'frigia'
  * En qué nota se considera grabado el sonido propio. Se nombra por el oído
  * porque nadie sabe en qué nota quedó un «ey» grabado con una tablet.
  */
-const AFINACIONES: { nota: string; etiqueta: string }[] = [
-  { nota: 'C1', etiqueta: 'Muy agudo' },
-  { nota: 'C2', etiqueta: 'Agudo' },
-  { nota: 'C3', etiqueta: 'Medio' },
-  { nota: 'C4', etiqueta: 'Grave' },
-  { nota: 'C5', etiqueta: 'Muy grave' },
-];
 
 const COLOR_MATRIZ = '#5fd4ff';
 
@@ -105,22 +99,6 @@ export function VentanaMatriz({ alCerrar }: { alCerrar: () => void }) {
   const soltar = () => {
     pintando.current = null;
     pintar.alSoltar();
-  };
-
-  /**
-   * El sonido de la melodía sale de los que el estudiante ya tiene —grabados
-   * en Sonidos o subidos de un archivo—, no de un selector de archivos
-   * aparte. Un sonido entra al proyecto una vez y después se usa donde sea.
-   */
-  const usarSonido = (id: string) => {
-    const sonido = proyecto.sonidos.find((s) => s.id === id);
-    if (!sonido) return;
-    actualizar((p) => {
-      const m = p.patron.melodia;
-      m.sampleUrl = sonido.url;
-      m.nombreSample = sonido.nombre;
-      m.instrumento = 'sample';
-    });
   };
 
   const oir = () => {
@@ -248,63 +226,7 @@ export function VentanaMatriz({ alCerrar }: { alCerrar: () => void }) {
           </div>
 
           <h3 className="pistas__titulo">Con qué suena</h3>
-          <div className="sonidos-elegir__rejilla">
-            <button
-              type="button"
-              className={`chip-sonido ${
-                melodia.instrumento === 'sintetizador' ? 'chip-sonido--actual' : ''
-              }`}
-              onClick={() =>
-                actualizar((p) => {
-                  p.patron.melodia.instrumento = 'sintetizador';
-                })
-              }
-            >
-              Sintetizador
-            </button>
-
-            {proyecto.sonidos.map((sonido) => (
-              <button
-                key={sonido.id}
-                type="button"
-                className={`chip-sonido ${
-                  melodia.instrumento === 'sample' && melodia.sampleUrl === sonido.url
-                    ? 'chip-sonido--actual'
-                    : ''
-                }`}
-                title={`Tocar la melodía con ${sonido.nombre}`}
-                onClick={() => usarSonido(sonido.id)}
-              >
-                🎙 {sonido.nombre}
-              </button>
-            ))}
-          </div>
-
-          {proyecto.sonidos.length === 0 && (
-            <p className="pista__nota">
-              Lo que grabes o subas en Sonidos aparece aquí, y la matriz lo toca afinado.
-            </p>
-          )}
-
-          {melodia.instrumento === 'sample' && melodia.sampleUrl && (
-            <label className="campo campo--horizontal">
-              <span className="campo__etiqueta">Afinación</span>
-              <select
-                value={melodia.notaSample}
-                onChange={(e) =>
-                  actualizar((p) => {
-                    p.patron.melodia.notaSample = e.target.value;
-                  })
-                }
-              >
-                {AFINACIONES.map((a) => (
-                  <option key={a.nota} value={a.nota}>
-                    {a.etiqueta}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
+          <SelectorInstrumento />
 
           <label className="corrida">
             <span>Volumen</span>

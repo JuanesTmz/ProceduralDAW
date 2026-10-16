@@ -16,6 +16,7 @@ import { buscarEscena } from '../estado/escenas';
 import { nivelDeCapa } from '../generativo/motorGenerativo';
 import type { Escena, PuntoGesto, TipoSonido } from '../estado/tipos';
 import type { Herramienta } from './MusicaEscena';
+import { NOMBRE_GRUPO, SONOTECA } from '../audio/sonoteca';
 import { useReproduccion } from './useReproduccion';
 
 interface Props {
@@ -76,6 +77,12 @@ export function MusicaMU({ escena, indice, alAbrir }: Props) {
         fila.tipo = 'sample';
         fila.sampleUrl = s.url;
         fila.nombre = s.nombre;
+      } else if (valor.startsWith('sonoteca:')) {
+        const s = SONOTECA.find((x) => x.id === valor.slice(9));
+        if (!s) return;
+        fila.tipo = 'sample';
+        fila.sampleUrl = s.url;
+        fila.nombre = s.nombre;
       } else {
         const tipo = valor as TipoSonido;
         fila.tipo = tipo;
@@ -87,6 +94,8 @@ export function MusicaMU({ escena, indice, alAbrir }: Props) {
 
   const valorSonido = (tipo: TipoSonido, url?: string) => {
     if (tipo !== 'sample') return tipo;
+    const deLaApp = SONOTECA.find((x) => x.url === url);
+    if (deLaApp) return `sonoteca:${deLaApp.id}`;
     const s = proyecto.sonidos.find((x) => x.url === url);
     return s ? `propio:${s.id}` : '';
   };
@@ -130,13 +139,22 @@ export function MusicaMU({ escena, indice, alAbrir }: Props) {
                 value={valorSonido(f.tipo, f.sampleUrl)}
                 onChange={(ev) => cambiarSonido(f.id, ev.target.value)}
               >
-                <optgroup label="Sonidos de la app">
+                <optgroup label="Batería">
                   {KIT.map((t) => (
                     <option key={t} value={t}>
                       {NOMBRES_SONIDO[t]}
                     </option>
                   ))}
                 </optgroup>
+                {(['percusion', 'ciudad', 'melodico'] as const).map((g) => (
+                  <optgroup key={g} label={NOMBRE_GRUPO[g]}>
+                    {SONOTECA.filter((x) => x.grupo === g).map((x) => (
+                      <option key={x.id} value={`sonoteca:${x.id}`}>
+                        {x.nombre}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
                 {proyecto.sonidos.length > 0 && (
                   <optgroup label="Tus grabaciones">
                     {proyecto.sonidos.map((s) => (
@@ -193,9 +211,14 @@ export function MusicaMU({ escena, indice, alAbrir }: Props) {
               <span className="nv-punto" style={{ background: '#5fd4ff' }} />
               Melodía
             </span>
-            <span className="nv-tenue nv-chico">
-              {patron.melodia.notas.length} notas · {patron.melodia.instrumento === 'sample' ? 'tu sonido' : 'sintetizador'}
-            </span>
+            <button
+              type="button"
+              className={`nv-select nv-select--boton ${patron.melodia.instrumento === 'sample' ? 'nv-select--propio' : ''}`}
+              onClick={() => alAbrir('melodia')}
+              title="Elegir con qué suena la melodía"
+            >
+              {patron.melodia.instrumento === 'sample' ? patron.melodia.nombreSample ?? 'Tu sonido' : 'Sintetizador'} ▾
+            </button>
             {escena ? (
               <div className="nv-selector nv-selector--chico">
                 {NIVELES.slice(0, 1).concat('Suena').map((n, i) => {

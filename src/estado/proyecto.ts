@@ -413,6 +413,7 @@ export function crearProyectoInicial(): Proyecto {
     conexionesVisual: [],
     archivosDatos: [],
     preset: 'pulso',
+    modoVoz: 'escena',
   };
 }
 

@@ -287,12 +287,48 @@ export function escenasASecciones(p: Proyecto): Seccion[] {
       emocion: escena.emocion,
       fuerza: escena.fuerza,
       gesto: escena.gesto,
+      cajitas: escena.cajitas?.map((c) => ({
+        ...c,
+        t: (c.palabra / Math.max(1, palabrasDe(escena.texto).length)) * duracionVoz(escena),
+      })),
       voz:
         escena.vozUrl && !escena.respiro
-          ? { url: escena.vozUrl, duracion: escena.vozDuracion }
+          ? { url: escena.vozUrl, duracion: escena.vozDuracion, desde: escena.vozDesde }
           : undefined,
     };
   });
+}
+
+/**
+ * Reparte la grabación de corrido entre las escenas, en proporción a sus
+ * palabras: es el punto de partida, y después se ajusta arrastrando.
+ */
+export function repartirVozCorrida(p: Proyecto): void {
+  const voz = p.vozCorrida;
+  if (!voz) return;
+  const largos = p.escenas.map((e) => Math.max(1, palabrasDe(e.texto).length));
+  const total = largos.reduce((a, b) => a + b, 0);
+  let desde = 0;
+  p.escenas.forEach((e, i) => {
+    const dura = (largos[i] / total) * voz.duracion;
+    e.vozUrl = voz.url;
+    e.vozDesde = desde;
+    e.vozDuracion = dura;
+    desde += dura;
+  });
+}
+
+/** Mueve el límite k (en segundos) entre la escena k y la k+1. */
+export function moverLimiteVoz(p: Proyecto, k: number, segundo: number): void {
+  const a = p.escenas[k];
+  const b = p.escenas[k + 1];
+  if (!a || !b || a.vozDesde === undefined || b.vozDesde === undefined) return;
+  const inicio = a.vozDesde;
+  const fin = b.vozDesde + b.vozDuracion;
+  const corte = Math.max(inicio + 0.3, Math.min(fin - 0.3, segundo));
+  a.vozDuracion = corte - inicio;
+  b.vozDesde = corte;
+  b.vozDuracion = fin - corte;
 }
 
 /** Un texto de ejemplo para probar sin escribir. */

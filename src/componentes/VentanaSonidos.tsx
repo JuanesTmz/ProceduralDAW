@@ -19,6 +19,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { motorAudio } from '../audio/motorAudio';
 import { useProyecto } from '../estado/ProyectoContext';
+import { crearUrl } from '../estado/guardado';
 import { crearFila, NOMBRES_SONIDO, nuevoId } from '../estado/proyecto';
 import { useGrabadora } from '../hooks/useGrabadora';
 import { Recortador } from './Recortador';
@@ -125,7 +126,7 @@ export function VentanaSonidos({ alCerrar }: { alCerrar: () => void }) {
     if (!archivo) return;
     setRehaciendo(null);
     setNombre(archivo.name.replace(/\.[^.]+$/, '').slice(0, 18));
-    setCruda(URL.createObjectURL(archivo));
+    setCruda(crearUrl(archivo));
     evento.target.value = '';
   };
 
@@ -139,7 +140,7 @@ export function VentanaSonidos({ alCerrar }: { alCerrar: () => void }) {
   };
 
   const guardarRecorte = (recorte: Blob, duracion: number) => {
-    const url = URL.createObjectURL(recorte);
+    const url = crearUrl(recorte);
     const comoSeLlama = nombre.trim().slice(0, 18) || `Sonido ${proyecto.sonidos.length + 1}`;
 
     actualizar((p) => {

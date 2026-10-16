@@ -58,7 +58,7 @@ function ElegirLab() {
 }
 
 export function AppNarrativa() {
-  const { proyecto } = useProyecto();
+  const { proyecto, cargando } = useProyecto();
   const [paso, setPaso] = useState<Paso>('historia');
   const [escenaAbierta, setEscenaAbierta] = useState<string | null>(null);
   const [editor, setEditor] = useState<'musica' | 'imagen' | null>(null);
@@ -77,6 +77,7 @@ export function AppNarrativa() {
     return () => window.removeEventListener('keydown', tecla);
   }, [proyecto.escenas.length]);
 
+  if (cargando) return <div className="nv" />;
   if (!proyecto.track) return <ElegirLab />;
 
   const ir = (p: Paso) => {

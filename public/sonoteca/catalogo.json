@@ -1,0 +1,131 @@
+[
+  {
+    "id": "marimba",
+    "nombre": "Marimba",
+    "grupo": "melodico",
+    "nota": "C4"
+  },
+  {
+    "id": "piano",
+    "nombre": "Piano eléctrico",
+    "grupo": "melodico",
+    "nota": "C4"
+  },
+  {
+    "id": "pluck",
+    "nombre": "Cuerda pulsada",
+    "grupo": "melodico",
+    "nota": "C4"
+  },
+  {
+    "id": "bajo808",
+    "nombre": "Bajo 808",
+    "grupo": "melodico",
+    "nota": "C2"
+  },
+  {
+    "id": "campana",
+    "nombre": "Campana",
+    "grupo": "melodico",
+    "nota": "C5"
+  },
+  {
+    "id": "pad",
+    "nombre": "Colchón",
+    "grupo": "melodico",
+    "nota": "C3"
+  },
+  {
+    "id": "silbido",
+    "nombre": "Silbido",
+    "grupo": "melodico",
+    "nota": "C5"
+  },
+  {
+    "id": "vozah",
+    "nombre": "Voz «ah»",
+    "grupo": "melodico",
+    "nota": "C3"
+  },
+  {
+    "id": "kalimba",
+    "nombre": "Kalimba",
+    "grupo": "melodico",
+    "nota": "C5"
+  },
+  {
+    "id": "shaker",
+    "nombre": "Shaker",
+    "grupo": "percusion"
+  },
+  {
+    "id": "conga",
+    "nombre": "Conga",
+    "grupo": "percusion"
+  },
+  {
+    "id": "cencerro",
+    "nombre": "Cencerro",
+    "grupo": "percusion"
+  },
+  {
+    "id": "clave",
+    "nombre": "Clave",
+    "grupo": "percusion"
+  },
+  {
+    "id": "guiro",
+    "nombre": "Güiro",
+    "grupo": "percusion"
+  },
+  {
+    "id": "chasquido",
+    "nombre": "Chasquido",
+    "grupo": "percusion"
+  },
+  {
+    "id": "lluvia",
+    "nombre": "Lluvia",
+    "grupo": "ciudad"
+  },
+  {
+    "id": "viento",
+    "nombre": "Viento en la loma",
+    "grupo": "ciudad"
+  },
+  {
+    "id": "trafico",
+    "nombre": "Tráfico lejano",
+    "grupo": "ciudad"
+  },
+  {
+    "id": "bocina",
+    "nombre": "Bocina",
+    "grupo": "ciudad"
+  },
+  {
+    "id": "metro",
+    "nombre": "Metro en los rieles",
+    "grupo": "ciudad"
+  },
+  {
+    "id": "campanario",
+    "nombre": "Campanario",
+    "grupo": "ciudad"
+  },
+  {
+    "id": "pajaros",
+    "nombre": "Pájaros",
+    "grupo": "ciudad"
+  },
+  {
+    "id": "murmullo",
+    "nombre": "Murmullo de gente",
+    "grupo": "ciudad"
+  },
+  {
+    "id": "moto",
+    "nombre": "Moto que pasa",
+    "grupo": "ciudad"
+  }
+]

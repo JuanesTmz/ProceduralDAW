@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { PointerEvent as EventoPuntero } from 'react';
 import { motorAudio } from '../audio/motorAudio';
 import { useProyecto } from '../estado/ProyectoContext';
+import { crearUrl } from '../estado/guardado';
 import { buscarEscena, EMOCIONES, recorrido } from '../estado/escenas';
 import {
   destinosVisuales,
@@ -267,7 +268,7 @@ function ImagenMU({ escena, indice }: { escena: Escena | null; indice: number })
 
   const elegirFoto = (archivo: File | undefined) => {
     if (!archivo) return;
-    const url = URL.createObjectURL(archivo);
+    const url = crearUrl(archivo);
     actualizar((p) => {
       const e = escena && buscarEscena(p, escena.id);
       if (e) e.imagenUrl = url;

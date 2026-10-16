@@ -5,6 +5,7 @@
  * Partir el texto vive en PartirTexto: tramos resaltados con límites que
  * se arrastran.
  */
+import { useState } from 'react';
 import { useProyecto } from '../estado/ProyectoContext';
 import { palabrasDe } from '../estado/proyecto';
 import { cargarEjemplo, sincronizarEscenas } from '../estado/escenas';
@@ -12,7 +13,8 @@ import { PartirTexto } from './PartirTexto';
 import { MAXIMO_PALABRAS, MINIMO_PALABRAS } from '../estado/tipos';
 
 export function PasoHistoria({ alSeguir }: { alSeguir: () => void }) {
-  const { proyecto, actualizar } = useProyecto();
+  const { proyecto, actualizar, empezarDeNuevo } = useProyecto();
+  const [seguro, setSeguro] = useState(false);
   const { historia, narracion } = proyecto;
   const palabras = palabrasDe(narracion.texto);
   const total = palabras.length;
@@ -34,6 +36,21 @@ export function PasoHistoria({ alSeguir }: { alSeguir: () => void }) {
           <p className="nv-sub">Lo primero y lo más importante: qué vas a contar de Medellín.</p>
         </div>
         <span className="nv-espacio" />
+        <button
+          type="button"
+          className={`nv-boton ${seguro ? 'nv-boton--peligro' : ''}`}
+          onClick={() => {
+            if (!seguro) {
+              setSeguro(true);
+              window.setTimeout(() => setSeguro(false), 3000);
+              return;
+            }
+            setSeguro(false);
+            empezarDeNuevo();
+          }}
+        >
+          {seguro ? '¿Seguro? Toca otra vez' : 'Empezar de cero'}
+        </button>
         <button
           type="button"
           className="nv-boton"
