@@ -438,7 +438,7 @@
   padding: 12px 14px;
   gap: 6px;
 }
-.nv-tarjeta-general { width: 150px; flex: none; border: 1px dashed var(--nv-acento); }
+.nv-tarjeta-general { width: 130px; flex: none; border: 1px dashed var(--nv-acento); }
 .nv-tarjeta-respiro { width: 92px; flex: none; border: 1px dashed; align-items: center; text-align: center; }
 .nv-tarjeta-escena,
 .nv-tarjeta-respiro {
@@ -449,13 +449,13 @@
   will-change: transform;
 }
 .nv-agarrada { cursor: grabbing; }
-.nv-tarjeta-escena { flex: 1; min-width: 0; background: var(--nv-s1); border: 1px solid var(--nv-linea); }
+.nv-tarjeta-escena { flex: 1 1 0; min-width: 0; overflow: hidden; background: var(--nv-s1); border: 1px solid var(--nv-linea); }
 .nv-tarjeta-escena:hover { border-color: var(--nv-suave); }
 .nv-activa { outline: 2px solid var(--nv-acento); outline-offset: -2px; }
 .nv-tarjeta-escena__arriba { display: flex; align-items: center; gap: 10px; }
 .nv-tarjeta-escena__nombre { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
 .nv-tarjeta-escena__nombre strong { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.nv-tarjeta-escena__abajo { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.nv-tarjeta-escena__abajo { display: flex; align-items: center; gap: 8px; min-width: 0; white-space: nowrap; overflow: hidden; }
 .nv-miniatura { width: 46px; height: 46px; border-radius: 8px; flex: none; }
 
 .nv-pieza { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 14px; }
@@ -601,3 +601,19 @@
 .nv-lab-opcion--mu .nv-etiqueta { color: var(--nv-mu); }
 .nv-lab-opcion--ia:hover { border-color: var(--nv-ia); }
 .nv-lab-opcion--mu:hover { border-color: var(--nv-mu); }
+
+.nv-quitar {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--nv-s3);
+  color: var(--nv-suave);
+  font-size: 16px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+}
+.nv-quitar:hover { background: var(--nv-rojo); color: #fff; }

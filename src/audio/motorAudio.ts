@@ -192,6 +192,7 @@ class MotorAudio {
     // La voz cuelga del maestro, no del bus: el filtro, el eco y el
     // desvanecido del cierre son de la música, no del relato.
     this.gananciaNarrador = new Tone.Gain(1).connect(this.maestro);
+    for (const reproductor of this.vocesEscena.values()) reproductor.connect(this.gananciaNarrador);
 
     const transporte = Tone.getTransport();
     transporte.bpm.value = this.proyecto?.bpm ?? 100;
@@ -516,10 +517,19 @@ class MotorAudio {
     const voz = seccion.voz;
     if (!voz) return;
     const reproductor = this.vocesEscena.get(voz.url);
-    if (!reproductor?.loaded) return;
+    if (!reproductor) return;
     const entra = tiempo + 0.15;
-    if (reproductor.state === 'started') reproductor.stop(tiempo);
-    reproductor.start(entra);
+    const generacion = this.generacionPieza;
+    const arrancar = () => {
+      if (this.generacionPieza !== generacion) return;
+      if (reproductor.state === 'started') reproductor.stop();
+      const ahora = Tone.now();
+      // Si terminó de cargar tarde, entra por donde iba y no desde el principio.
+      if (entra >= ahora) reproductor.start(entra);
+      else if (ahora - entra < voz.duracion) reproductor.start(ahora, ahora - entra);
+    };
+    if (reproductor.loaded) arrancar();
+    else void Tone.loaded().then(arrancar);
     const ganancia = this.agacharse?.gain;
     if (!ganancia) return;
     ganancia.cancelScheduledValues(tiempo);
@@ -529,7 +539,6 @@ class MotorAudio {
 
   /** Prepara un reproductor por cada voz de escena y suelta los que sobran. */
   private cargarVocesEscenas(secciones: Seccion[]): void {
-    if (!this.gananciaNarrador) return;
     const urls = new Set(secciones.flatMap((s) => (s.voz ? [s.voz.url] : [])));
     for (const [url, reproductor] of this.vocesEscena) {
       if (!urls.has(url)) {
@@ -539,7 +548,10 @@ class MotorAudio {
     }
     for (const url of urls) {
       if (!this.vocesEscena.has(url)) {
-        this.vocesEscena.set(url, new Tone.Player({ url }).connect(this.gananciaNarrador));
+        // Se carga ya, aunque el audio no haya arrancado: así al tocar play está lista.
+        const reproductor = new Tone.Player({ url });
+        if (this.gananciaNarrador) reproductor.connect(this.gananciaNarrador);
+        this.vocesEscena.set(url, reproductor);
       }
     }
   }
@@ -613,6 +625,7 @@ class MotorAudio {
    */
   sincronizar(proyecto: Proyecto): void {
     this.proyecto = proyecto;
+    this.cargarVocesEscenas(proyecto.secciones);
     if (!this.iniciado || !this.bus) return;
 
     this.aplicarTempo();
@@ -635,7 +648,6 @@ class MotorAudio {
     this.gananciaMatriz?.gain.rampTo(melodiaAudible ? melodia.volumen : 0, 0.03);
 
     this.cargarNarracion(proyecto.narracion.audioUrl);
-    this.cargarVocesEscenas(proyecto.secciones);
     this.gananciaNarrador?.gain.rampTo(proyecto.narracion.volumen, 0.05);
 
     this.ajustarVolumenMaestro(proyecto.volumenMaestro);

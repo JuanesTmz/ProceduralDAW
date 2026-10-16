@@ -15,6 +15,7 @@ import {
   DURACION_MAXIMA,
   EMOCIONES,
   intensidadDeEscena,
+  quitarRespiro,
   recorrido,
   reordenar,
 } from '../estado/escenas';
@@ -93,8 +94,8 @@ export function PasoEscenas({ alEntrar }: { alEntrar: (id: string) => void }) {
             });
             if (id) alEntrar(id);
           }}
-        >
-          + Respiro
+         title="Opcional: un momento sin voz donde la música cuenta sola">
+          + Respiro (opcional)
         </button>
       </div>
 
@@ -119,6 +120,20 @@ export function PasoEscenas({ alEntrar }: { alEntrar: (id: string) => void }) {
                 style={{ ...manejadores(i).style, borderColor: color }}
                 onKeyDown={(ev) => ev.key === 'Enter' && alEntrar(e.id)}
               >
+                <button
+                  type="button"
+                  className="nv-quitar"
+                  aria-label="Quitar este respiro"
+                  title="Quitar este respiro"
+                  onPointerDown={(ev) => ev.stopPropagation()}
+                  onPointerUp={(ev) => ev.stopPropagation()}
+                  onClick={(ev) => {
+                    ev.stopPropagation();
+                    actualizar((p) => quitarRespiro(p, e.id));
+                  }}
+                >
+                  ×
+                </button>
                 <span className="nv-etiqueta" style={{ color }}>RESPIRO</span>
                 <span className="nv-mono nv-tenue">{formatearReloj(duraciones[i] ?? 0)}</span>
                 <span className="nv-espacio-v" />
@@ -149,7 +164,7 @@ export function PasoEscenas({ alEntrar }: { alEntrar: (id: string) => void }) {
               <span className="nv-espacio-v" />
               <span className="nv-tarjeta-escena__abajo">
                 <ChipEmocion e={e} />
-                {!e.vozUrl && <span className="nv-tenue nv-chico">sin voz grabada</span>}
+                {!e.vozUrl && <span className="nv-tenue nv-chico">sin voz</span>}
               </span>
             </div>
           );

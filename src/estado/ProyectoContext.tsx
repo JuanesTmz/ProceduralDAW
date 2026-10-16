@@ -30,6 +30,11 @@ export function ProveedorProyecto({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  // Solo en desarrollo: tocar el estado desde la consola para diagnosticar.
+  if (import.meta.env.DEV) {
+    (globalThis as Record<string, unknown>).__sonoraProyecto = { proyecto, actualizar };
+  }
+
   const valor = useMemo(
     () => ({ proyecto, actualizar, reemplazar: setProyecto }),
     [proyecto, actualizar],
