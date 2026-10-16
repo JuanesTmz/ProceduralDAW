@@ -1,10 +1,10 @@
 /**
- * La imagen de una escena, o de toda la pieza (General).
+ * La pestaña Visuales de una escena, o de toda la pieza (General).
  *
  * A la izquierda, el visual en vivo con la foto de la escena como
  * material. Debajo, el estilo y la paleta, que valen para toda la pieza.
- * A la derecha, la mecánica del lab: en IA las mismas conexiones que en la
- * música, apuntadas a los mandos del visual; en Música Urbana, cómo
+ * A la derecha, la foto y la mecánica del lab: en IA, qué mandos se mueven
+ * solos con un dato (lo mismo que en la música); en Música Urbana, cómo
  * reacciona, el cuadro X/Y y los golpes visuales tocados en vivo.
  */
 import { useEffect, useRef, useState } from 'react';
@@ -12,73 +12,30 @@ import type { PointerEvent as EventoPuntero } from 'react';
 import { motorAudio } from '../audio/motorAudio';
 import { useProyecto } from '../estado/ProyectoContext';
 import { crearUrl } from '../estado/guardado';
-import { buscarEscena, EMOCIONES, recorrido } from '../estado/escenas';
-import {
-  destinosVisuales,
-  NOMBRE_ESTILO,
-  NOMBRE_GOLPE,
-  NOMBRE_REACCION,
-  ORDEN_ESTILOS,
-  ORDEN_GOLPES,
-} from '../estado/imagen';
-import { fuente, leerArchivoDatos } from '../estado/musica';
-import type { Conexion, Escena, GolpeVisual, PuntoGesto, ReaccionVisual } from '../estado/tipos';
+import { buscarEscena } from '../estado/escenas';
+import { NOMBRE_ESTILO, NOMBRE_GOLPE, NOMBRE_REACCION, ORDEN_ESTILOS, ORDEN_GOLPES } from '../estado/imagen';
+import { leerArchivoDatos } from '../estado/musica';
+import type { Escena, GolpeVisual, PuntoGesto, ReaccionVisual } from '../estado/tipos';
+import { algoritmoDe, valoresPorDefecto } from '../visual/algoritmos';
 import { PALETAS } from '../visual/paletas';
 import { enVivo } from '../visual/enVivo';
-import { BandejaFuentes, conectar, ListaConexiones } from './Conexiones';
 import { Escenario } from './Escenario';
+import { ParametrosDatos, type Parametro } from './ParametrosDatos';
 import { fondoEscena } from './PasoEscenas';
 import { useReproduccion } from './useReproduccion';
 
 interface Props {
-  id: string;
-  alVolver: () => void;
-  alMusica: () => void;
+  escena: Escena | null;
+  indice: number;
 }
 
-export function ImagenEscena({ id, alVolver, alMusica }: Props) {
+export function ImagenEscena({ escena, indice }: Props) {
   const { proyecto, actualizar } = useProyecto();
-  const { sonando } = useReproduccion();
-  const general = id === 'general';
-  const escena = general ? null : buscarEscena(proyecto, id) ?? null;
-  const lista = recorrido(proyecto);
-  const indice = escena ? lista.findIndex((e) => e.id === escena.id) : -1;
-  const color = escena ? EMOCIONES[escena.emocion].color : '#ffb020';
   const esIA = proyecto.track === 'ia';
   const v = proyecto.visual;
 
-  const escuchar = () => {
-    if (sonando) motorAudio.detener();
-    else if (escena) void motorAudio.reproducirEscena(indice);
-    else void motorAudio.reproducirPieza();
-  };
-
   return (
-    <div className="nv-pagina nv-pagina--fija">
-      <div className="nv-cabeza">
-        <button type="button" className="nv-boton" onClick={alVolver}>
-          ← {escena ? (escena.respiro ? 'Respiro' : escena.nombre) : 'Escenas'}
-        </button>
-        <div className="nv-dentro__nombre">
-          <span className="nv-etiqueta" style={{ color }}>
-            {escena ? 'IMAGEN DE LA ESCENA' : 'IMAGEN DE TODA LA PIEZA'}
-          </span>
-          <h1 className="nv-titulo">{escena ? (escena.respiro ? 'Respiro' : escena.nombre) : 'General'}</h1>
-        </div>
-        <span className="nv-espacio" />
-        <div className="nv-selector">
-          <button type="button" className="nv-selector__op" onClick={alMusica}>
-            ♫  Música
-          </button>
-          <button type="button" className="nv-selector__op nv-selector__op--activa">
-            ◐  Imagen
-          </button>
-        </div>
-        <button type="button" className="nv-boton" onClick={escuchar}>
-          {sonando ? '■  Parar' : escena ? '▶  Escuchar esta escena' : '▶  Escuchar la pieza'}
-        </button>
-      </div>
-
+    <div className="nv-pestana">
       <div className="nv-imagen">
         <div className="nv-imagen__vista">
           <Escenario escenaFija={escena?.id} />
@@ -126,6 +83,7 @@ export function ImagenEscena({ id, alVolver, alMusica }: Props) {
         </div>
 
         <aside className="nv-tarjeta nv-imagen__lado">
+          <FotoEscena escena={escena} />
           {esIA ? <ImagenIA /> : <ImagenMU escena={escena} indice={indice} />}
         </aside>
       </div>
@@ -133,48 +91,84 @@ export function ImagenEscena({ id, alVolver, alMusica }: Props) {
   );
 }
 
-function ImagenIA() {
+/** La foto de la escena (o de toda la pieza): es el material del visual. */
+function FotoEscena({ escena }: { escena: Escena | null }) {
   const { proyecto, actualizar } = useProyecto();
-  const [fuentesAbiertas, setFuentesAbiertas] = useState(false);
-  const destinos = destinosVisuales(proyecto.visual.algoritmo);
+  const [leyendo, setLeyendo] = useState(false);
+  const esIA = proyecto.track === 'ia';
 
-  const frase = (c: Conexion) => {
-    const f = fuente(proyecto, c.fuente);
-    const d = destinos.find((x) => x.clave === c.destino);
-    if (!f || !d) return '';
-    const dato = f.etiqueta.charAt(0).toLowerCase() + f.etiqueta.slice(1);
-    if (c.destino === 'paleta') {
-      return c.fuente.startsWith('archivo:')
-        ? `La obra se pinta con los colores de ${f.etiqueta.split(' · ')[0]}.`
-        : `Los colores cambian según ${dato}.`;
-    }
-    return `Cuanto más sube ${dato}, más sube «${d.etiqueta.toLowerCase()}».`;
+  const elegirFoto = (archivo: File | undefined) => {
+    if (!archivo) return;
+    const url = crearUrl(archivo);
+    actualizar((p) => {
+      const e = escena && buscarEscena(p, escena.id);
+      if (e) e.imagenUrl = url;
+      else p.visual.imagenUrl = url;
+    });
   };
 
+  const coloresDeImagen = async (archivo: File | undefined) => {
+    if (!archivo) return;
+    setLeyendo(true);
+    try {
+      const datos = await leerArchivoDatos(archivo);
+      if (datos.colores) actualizar((p) => (p.visual.paletaPropia = datos.colores));
+    } finally {
+      setLeyendo(false);
+    }
+  };
+
+  const fotoUrl = escena ? escena.imagenUrl : proyecto.visual.imagenUrl;
+  return (
+    <div className="nv-foto">
+      <span
+        className="nv-foto__muestra"
+        style={{ background: escena ? fondoEscena(escena) : fotoUrl ? `center / cover url(${fotoUrl})` : '#2d3244' }}
+      />
+      <span className="nv-foto__texto">
+        <strong>{escena ? 'Tu foto es el material' : 'Foto para toda la pieza'}</strong>
+        <span className="nv-campo__fila">
+          <label className={`${esIA ? 'nv-ia' : 'nv-mu'} nv-enlace-label`}>
+            {fotoUrl ? 'Cambiar foto' : 'Elegir foto'}
+            <input type="file" accept="image/*" hidden onChange={(ev) => elegirFoto(ev.target.files?.[0])} />
+          </label>
+          {!esIA && (
+            <label className="nv-mu nv-enlace-label">
+              {leyendo ? 'Leyendo…' : 'Usar colores de otra imagen'}
+              <input type="file" accept="image/*" hidden onChange={(ev) => void coloresDeImagen(ev.target.files?.[0])} />
+            </label>
+          )}
+        </span>
+      </span>
+    </div>
+  );
+}
+
+/** Lab de IA: qué mandos del visual se mueven solos con un dato. */
+function ImagenIA() {
+  const { proyecto, actualizar } = useProyecto();
+  const alg = algoritmoDe(proyecto.visual.algoritmo);
+  const valores = { ...valoresPorDefecto(alg), ...(proyecto.visual.parametros[alg.id] ?? {}) };
+  const parametros: Parametro[] = [
+    ...alg.mandos.map((m) => ({
+      clave: m.id,
+      etiqueta: m.etiqueta,
+      mano: {
+        valor: (valores[m.id] - m.min) / (m.max - m.min),
+        poner: (v: number) =>
+          actualizar((p) => {
+            const lista = (p.visual.parametros[alg.id] ??= {});
+            lista[m.id] = m.min + v * (m.max - m.min);
+          }),
+      },
+    })),
+    { clave: 'paleta', etiqueta: 'Paleta de colores', notaMano: 'la que elijas abajo' },
+  ];
   return (
     <>
-      <div className="nv-campo__fila">
-        <strong className="nv-subtitulo">Conexiones</strong>
-        <span className="nv-tenue nv-chico">valen para toda la pieza</span>
-        <span className="nv-espacio" />
-        <button
-          type="button"
-          className={`nv-boton nv-boton--chico nv-boton--ia ${fuentesAbiertas ? 'nv-boton--ia-activo' : ''}`}
-          onClick={() => setFuentesAbiertas(!fuentesAbiertas)}
-        >
-          {fuentesAbiertas ? 'Ver conexiones' : 'Fuentes de datos ▸'}
-        </button>
-      </div>
-      {fuentesAbiertas ? (
-        <BandejaFuentes
-          alConectar={(clave) => {
-            actualizar((p) => p.conexionesVisual.push(conectar(p.conexionesVisual, destinos, clave)));
-            setFuentesAbiertas(false);
-          }}
-        />
-      ) : (
-        <ListaConexiones clave="conexionesVisual" destinos={destinos} frase={frase} />
-      )}
+      <strong className="nv-subtitulo">Datos</strong>
+      <span className="nv-tenue nv-chico">Elige qué se mueve solo con un dato. Lo demás lo pones tú.</span>
+      <ParametrosDatos clave="conexionesVisual" grupos={[{ titulo: NOMBRE_ESTILO[alg.id], parametros }]} />
     </>
   );
 }
@@ -229,10 +223,9 @@ function useGrabarEnEscena(escena: Escena | null, indice: number, alGuardar: (ge
 }
 
 function ImagenMU({ escena, indice }: { escena: Escena | null; indice: number }) {
-  const { proyecto, actualizar } = useProyecto();
+  const { actualizar } = useProyecto();
   const cuadro = useRef<HTMLDivElement>(null);
   const [punto, setPunto] = useState<{ x: number; y: number } | null>(null);
-  const [leyendo, setLeyendo] = useState(false);
 
   const { grabando, empezar, parar } = useGrabarEnEscena(escena, indice, (gesto, golpes) =>
     actualizar((p) => {
@@ -255,52 +248,10 @@ function ImagenMU({ escena, indice }: { escena: Escena | null; indice: number })
     enVivo.gesto = null;
   };
 
-  const coloresDeImagen = async (archivo: File | undefined) => {
-    if (!archivo) return;
-    setLeyendo(true);
-    try {
-      const datos = await leerArchivoDatos(archivo);
-      if (datos.colores) actualizar((p) => (p.visual.paletaPropia = datos.colores));
-    } finally {
-      setLeyendo(false);
-    }
-  };
-
-  const elegirFoto = (archivo: File | undefined) => {
-    if (!archivo) return;
-    const url = crearUrl(archivo);
-    actualizar((p) => {
-      const e = escena && buscarEscena(p, escena.id);
-      if (e) e.imagenUrl = url;
-      else p.visual.imagenUrl = url;
-    });
-  };
-
-  const fotoUrl = escena ? escena.imagenUrl : proyecto.visual.imagenUrl;
   const marcas = (escena?.gestoVisual?.length ?? 0) + (escena?.golpesVisuales?.length ?? 0);
 
   return (
     <>
-      <div className="nv-foto">
-        <span
-          className="nv-foto__muestra"
-          style={{ background: escena ? fondoEscena(escena) : fotoUrl ? `center / cover url(${fotoUrl})` : '#2d3244' }}
-        />
-        <span className="nv-foto__texto">
-          <strong>{escena ? 'Tu foto es el material' : 'Foto para toda la pieza'}</strong>
-          <span className="nv-campo__fila">
-            <label className="nv-mu nv-enlace-label">
-              {fotoUrl ? 'Cambiar foto' : 'Elegir foto'}
-              <input type="file" accept="image/*" hidden onChange={(ev) => elegirFoto(ev.target.files?.[0])} />
-            </label>
-            <label className="nv-mu nv-enlace-label">
-              {leyendo ? 'Leyendo…' : 'Usar colores de otra imagen'}
-              <input type="file" accept="image/*" hidden onChange={(ev) => void coloresDeImagen(ev.target.files?.[0])} />
-            </label>
-          </span>
-        </span>
-      </div>
-
       {escena ? (
         <>
           <div className="nv-campo">

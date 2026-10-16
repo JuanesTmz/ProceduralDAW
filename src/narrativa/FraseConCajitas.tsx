@@ -23,13 +23,21 @@ function describir(c: Cajita): string {
   return `imagen · ${c.golpe ? NOMBRE_GOLPE[c.golpe].toLowerCase() : ''}`;
 }
 
-export function FraseConCajitas({ escena }: { escena: Escena }) {
+interface Props {
+  escena: Escena;
+  /** Qué cajitas se pueden pegar aquí: en Música, sonido y silencio; en Visuales, imagen. */
+  tipos?: Cajita['tipo'][];
+  /** Cuántas palabras ya se dijeron, para encenderlas mientras suena. */
+  dichas?: number;
+}
+
+export function FraseConCajitas({ escena, tipos = ['sonido', 'silencio', 'imagen'], dichas = -1 }: Props) {
   const { proyecto, actualizar } = useProyecto();
   const [abierta, setAbierta] = useState<number | null>(null);
   const [menu, setMenu] = useState<'inicio' | 'sonido' | 'imagen'>('inicio');
   const palabras = palabrasDe(escena.texto);
   const cajitas = escena.cajitas ?? [];
-  const deLaPalabra = (i: number) => cajitas.find((c) => c.palabra === i);
+  const deLaPalabra = (i: number) => cajitas.find((c) => c.palabra === i && tipos.includes(c.tipo));
   const sonidos = [
     ...SONOTECA.filter((s) => s.grupo !== 'melodico').map((s) => ({ url: s.url, nombre: s.nombre })),
     ...proyecto.sonidos.map((s) => ({ url: s.url, nombre: `🎙 ${s.nombre}` })),
@@ -39,7 +47,8 @@ export function FraseConCajitas({ escena }: { escena: Escena }) {
     actualizar((p) => {
       const e = buscarEscena(p, escena.id);
       if (!e) return;
-      const resto = (e.cajitas ?? []).filter((c) => c.palabra !== palabra);
+      // Solo se reemplaza la cajita de esta pestaña: una palabra puede tener sonido e imagen.
+      const resto = (e.cajitas ?? []).filter((c) => c.palabra !== palabra || !tipos.includes(c.tipo));
       e.cajitas = datos ? [...resto, { id: nuevoId('cajita'), palabra, ...datos }] : resto;
     });
     setAbierta(null);
@@ -48,7 +57,6 @@ export function FraseConCajitas({ escena }: { escena: Escena }) {
 
   return (
     <div className="nv-cajitas">
-      <span className="nv-tenue nv-chico">Toca una palabra para pegarle una cajita.</span>
       <p className="nv-dentro__texto">
         {palabras.map((palabra, i) => {
           const c = deLaPalabra(i);
@@ -56,7 +64,7 @@ export function FraseConCajitas({ escena }: { escena: Escena }) {
             <span key={i} className="nv-cajitas__lugar">
               <button
                 type="button"
-                className={`nv-cajitas__palabra ${c ? 'nv-cajitas__palabra--con' : ''} ${abierta === i ? 'nv-cajitas__palabra--abierta' : ''}`}
+                className={`nv-cajitas__palabra ${c ? 'nv-cajitas__palabra--con' : ''} ${abierta === i ? 'nv-cajitas__palabra--abierta' : ''} ${dichas >= 0 ? (i < dichas ? 'nv-cajitas__palabra--dicha' : 'nv-cajitas__palabra--espera') : ''}`}
                 style={c ? { color: COLOR[c.tipo], borderColor: COLOR[c.tipo] } : undefined}
                 onClick={() => {
                   setAbierta(abierta === i ? null : i);
@@ -69,15 +77,21 @@ export function FraseConCajitas({ escena }: { escena: Escena }) {
                 <span className="nv-lista-flotante nv-cajitas__menu">
                   {menu === 'inicio' && (
                     <>
-                      <button type="button" onClick={() => setMenu('sonido')}>
-                        <span className="nv-cajitas__icono" style={{ color: COLOR.sonido }}>♪</span> Un sonido
-                      </button>
-                      <button type="button" onClick={() => poner(i, { tipo: 'silencio' })}>
-                        <span className="nv-cajitas__icono" style={{ color: COLOR.silencio }}>◌</span> Silencio: la música se calla
-                      </button>
-                      <button type="button" onClick={() => setMenu('imagen')}>
-                        <span className="nv-cajitas__icono" style={{ color: COLOR.imagen }}>◐</span> Un golpe de imagen
-                      </button>
+                      {tipos.includes('sonido') && (
+                        <button type="button" onClick={() => setMenu('sonido')}>
+                          <span className="nv-cajitas__icono" style={{ color: COLOR.sonido }}>♪</span> Un sonido
+                        </button>
+                      )}
+                      {tipos.includes('silencio') && (
+                        <button type="button" onClick={() => poner(i, { tipo: 'silencio' })}>
+                          <span className="nv-cajitas__icono" style={{ color: COLOR.silencio }}>◌</span> Silencio: la música se calla
+                        </button>
+                      )}
+                      {tipos.includes('imagen') && (
+                        <button type="button" onClick={() => setMenu('imagen')}>
+                          <span className="nv-cajitas__icono" style={{ color: COLOR.imagen }}>◐</span> Un golpe de imagen
+                        </button>
+                      )}
                       {c && (
                         <button type="button" className="nv-rojo" onClick={() => poner(i, null)}>
                           × Quitar la cajita
@@ -103,9 +117,10 @@ export function FraseConCajitas({ escena }: { escena: Escena }) {
           );
         })}
       </p>
-      {cajitas.length > 0 && (
+      {cajitas.some((c) => tipos.includes(c.tipo)) && (
         <div className="nv-fichas">
-          {[...cajitas]
+          {cajitas
+            .filter((c) => tipos.includes(c.tipo))
             .sort((a, b) => a.palabra - b.palabra)
             .map((c) => (
               <span key={c.id} className="nv-chip" style={{ color: COLOR[c.tipo], background: `${COLOR[c.tipo]}22` }}>

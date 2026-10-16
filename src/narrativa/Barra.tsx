@@ -20,9 +20,11 @@ export const PASOS: { id: Paso; etiqueta: string }[] = [
 interface Props {
   paso: Paso;
   alCambiar: (paso: Paso) => void;
+  /** Dentro de una escena se escucha solo la escena, desde su propia barra. */
+  enEscena?: boolean;
 }
 
-export function Barra({ paso, alCambiar }: Props) {
+export function Barra({ paso, alCambiar, enEscena }: Props) {
   const { proyecto, actualizar } = useProyecto();
   const { sonando } = useReproduccion();
   const hayEscenas = proyecto.escenas.length > 0;
@@ -60,7 +62,7 @@ export function Barra({ paso, alCambiar }: Props) {
           </span>
         </div>
       )}
-      {paso !== 'funcion' && (
+      {paso !== 'funcion' && !enEscena && (
         <button
           type="button"
           className="nv-boton nv-boton--primario"

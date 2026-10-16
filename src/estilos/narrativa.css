@@ -1002,3 +1002,234 @@
 }
 .nv-exportando__caja { display: flex; flex-direction: column; gap: 10px; width: 460px; pointer-events: auto; box-shadow: 0 20px 60px #000c; }
 .nv-exportando__barra { width: 100%; height: 8px; }
+
+/* ---------- editor de escena (riel + pestañas) ---------- */
+.nv--incrustado { height: auto; background: transparent; }
+.nv-editor { height: 100%; min-height: 0; display: grid; grid-template-columns: 184px 1fr; }
+.nv-editor__cuerpo { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 12px; padding: 16px 20px 18px; overflow: auto; }
+.nv-cabeza--editor { flex-wrap: wrap; row-gap: 8px; }
+.nv-selector--pestanas .nv-selector__op { padding: 9px 18px; font-weight: 600; }
+.nv-selector--pestanas .nv-selector__op--activa { background: var(--nv-texto); color: var(--nv-fondo); }
+
+.nv-riel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 10px;
+  background: #0b0d12;
+  border-right: 1px solid var(--nv-linea);
+  overflow: auto;
+}
+.nv-riel__volver { text-align: left; padding: 8px 10px; color: var(--nv-suave); font-size: 13px; border-radius: 8px; }
+.nv-riel__volver:hover { color: var(--nv-texto); background: var(--nv-s1); }
+.nv-riel__item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  text-align: left;
+  border: 1px solid transparent;
+  border-left: 3px solid var(--color, var(--nv-linea));
+}
+.nv-riel__item:hover { background: var(--nv-s1); }
+.nv-riel__item--activo { background: var(--nv-s2); border-color: var(--nv-linea); border-left-color: var(--color, var(--nv-acento)); }
+.nv-riel__item--general { --color: var(--nv-acento); border-left-style: dashed; margin-bottom: 6px; }
+.nv-riel__item--respiro { padding-top: 4px; padding-bottom: 4px; opacity: 0.8; }
+.nv-riel__num {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color, var(--nv-acento));
+  background: color-mix(in srgb, var(--color, var(--nv-acento)) 18%, transparent);
+}
+.nv-riel__texto { display: flex; flex-direction: column; min-width: 0; font-size: 12px; }
+.nv-riel__texto strong { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nv-riel__marca { color: var(--color); }
+.nv-riel__sonando {
+  position: absolute;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color, var(--nv-acento));
+  animation: nv-latido 0.9s ease-in-out infinite;
+}
+@keyframes nv-latido { 50% { opacity: 0.25; transform: scale(0.7); } }
+
+.nv-sentir { display: flex; align-items: center; gap: 8px; }
+.nv-sentir .nv-emocion { min-height: 38px; padding: 6px 12px; }
+.nv-sentir__emociones { min-width: 180px; }
+.nv-pestana { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
+
+/* ---------- barra de la escena ---------- */
+.nv-barra-escena {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--nv-s1);
+  border: 1px solid var(--nv-linea);
+}
+.nv-barra-escena .nv-cajitas { gap: 6px; }
+.nv-barra-escena .nv-dentro__texto { font-size: 17px; line-height: 1.5; max-height: 4.6em; overflow: auto; }
+.nv-cajitas__palabra--espera { color: var(--nv-suave); }
+.nv-cajitas__palabra--dicha { color: var(--nv-texto); }
+.nv-barra-escena__fila { display: flex; align-items: center; gap: 12px; }
+.nv-barra-escena__play {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--color);
+  color: #0f1117;
+  font-size: 15px;
+  font-weight: 700;
+}
+.nv-barra-escena__pista {
+  position: relative;
+  flex: 1;
+  height: 44px;
+  border-radius: 8px;
+  background: var(--nv-s2);
+  cursor: pointer;
+  touch-action: none;
+  overflow: hidden;
+}
+.nv-barra-escena__voz { position: absolute; top: 4px; bottom: 4px; display: flex; pointer-events: none; }
+.nv-barra-escena__voz > * { flex: 1; height: 100%; }
+.nv-barra-escena__respiro { position: absolute; inset: 0; display: grid; place-items: center; font-size: 12px; color: var(--nv-suave); font-style: italic; }
+.nv-barra-escena__cajita { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--nv-acento); pointer-events: none; }
+.nv-barra-escena__lleno { position: absolute; left: 0; top: 0; bottom: 0; background: color-mix(in srgb, var(--color) 22%, transparent); pointer-events: none; }
+.nv-barra-escena__cabeza { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #fff; box-shadow: 0 0 8px #fff; pointer-events: none; }
+.nv-barra-escena__cabeza--quieta { background: var(--color); box-shadow: none; width: 3px; }
+.nv-barra-escena__reloj { font-size: 12px; color: var(--nv-suave); min-width: 86px; text-align: right; }
+
+/* ---------- herramientas de música ---------- */
+.nv-herramientas { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.nv-herramienta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px 8px 10px;
+  border-radius: 12px;
+  background: var(--nv-s1);
+  border: 1px solid var(--nv-linea);
+  text-align: left;
+}
+.nv-herramienta > span:last-child { display: flex; flex-direction: column; }
+.nv-herramienta:hover { border-color: var(--nv-acento); }
+.nv-herramienta__icono {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: #ffb02026;
+  color: var(--nv-acento);
+  font-size: 16px;
+}
+.nv-herramienta--ia:hover { border-color: var(--nv-ia); }
+.nv-herramienta--ia .nv-herramienta__icono { background: #5ee0ff26; color: var(--nv-ia); }
+.nv-preset--tempo { min-width: 150px; }
+.nv-preset--tempo input { width: 100%; }
+
+/* ---------- pistas procedurales (IA) ---------- */
+.nv-pistas { gap: 6px; }
+.nv-pista {
+  display: grid;
+  grid-template-columns: 120px 130px 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+.nv-pista:hover { background: var(--nv-s2); }
+.nv-pista--activa { background: var(--nv-s2); border-color: var(--color); }
+.nv-pista--muda .nv-tira, .nv-pista--muda .nv-pista__nombre { opacity: 0.35; }
+.nv-pista__nombre { display: flex; align-items: center; gap: 8px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nv-pista__sonido {
+  padding: 5px 9px;
+  border-radius: 8px;
+  background: var(--nv-s3);
+  font-size: 12px;
+  color: var(--nv-suave);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+.nv-pista__sonido:hover { color: var(--nv-texto); }
+.nv-pista__marcas { display: flex; gap: 4px; justify-content: flex-end; }
+.nv-tira { display: grid; grid-template-columns: repeat(16, 1fr); gap: 3px; }
+.nv-tira__casilla { height: 22px; border-radius: 4px; background: var(--nv-s3); }
+.nv-tira__casilla:nth-child(4n + 1) { box-shadow: inset 0 0 0 1px #ffffff14; }
+.nv-tira__casilla[data-estado='1'] { background: color-mix(in srgb, var(--color) 45%, transparent); }
+.nv-tira__casilla[data-estado='2'] { background: var(--color); }
+.nv-tira__casilla[data-cabeza='si'] { outline: 2px solid #fff; outline-offset: -1px; }
+.nv-regla__cuadro { width: 100%; max-width: 300px; align-self: center; }
+
+/* ---------- datos (parámetros) ---------- */
+.nv-parametros { display: flex; flex-direction: column; gap: 16px; }
+.nv-parametros__grupo { display: flex; flex-direction: column; gap: 6px; }
+.nv-parametro {
+  display: grid;
+  grid-template-columns: minmax(110px, 1fr) auto minmax(120px, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--nv-s2);
+}
+.nv--incrustado .nv-parametro { background: #ffffff08; }
+.nv-parametro--dato { box-shadow: inset 3px 0 0 var(--nv-ia); }
+.nv-parametro__nombre { font-size: 14px; }
+.nv-parametro__mano { width: 100%; }
+.nv-archivo--chico { padding: 6px 8px; gap: 8px; }
+
+/* ---------- ventana de sonidos ---------- */
+.nv-sonidos { display: grid; grid-template-columns: 210px 1fr; gap: 18px; min-height: 0; height: 100%; color: var(--nv-texto); }
+.nv-sonidos__pistas { display: flex; flex-direction: column; gap: 4px; overflow: auto; }
+.nv-sonidos__pista { display: flex; align-items: center; gap: 4px; border-radius: 10px; border: 1px solid transparent; }
+.nv-sonidos__pista > button:first-child { flex: 1; display: flex; align-items: center; gap: 8px; padding: 9px 10px; text-align: left; min-width: 0; }
+.nv-sonidos__pista:hover { background: #ffffff0a; }
+.nv-sonidos__pista--activa { background: #ffffff12; border-color: var(--nv-acento); }
+.nv-sonidos__pista .nv-quitar { position: static; flex: none; opacity: 0; }
+.nv-sonidos__pista:hover .nv-quitar, .nv-sonidos__pista--activa .nv-quitar { opacity: 1; }
+.nv-sonidos__nombre { display: flex; flex-direction: column; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nv-conectar--activo { background: #5ee0ff1a; border-style: solid; }
+.nv-sonidos__catalogo { display: flex; flex-direction: column; gap: 16px; overflow: auto; padding-right: 4px; }
+.nv-sonidos__aviso { margin: 0; padding: 10px 12px; border-radius: 10px; background: #5ee0ff1a; color: var(--nv-ia); }
+.nv-sonidos__grupo { display: flex; flex-direction: column; gap: 8px; }
+.nv-sonidos__fichas { display: flex; flex-wrap: wrap; gap: 6px; }
+.nv-sonido {
+  padding: 8px 12px;
+  border-radius: 9px;
+  background: #ffffff0d;
+  border: 1px solid #ffffff14;
+  font-size: 13px;
+}
+.nv-sonido:hover { border-color: var(--nv-acento); }
+.nv-sonido--activo { background: #ffb02026; border-color: var(--nv-acento); color: var(--nv-acento); font-weight: 600; }
+.nv-sonido--quieto { cursor: default; color: var(--nv-suave); }
+.nv-sonidos__propios { padding-top: 12px; border-top: 1px solid #ffffff14; }
+.nv-sonidos__recorte { padding: 12px; border-radius: 12px; background: #ffffff08; }
+.nv-entrada {
+  padding: 9px 12px;
+  border-radius: 9px;
+  background: #ffffff0d;
+  border: 1px solid #ffffff1f;
+  color: inherit;
+  font: inherit;
+}
+.nv-pista .nv-interruptor--on { background: var(--nv-ia); }

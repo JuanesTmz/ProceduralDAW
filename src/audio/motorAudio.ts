@@ -93,6 +93,8 @@ class MotorAudio {
   /** Desde qué sección arranca la pieza, y si para al terminarla. */
   private desde = 0;
   private soloUna = false;
+  /** Segundos dentro de la escena desde los que arranca (la barra de la escena). */
+  private desdeSegundo = 0;
   private musicaApagada = false;
   /** Lo que mueven las conexiones y el gesto: volumen de la música, aparte de todo lo demás. */
   private modulador: Tone.Gain | null = null;
@@ -273,7 +275,21 @@ class MotorAudio {
 
     if (this.modo === 'pieza') {
       const primera = this.proyecto?.secciones[this.desde];
-      if (primera) this.aplicarSeccion(primera, inicio);
+      let corrido = 0;
+      if (primera && this.desdeSegundo > 0 && this.proyecto) {
+        // Arrancar a mitad de escena: se salta a la vuelta y al paso que tocan.
+        const n = this.proyecto.patron.cantidadPasos;
+        const porPaso = 60 / (this.proyecto.bpm * primera.factorTempo) / 4;
+        const paso = Math.floor(this.desdeSegundo / porPaso);
+        if (paso < primera.compases * n) {
+          this.vueltaEnSeccion = Math.floor(paso / n);
+          this.paso = paso % n;
+          corrido = paso * porPaso;
+          Tone.getTransport().bpm.value = this.proyecto.bpm * primera.factorTempo;
+        }
+      }
+      this.desdeSegundo = 0;
+      if (primera) this.aplicarSeccion(primera, inicio, corrido);
       this.avisarSeccion(this.desde);
       if (this.desde === 0) this.lanzarNarracion();
     } else {
@@ -341,13 +357,25 @@ class MotorAudio {
     await this.reproducir();
   }
 
-  /** Toca una sola escena de la pieza, y para al terminarla. */
-  async reproducirEscena(indice: number): Promise<void> {
+  /** Toca una sola escena de la pieza, y para al terminarla. Puede arrancar a mitad. */
+  async reproducirEscena(indice: number, desdeSegundo = 0): Promise<void> {
     if (this.estaSonando) this.detener();
     this.modo = 'pieza';
     this.desde = Math.max(0, indice);
     this.soloUna = true;
+    this.desdeSegundo = Math.max(0, desdeSegundo);
     await this.reproducir();
+  }
+
+  /** La escena que suena si se tocó una sola, o -1. */
+  get escenaSola(): number {
+    return this.estaSonando && this.soloUna ? this.indiceSeccion : -1;
+  }
+
+  /** Cuánto dura la sección i, en segundos. */
+  duracionDe(indice: number): number {
+    const s = this.proyecto?.secciones[indice];
+    return s ? this.duracionSeccion(s) : 0;
   }
 
   /** Bucle del patrón, o recorrido completo por el arco. */
@@ -448,11 +476,13 @@ class MotorAudio {
     const mod = seccion ? this.modular(seccion, tiempo) : null;
     this.envolventeBombo *= 0.55;
 
-    for (const fila of patron.filas) {
+    for (const filaBase of patron.filas) {
+      const propios = seccion?.pasosFilas?.[filaBase.id];
+      const fila = propios ? { ...filaBase, ...propios } : filaBase;
       const esRedoble = remate && fila.id === idRedoble;
       // «Máquina» encendida en la capa: improvisa sobre lo dibujado, quita y agrega golpes.
       const sinMaquina = mod?.golpes(fila.id) ?? { factor: 1, extra: 0 };
-      const golpes = fila.regla.activa
+      const golpes = fila.maquina
         ? { factor: sinMaquina.factor * 0.82, extra: sinMaquina.extra + 0.22 }
         : sinMaquina;
       // Con el dato arriba, la máquina agrega golpes en los tiempos vacíos.
@@ -492,8 +522,8 @@ class MotorAudio {
     if (melodiaSuena) {
       // Se disparan juntas: en la matriz varias notas en la misma columna son un acorde.
       const escala = mod?.escala ?? seccion?.escala ?? melodia.escala;
-      const probMelodia = (mod?.melodia ?? 1) * (melodia.regla.activa ? 0.78 : 1);
-      const acorde = melodia.notas
+      const probMelodia = (mod?.melodia ?? 1) * (melodia.maquina ? 0.78 : 1);
+      const acorde = (seccion?.notas ?? melodia.notas)
         .filter((n) => n.paso === paso)
         .filter((n) =>
           probMelodia < 1
@@ -547,11 +577,11 @@ class MotorAudio {
   }
 
   /** Ajusta volumen, tempo y desvanecido al entrar en una sección. */
-  private aplicarSeccion(seccion: Seccion, tiempo: number): void {
+  private aplicarSeccion(seccion: Seccion, tiempo: number, corrido = 0): void {
     const ganancia = this.gananciaSeccion?.gain;
     if (!ganancia) return;
 
-    this.inicioSeccionT = tiempo;
+    this.inicioSeccionT = tiempo - corrido;
     this.duracionSeccionT = Math.max(0.5, this.duracionSeccion(seccion));
     const objetivo = volumenDeIntensidad(seccion.intensidad);
     ganancia.cancelScheduledValues(tiempo);
@@ -561,19 +591,20 @@ class MotorAudio {
 
     if (seccion.desvanecer) {
       // El cierre se apaga a lo largo de toda la sección.
-      const duracion = this.duracionSeccion(seccion);
+      const duracion = this.duracionSeccion(seccion) - corrido;
       ganancia.rampTo(0.0015, Math.max(0.5, duracion * 0.92), tiempo + 0.12);
     }
 
     this.aplicarTempo(seccion);
-    this.lanzarVozEscena(seccion, tiempo);
-    this.lanzarCajitas(seccion, tiempo);
+    this.lanzarVozEscena(seccion, tiempo, corrido);
+    this.lanzarCajitas(seccion, tiempo, corrido);
   }
 
   /** Agenda lo que pasa en cada palabra con cajita: un sonido o un silencio. */
-  private lanzarCajitas(seccion: Seccion, tiempo: number): void {
+  private lanzarCajitas(seccion: Seccion, tiempo: number, corrido = 0): void {
     for (const c of seccion.cajitas ?? []) {
-      const momento = tiempo + 0.15 + c.t;
+      const momento = tiempo + 0.15 + c.t - corrido;
+      if (momento < tiempo) continue;
       if (c.tipo === 'sonido' && c.url) {
         const r = this.sueltas.get(c.url);
         if (r?.loaded) r.start(momento);
@@ -733,12 +764,16 @@ class MotorAudio {
    * La voz de una escena entra justo al empezar su sección, y mientras
    * habla la música se agacha un poco para dejarla oír.
    */
-  private lanzarVozEscena(seccion: Seccion, tiempo: number): void {
-    const voz = seccion.voz;
-    if (!voz) return;
-    const reproductor = this.vocesEscena.get(voz.url);
+  private lanzarVozEscena(seccion: Seccion, tiempo: number, corrido = 0): void {
+    const original = seccion.voz;
+    if (!original) return;
+    const reproductor = this.vocesEscena.get(original.url);
     if (!reproductor) return;
-    const entra = tiempo + 0.15;
+    // Arrancando a mitad de escena, la voz se salta lo que ya pasó.
+    const salto = Math.max(0, corrido - 0.15);
+    if (salto >= original.duracion) return;
+    const voz = { ...original, desde: (original.desde ?? 0) + salto, duracion: original.duracion - salto };
+    const entra = tiempo + Math.max(0, 0.15 - corrido);
     const generacion = this.generacionPieza;
     const arrancar = () => {
       if (this.generacionPieza !== generacion) return;

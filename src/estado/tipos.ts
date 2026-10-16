@@ -55,6 +55,8 @@ export interface Fila {
   silenciada: boolean;
   soloActivo: boolean;
   regla: ReglaFila;
+  /** Música Urbana: la capa improvisa sobre lo dibujado (quita y agrega golpes). */
+  maquina?: boolean;
   /** URL local (objectURL o dataURL) del sample subido. */
   sampleUrl?: string;
   /** Nota base para afinar el sample o el sonido. */
@@ -91,6 +93,8 @@ export interface Melodia {
   silenciada: boolean;
   soloActivo: boolean;
   regla: ReglaFila;
+  /** Música Urbana: la melodía improvisa sobre lo dibujado. */
+  maquina?: boolean;
   /** Escala a la que se cuantizan las notas generadas. */
   escala: NombreEscala;
   /** El estudiante puede ocultar la matriz para concentrarse en el ritmo. */
@@ -171,6 +175,10 @@ export interface Seccion {
   gesto?: PuntoGesto[];
   /** Las cajitas con su momento en segundos desde que empieza la voz. */
   cajitas?: (Cajita & { t: number })[];
+  /** Lab de IA: los golpes que deja el cuadro de esta escena, si se movió aquí. */
+  pasosFilas?: Record<string, { pasos: boolean[]; probabilidad: number[] }>;
+  /** Lab de IA: las notas que deja el cuadro de la melodía en esta escena. */
+  notas?: NotaMelodia[];
 }
 
 /** Un punto del gesto tocado en vivo: cuándo (0..1 de la escena) y dónde. */
@@ -250,6 +258,8 @@ export interface Escena {
   niveles?: Record<string, number>;
   /** El gesto tocado en vivo sobre esta escena. */
   gesto?: PuntoGesto[];
+  /** Lab de IA: dónde quedó el cuadro de cada pista en esta escena (si se movió aquí). */
+  reglas?: Record<string, { golpes: number; azar: number }>;
   /** Qué versión de la máquina suena (lab de IA): cambia el azar, no las reglas. */
   version: number;
   /** Desde qué versión empiezan las tres propuestas que se muestran. */

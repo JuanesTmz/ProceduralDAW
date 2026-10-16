@@ -1,76 +1,69 @@
 /**
- * La música de una escena, o de toda la pieza (la tarjeta General).
+ * La pestaña Música de una escena, o de toda la pieza (General).
  *
- * Lo que hay adentro depende del lab: IA dirige con datos (conexiones) y
- * Música Urbana samplea y toca (capas, «Máquina», tocar en vivo). Las dos
- * comparten el punto de partida —el preset, que se elige en General— y las
- * herramientas de edición fina: la grilla de golpes y la matriz de melodía.
+ * Arriba, las herramientas a un toque: Sonidos (con qué suena cada pista),
+ * Datos (solo IA: qué se mueve solo), y la edición fina de golpes y
+ * melodía. Debajo, la mecánica del lab: IA arma con reglas (tiras y
+ * cuadro), Música Urbana samplea y toca (capas y tocar en vivo).
  */
 import { useState } from 'react';
-import { motorAudio } from '../audio/motorAudio';
 import { useProyecto } from '../estado/ProyectoContext';
-import { buscarEscena, EMOCIONES, recorrido } from '../estado/escenas';
 import { aplicarPreset, PRESETS } from '../estado/musica';
+import type { Escena } from '../estado/tipos';
 import { VentanaGolpes } from '../componentes/VentanaGolpes';
 import { VentanaMatriz } from '../componentes/VentanaMatriz';
-import { VentanaSonidos } from '../componentes/VentanaSonidos';
-import { MusicaIA } from './MusicaIA';
+import { Ventana } from '../componentes/Ventana';
+import { MusicaIA, parametrosMusica } from './MusicaIA';
 import { MusicaMU } from './MusicaMU';
-import { useReproduccion } from './useReproduccion';
+import { ParametrosDatos } from './ParametrosDatos';
+import { VentanaSonidosPistas } from './VentanaSonidosPistas';
 
-export type Herramienta = 'golpes' | 'melodia' | 'sonidos';
+type Herramienta = { tipo: 'golpes' } | { tipo: 'melodia' } | { tipo: 'datos' } | { tipo: 'sonidos'; pista?: string };
 
 interface Props {
-  /** El id de la escena, o 'general' para toda la pieza. */
-  id: string;
-  alVolver: () => void;
-  alImagen: () => void;
+  escena: Escena | null;
+  indice: number;
 }
 
-export function MusicaEscena({ id, alVolver, alImagen }: Props) {
+export function MusicaEscena({ escena, indice }: Props) {
   const { proyecto, actualizar } = useProyecto();
-  const { sonando } = useReproduccion();
   const [herramienta, setHerramienta] = useState<Herramienta | null>(null);
-  const general = id === 'general';
-  const escena = general ? null : buscarEscena(proyecto, id) ?? null;
-  const lista = recorrido(proyecto);
-  const indice = escena ? lista.findIndex((e) => e.id === escena.id) : -1;
   const esIA = proyecto.track === 'ia';
-  const color = escena ? EMOCIONES[escena.emocion].color : '#ffb020';
-
-  const escuchar = () => {
-    if (sonando) motorAudio.detener();
-    else if (escena) void motorAudio.reproducirEscena(indice);
-    else void motorAudio.reproducirPieza();
-  };
+  const cerrar = () => setHerramienta(null);
+  const alSonidos = (pista?: string) => setHerramienta({ tipo: 'sonidos', pista });
+  const datosActivos = proyecto.conexiones.length;
 
   return (
-    <div className="nv-pagina nv-pagina--fija">
-      <div className="nv-cabeza">
-        <button type="button" className="nv-boton" onClick={alVolver}>
-          ← {escena ? (escena.respiro ? 'Respiro' : escena.nombre) : 'Escenas'}
-        </button>
-        <div className="nv-dentro__nombre">
-          <span className="nv-etiqueta" style={{ color }}>
-            {escena ? 'MÚSICA DE LA ESCENA' : 'MÚSICA DE TODA LA PIEZA'}
+    <div className="nv-pestana">
+      <div className="nv-herramientas">
+        <button type="button" className="nv-herramienta" onClick={() => alSonidos()}>
+          <span className="nv-herramienta__icono">♪</span>
+          <span>
+            <strong>Sonidos</strong>
+            <span className="nv-tenue nv-chico">biblioteca y tus efectos</span>
           </span>
-          <h1 className="nv-titulo">{escena ? (escena.respiro ? 'Respiro' : escena.nombre) : 'General'}</h1>
-        </div>
+        </button>
+        {esIA && (
+          <button type="button" className="nv-herramienta nv-herramienta--ia" onClick={() => setHerramienta({ tipo: 'datos' })}>
+            <span className="nv-herramienta__icono">↯</span>
+            <span>
+              <strong>Datos</strong>
+              <span className="nv-tenue nv-chico">
+                {datosActivos === 0 ? 'nada se mueve solo' : `${datosActivos} ${datosActivos === 1 ? 'parámetro se mueve' : 'parámetros se mueven'} solos`}
+              </span>
+            </span>
+          </button>
+        )}
         <span className="nv-espacio" />
-        <div className="nv-selector">
-          <button type="button" className="nv-selector__op nv-selector__op--activa">
-            ♫  Música
-          </button>
-          <button type="button" className="nv-selector__op" onClick={alImagen}>
-            ◐  Imagen
-          </button>
-        </div>
-        <button type="button" className="nv-boton" onClick={escuchar}>
-          {sonando ? '■  Parar' : escena ? '▶  Escuchar esta escena' : '▶  Escuchar la pieza'}
+        <button type="button" className="nv-boton nv-boton--suave" onClick={() => setHerramienta({ tipo: 'golpes' })}>
+          Editar golpes a mano
+        </button>
+        <button type="button" className="nv-boton nv-boton--suave" onClick={() => setHerramienta({ tipo: 'melodia' })}>
+          Editar melodía
         </button>
       </div>
 
-      {general && (
+      {!escena && (
         <div className="nv-presets">
           <span className="nv-campo__titulo">Punto de partida</span>
           {PRESETS.map((p) => (
@@ -85,18 +78,41 @@ export function MusicaEscena({ id, alVolver, alImagen }: Props) {
               <span>{p.descripcion}</span>
             </button>
           ))}
+          <label className="nv-preset nv-preset--tempo">
+            <strong>Tempo · {proyecto.bpm}</strong>
+            <input
+              type="range"
+              min={60}
+              max={140}
+              step={1}
+              value={proyecto.bpm}
+              onChange={(ev) => actualizar((p) => (p.bpm = Number(ev.target.value)))}
+            />
+          </label>
         </div>
       )}
 
       {esIA ? (
-        <MusicaIA escena={escena} indice={indice} alAbrir={setHerramienta} />
+        <MusicaIA escena={escena} alSonidos={alSonidos} />
       ) : (
-        <MusicaMU escena={escena} indice={indice} alAbrir={setHerramienta} />
+        <MusicaMU escena={escena} indice={indice} alSonidos={alSonidos} />
       )}
 
-      {herramienta === 'golpes' && <VentanaGolpes alCerrar={() => setHerramienta(null)} />}
-      {herramienta === 'melodia' && <VentanaMatriz alCerrar={() => setHerramienta(null)} />}
-      {herramienta === 'sonidos' && <VentanaSonidos alCerrar={() => setHerramienta(null)} />}
+      {herramienta?.tipo === 'golpes' && <VentanaGolpes alCerrar={cerrar} />}
+      {herramienta?.tipo === 'melodia' && <VentanaMatriz alCerrar={cerrar} />}
+      {herramienta?.tipo === 'sonidos' && <VentanaSonidosPistas pista={herramienta.pista} alCerrar={cerrar} />}
+      {herramienta?.tipo === 'datos' && (
+        <Ventana
+          titulo="Datos"
+          nota="Elige qué parámetros se mueven solos con un dato. Valen para toda la pieza."
+          ancha
+          alCerrar={cerrar}
+        >
+          <div className="nv nv--incrustado">
+            <ParametrosDatos clave="conexiones" grupos={parametrosMusica(proyecto, actualizar)} />
+          </div>
+        </Ventana>
+      )}
     </div>
   );
 }

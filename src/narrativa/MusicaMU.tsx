@@ -5,27 +5,25 @@
  * una capa por una grabación propia, subir o bajar cada capa en la escena,
  * editar golpes y melodía. Lo procedural es un solo interruptor por capa,
  * «Máquina»: con él encendido, la capa improvisa sobre lo dibujado.
+ * Los sonidos se cambian en la ventana Sonidos (tocando el de cada capa).
  * Dentro de una escena se puede tocar en vivo y grabar el gesto.
  */
 import { useEffect, useRef, useState } from 'react';
 import type { PointerEvent as EventoPuntero } from 'react';
 import { motorAudio } from '../audio/motorAudio';
 import { useProyecto } from '../estado/ProyectoContext';
-import { colorDeSonido, NOMBRES_SONIDO } from '../estado/proyecto';
 import { buscarEscena } from '../estado/escenas';
 import { nivelDeCapa } from '../generativo/motorGenerativo';
-import type { Escena, PuntoGesto, TipoSonido } from '../estado/tipos';
-import type { Herramienta } from './MusicaEscena';
-import { NOMBRE_GRUPO, SONOTECA } from '../audio/sonoteca';
+import type { Escena, PuntoGesto } from '../estado/tipos';
+import { ID_MELODIA } from './VentanaSonidosPistas';
 import { useReproduccion } from './useReproduccion';
 
 interface Props {
   escena: Escena | null;
   indice: number;
-  alAbrir: (h: Herramienta) => void;
+  alSonidos: (pista: string) => void;
 }
 
-const KIT: TipoSonido[] = ['bombo', 'redoblante', 'hihat', 'palma', 'tom', 'aro'];
 const NIVELES = ['Apagada', 'Suave', 'Media', 'Fuerte'];
 
 function Interruptor({ encendido, alCambiar }: { encendido: boolean; alCambiar: () => void }) {
@@ -43,7 +41,7 @@ function Interruptor({ encendido, alCambiar }: { encendido: boolean; alCambiar: 
   );
 }
 
-export function MusicaMU({ escena, indice, alAbrir }: Props) {
+export function MusicaMU({ escena, indice, alSonidos }: Props) {
   const { proyecto, actualizar } = useProyecto();
   const seccion = escena ? proyecto.secciones.find((s) => s.id === escena.id) : undefined;
   const { patron } = proyecto;
@@ -66,39 +64,6 @@ export function MusicaMU({ escena, indice, alAbrir }: Props) {
       }
       e.niveles[id] = nivel;
     });
-
-  const cambiarSonido = (filaId: string, valor: string) =>
-    actualizar((p) => {
-      const fila = p.patron.filas.find((f) => f.id === filaId);
-      if (!fila) return;
-      if (valor.startsWith('propio:')) {
-        const s = p.sonidos.find((x) => x.id === valor.slice(7));
-        if (!s) return;
-        fila.tipo = 'sample';
-        fila.sampleUrl = s.url;
-        fila.nombre = s.nombre;
-      } else if (valor.startsWith('sonoteca:')) {
-        const s = SONOTECA.find((x) => x.id === valor.slice(9));
-        if (!s) return;
-        fila.tipo = 'sample';
-        fila.sampleUrl = s.url;
-        fila.nombre = s.nombre;
-      } else {
-        const tipo = valor as TipoSonido;
-        fila.tipo = tipo;
-        fila.sampleUrl = undefined;
-        fila.nombre = NOMBRES_SONIDO[tipo];
-      }
-      fila.color = colorDeSonido(fila.tipo, fila.sampleUrl);
-    });
-
-  const valorSonido = (tipo: TipoSonido, url?: string) => {
-    if (tipo !== 'sample') return tipo;
-    const deLaApp = SONOTECA.find((x) => x.url === url);
-    if (deLaApp) return `sonoteca:${deLaApp.id}`;
-    const s = proyecto.sonidos.find((x) => x.url === url);
-    return s ? `propio:${s.id}` : '';
-  };
 
   return (
     <div className="nv-musica">
@@ -134,37 +99,14 @@ export function MusicaMU({ escena, indice, alAbrir }: Props) {
                 <span className="nv-punto" style={{ background: f.color }} />
                 {f.nombre}
               </span>
-              <select
-                className={`nv-select ${f.tipo === 'sample' ? 'nv-select--propio' : ''}`}
-                value={valorSonido(f.tipo, f.sampleUrl)}
-                onChange={(ev) => cambiarSonido(f.id, ev.target.value)}
+              <button
+                type="button"
+                className={`nv-select nv-select--boton ${f.tipo === 'sample' ? 'nv-select--propio' : ''}`}
+                onClick={() => alSonidos(f.id)}
+                title="Cambiar el sonido"
               >
-                <optgroup label="Batería">
-                  {KIT.map((t) => (
-                    <option key={t} value={t}>
-                      {NOMBRES_SONIDO[t]}
-                    </option>
-                  ))}
-                </optgroup>
-                {(['percusion', 'ciudad', 'melodico'] as const).map((g) => (
-                  <optgroup key={g} label={NOMBRE_GRUPO[g]}>
-                    {SONOTECA.filter((x) => x.grupo === g).map((x) => (
-                      <option key={x.id} value={`sonoteca:${x.id}`}>
-                        {x.nombre}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-                {proyecto.sonidos.length > 0 && (
-                  <optgroup label="Tus grabaciones">
-                    {proyecto.sonidos.map((s) => (
-                      <option key={s.id} value={`propio:${s.id}`}>
-                        {s.nombre}
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-              </select>
+                ♪ {f.tipo === 'sample' ? f.nombre : 'Batería'} ▾
+              </button>
               {escena ? (
                 <div className="nv-selector nv-selector--chico">
                   {NIVELES.map((n, i) => (
@@ -196,11 +138,11 @@ export function MusicaMU({ escena, indice, alAbrir }: Props) {
                 />
               )}
               <Interruptor
-                encendido={f.regla.activa}
+                encendido={Boolean(f.maquina)}
                 alCambiar={() =>
                   actualizar((p) => {
                     const x = p.patron.filas.find((y) => y.id === f.id);
-                    if (x) x.regla.activa = !x.regla.activa;
+                    if (x) x.maquina = !x.maquina;
                   })
                 }
               />
@@ -214,10 +156,10 @@ export function MusicaMU({ escena, indice, alAbrir }: Props) {
             <button
               type="button"
               className={`nv-select nv-select--boton ${patron.melodia.instrumento === 'sample' ? 'nv-select--propio' : ''}`}
-              onClick={() => alAbrir('melodia')}
+              onClick={() => alSonidos(ID_MELODIA)}
               title="Elegir con qué suena la melodía"
             >
-              {patron.melodia.instrumento === 'sample' ? patron.melodia.nombreSample ?? 'Tu sonido' : 'Sintetizador'} ▾
+              ♪ {patron.melodia.instrumento === 'sample' ? patron.melodia.nombreSample ?? 'Tu sonido' : 'Sintetizador'} ▾
             </button>
             {escena ? (
               <div className="nv-selector nv-selector--chico">
@@ -246,22 +188,10 @@ export function MusicaMU({ escena, indice, alAbrir }: Props) {
               />
             )}
             <Interruptor
-              encendido={patron.melodia.regla.activa}
-              alCambiar={() => actualizar((p) => (p.patron.melodia.regla.activa = !p.patron.melodia.regla.activa))}
+              encendido={Boolean(patron.melodia.maquina)}
+              alCambiar={() => actualizar((p) => (p.patron.melodia.maquina = !p.patron.melodia.maquina))}
             />
           </div>
-        </div>
-        <span className="nv-espacio-v" />
-        <div className="nv-campo__fila">
-          <button type="button" className="nv-boton nv-boton--suave nv-crece" onClick={() => alAbrir('golpes')}>
-            Editar golpes
-          </button>
-          <button type="button" className="nv-boton nv-boton--suave nv-crece" onClick={() => alAbrir('melodia')}>
-            Editar melodía
-          </button>
-          <button type="button" className="nv-boton nv-boton--grabar nv-crece" onClick={() => alAbrir('sonidos')}>
-            ●  Grabar un sonido
-          </button>
         </div>
       </div>
 
