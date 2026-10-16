@@ -19,6 +19,8 @@ import { PasoEscenas } from './PasoEscenas';
 import { PasoFuncion } from './PasoFuncion';
 import { PasoHistoria } from './PasoHistoria';
 import { PasoVoz } from './PasoVoz';
+import { Guia } from './Guia';
+import type { Pantalla } from './pasosGuia';
 
 function ElegirLab() {
   const { actualizar } = useProyecto();
@@ -84,6 +86,9 @@ export function AppNarrativa() {
   if (cargando) return <div className="nv" />;
   if (!proyecto.track) return <ElegirLab />;
 
+  const pantalla: Pantalla =
+    paso === 'escenas' && abierta ? (pestana === 'musica' ? 'escena-musica' : 'escena-visual') : paso;
+
   const ir = (p: Paso) => {
     setAbierta(null);
     setPaso(p);
@@ -91,7 +96,7 @@ export function AppNarrativa() {
 
   return (
     <div className="nv">
-      <Barra paso={paso} alCambiar={ir} enEscena={Boolean(abierta)} />
+      <Barra paso={paso} alCambiar={ir} enEscena={Boolean(abierta)} guia={<Guia pantalla={pantalla} />} />
       <main className="nv-contenido">
         {paso === 'historia' && <PasoHistoria alSeguir={() => ir('voz')} />}
         {paso === 'voz' && <PasoVoz alSeguir={() => ir('escenas')} />}

@@ -129,7 +129,7 @@ export function PasoFuncion() {
           </button>
         </div>
         <span className="nv-espacio" />
-        <button type="button" className="nv-boton nv-boton--suave" disabled={Boolean(exportando)} onClick={() => void exportar()}>
+        <button type="button" className="nv-boton nv-boton--suave" data-tour="exportar" disabled={Boolean(exportando)} onClick={() => void exportar()}>
           ⤓  Exportar video
         </button>
       </div>

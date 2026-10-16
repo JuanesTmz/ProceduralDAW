@@ -86,7 +86,7 @@ export function PasoVoz({ alSeguir }: { alSeguir: () => void }) {
             {grabadas} de {escenas.length} grabadas
           </span>
         )}
-        <div className="nv-selector">
+        <div className="nv-selector" data-tour="modo-voz">
           {(['escena', 'corrido'] as const).map((m) => (
             <button
               key={m}

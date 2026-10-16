@@ -108,7 +108,8 @@ export function PasoEscenas({ alEntrar, alGeneral }: { alEntrar: (id: string) =>
             });
             if (id) alEntrar(id);
           }}
-         title="Opcional: un momento sin voz donde la música cuenta sola">
+          data-tour="respiro"
+          title="Opcional: un momento sin voz donde la música cuenta sola">
           + Respiro (opcional)
         </button>
       </div>

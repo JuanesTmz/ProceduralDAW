@@ -36,7 +36,7 @@ export function MusicaEscena({ escena, indice }: Props) {
   return (
     <div className="nv-pestana">
       <div className="nv-herramientas">
-        <button type="button" className="nv-herramienta" onClick={() => alSonidos()}>
+        <button type="button" className="nv-herramienta" data-tour="sonidos" onClick={() => alSonidos()}>
           <span className="nv-herramienta__icono">♪</span>
           <span>
             <strong>Sonidos</strong>
@@ -44,7 +44,7 @@ export function MusicaEscena({ escena, indice }: Props) {
           </span>
         </button>
         {esIA && (
-          <button type="button" className="nv-herramienta nv-herramienta--ia" onClick={() => setHerramienta({ tipo: 'datos' })}>
+          <button type="button" className="nv-herramienta nv-herramienta--ia" data-tour="datos" onClick={() => setHerramienta({ tipo: 'datos' })}>
             <span className="nv-herramienta__icono">↯</span>
             <span>
               <strong>Datos</strong>
@@ -55,12 +55,14 @@ export function MusicaEscena({ escena, indice }: Props) {
           </button>
         )}
         <span className="nv-espacio" />
-        <button type="button" className="nv-boton nv-boton--suave" onClick={() => setHerramienta({ tipo: 'golpes' })}>
-          Editar golpes a mano
-        </button>
-        <button type="button" className="nv-boton nv-boton--suave" onClick={() => setHerramienta({ tipo: 'melodia' })}>
-          Editar melodía
-        </button>
+        <span className="nv-herramientas__editar" data-tour="editar">
+          <button type="button" className="nv-boton nv-boton--suave" onClick={() => setHerramienta({ tipo: 'golpes' })}>
+            Editar golpes a mano
+          </button>
+          <button type="button" className="nv-boton nv-boton--suave" onClick={() => setHerramienta({ tipo: 'melodia' })}>
+            Editar melodía
+          </button>
+        </span>
       </div>
 
       {!escena && (

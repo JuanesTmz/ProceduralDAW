@@ -6,6 +6,7 @@ import { motorAudio } from '../audio/motorAudio';
 import { useProyecto } from '../estado/ProyectoContext';
 import { duracionPieza, formatearReloj } from '../estado/proyecto';
 import { DURACION_MAXIMA } from '../estado/escenas';
+import type { ReactNode } from 'react';
 import { useReproduccion } from './useReproduccion';
 
 export type Paso = 'historia' | 'voz' | 'escenas' | 'funcion';
@@ -22,9 +23,11 @@ interface Props {
   alCambiar: (paso: Paso) => void;
   /** Dentro de una escena se escucha solo la escena, desde su propia barra. */
   enEscena?: boolean;
+  /** El botón de la guía de la pantalla actual. */
+  guia?: ReactNode;
 }
 
-export function Barra({ paso, alCambiar, enEscena }: Props) {
+export function Barra({ paso, alCambiar, enEscena, guia }: Props) {
   const { proyecto, actualizar } = useProyecto();
   const { sonando } = useReproduccion();
   const hayEscenas = proyecto.escenas.length > 0;
@@ -73,6 +76,7 @@ export function Barra({ paso, alCambiar, enEscena }: Props) {
           {sonando ? '■  Parar' : '▶  Escuchar'}
         </button>
       )}
+      {guia}
       <button
         type="button"
         className={`nv-lab ${esIA ? 'nv-lab--ia' : 'nv-lab--mu'}`}
