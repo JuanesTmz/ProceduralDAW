@@ -1281,8 +1281,7 @@
   border: 1px solid var(--nv-linea);
   box-shadow: 0 24px 60px #000c;
   color: var(--nv-texto);
-  transition: left 0.38s cubic-bezier(0.22, 1, 0.36, 1), top 0.38s cubic-bezier(0.22, 1, 0.36, 1),
-    width 0.3s, opacity 0.2s;
+  transition: left 0.38s cubic-bezier(0.22, 1, 0.36, 1), top 0.38s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s;
 }
 .nv-tour__cabeza { display: flex; flex-direction: column; gap: 4px; flex: none; }
 .nv-tour__titulo { font-size: 17px; }
@@ -1739,3 +1738,33 @@
 /* ---------- menú flotante (encima de toda la interfaz) ---------- */
 .nv-flotante { position: fixed; z-index: 90; }
 .nv-flotante .nv-lista-flotante { position: static; max-height: min(320px, calc(100vh - 20px)); }
+
+/* ---------- matriz: panel lateral (escala / con qué suena) ---------- */
+.matriz-lado { flex: 0 0 290px; display: flex; flex-direction: column; gap: 12px; min-height: 0; color: #eceef4; }
+.matriz-escalas { display: flex; flex-direction: column; gap: 6px; }
+.matriz-escala {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  padding: 11px 12px;
+  border-radius: 10px;
+  background: var(--nv-s2);
+  border: 1px solid transparent;
+  text-align: left;
+}
+.matriz-escala strong { font-size: 14px; }
+.matriz-escala span { font-size: 12px; color: var(--nv-suave); }
+.matriz-escala:hover { border-color: var(--nv-linea); }
+.matriz-escala--activa { border-color: #5fd4ff; background: #5fd4ff1f; }
+.matriz-escala--activa strong { color: #5fd4ff; }
+.matriz-volumen { margin-top: auto; display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--nv-suave); }
+.matriz-volumen input { flex: 1; accent-color: #5fd4ff; }
+
+.nv-instrumento--compacto { gap: 10px; }
+.nv-instrumento--compacto .nv-instrumento__fichas { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.nv-instrumento--compacto .nv-instrumento__fichas button { border-radius: 8px; padding: 7px 8px; font-size: 12px; min-width: 0; }
+.nv-instrumento--compacto .nv-instrumento__par { display: flex; min-width: 0; }
+.nv-instrumento--compacto .nv-instrumento__par > button:last-child { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
+.nv-instrumento--compacto .nv-instrumento__nota { grid-column: 1 / -1; }
+.nv-instrumento--compacto .nv-instrumento__afinar { flex-direction: column; align-items: stretch; gap: 6px; }

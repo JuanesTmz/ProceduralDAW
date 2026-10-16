@@ -10,7 +10,7 @@
  * cualquier cosa que el estudiante dibuje suena afinada.
  */
 import { useEscucha } from './useEscucha';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motorAudio } from '../audio/motorAudio';
 import { useProyecto } from '../estado/ProyectoContext';
 import { SelectorInstrumento } from '../narrativa/SelectorInstrumento';
@@ -28,6 +28,15 @@ import { Ventana } from './Ventana';
 import { BotonTutorial } from '../narrativa/BotonTutorial';
 
 const ESCALAS: NombreEscala[] = ['menorPentatonica', 'menor', 'dorica', 'frigia', 'mayor'];
+
+/** Cómo se siente cada escala, en una palabra. */
+const CARACTER: Partial<Record<NombreEscala, string>> = {
+  menorPentatonica: 'suelta, sin tropiezos',
+  menor: 'triste',
+  dorica: 'nostálgica',
+  frigia: 'tensa',
+  mayor: 'luminosa',
+};
 
 /**
  * En qué nota se considera grabado el sonido propio. Se nombra por el oído
@@ -104,6 +113,7 @@ export function VentanaMatriz({ alCerrar }: { alCerrar: () => void }) {
   };
 
   const escucha = useEscucha();
+  const [lado, setLado] = useState<'escala' | 'sonido'>('escala');
   const oir = () => escucha.alternar('melodia', () => {
     actualizar((p) => {
       p.patron.melodia.soloActivo = true;
@@ -209,34 +219,50 @@ export function VentanaMatriz({ alCerrar }: { alCerrar: () => void }) {
           </div>
         </div>
 
-        {/* ---------------- la escala y el timbre, al lado ---------------- */}
-        <aside className="pistas">
-          <h3 className="pistas__titulo">Escala</h3>
-          <div className="pistas__lista">
-            {ESCALAS.map((escala) => (
-              <button
-                key={escala}
-                type="button"
-                className={`pista ${melodia.escala === escala ? 'pista--actual' : ''}`}
-                style={{ color: COLOR_MATRIZ }}
-                aria-pressed={melodia.escala === escala}
-                onClick={() =>
-                  actualizar((p) => {
-                    p.patron.melodia.escala = escala;
-                  })
-                }
-              >
-                <span className="pista__textos">
-                  <span className="pista__nombre">{ETIQUETAS_ESCALA[escala]}</span>
-                </span>
-              </button>
-            ))}
+        {/* ---------------- la escala y el timbre, al lado, en dos pestañas ---------------- */}
+        <aside className="nv nv--incrustado matriz-lado">
+          <div className="nv-selector nv-selector--lleno">
+            <button
+              type="button"
+              className={`nv-selector__op ${lado === 'escala' ? 'nv-selector__op--activa' : ''}`}
+              onClick={() => setLado('escala')}
+            >
+              Escala
+            </button>
+            <button
+              type="button"
+              className={`nv-selector__op ${lado === 'sonido' ? 'nv-selector__op--activa' : ''}`}
+              onClick={() => setLado('sonido')}
+            >
+              Con qué suena
+            </button>
           </div>
 
-          <h3 className="pistas__titulo">Con qué suena</h3>
-          <SelectorInstrumento />
+          {lado === 'escala' ? (
+            <div className="matriz-escalas">
+              {ESCALAS.map((escala) => (
+                <button
+                  key={escala}
+                  type="button"
+                  className={`matriz-escala ${melodia.escala === escala ? 'matriz-escala--activa' : ''}`}
+                  aria-pressed={melodia.escala === escala}
+                  onClick={() =>
+                    actualizar((p) => {
+                      p.patron.melodia.escala = escala;
+                    })
+                  }
+                >
+                  <strong>{ETIQUETAS_ESCALA[escala].replace(/\s*\(.*\)$/, '')}</strong>
+                  <span>{CARACTER[escala]}</span>
+                </button>
+              ))}
+              <span className="nv-tenue nv-chico">Cambia el color de toda la melodía. En cada escena, la emoción también la mueve.</span>
+            </div>
+          ) : (
+            <SelectorInstrumento compacto />
+          )}
 
-          <label className="corrida">
+          <label className="matriz-volumen">
             <span>Volumen</span>
             <input
               type="range"

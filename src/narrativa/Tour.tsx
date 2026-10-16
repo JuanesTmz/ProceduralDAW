@@ -14,9 +14,9 @@ import type { PasoTour } from './pasosGuia';
 
 const MARGEN = 14;
 const BORDE = 12;
-const MIN_ALTO = 170;
-const MIN_LADO = 300;
-const ANCHO = 400;
+/** Anchos que prueba la burbuja, del más angosto al más ancho. */
+const ANCHOS = [400, 480, 560, 680];
+const ANCHO = ANCHOS[0];
 
 interface Caja {
   left: number;
@@ -43,14 +43,24 @@ export function Tour({ pasos, abierto, alCerrar }: Props) {
   const paso = pasos[i];
 
   const ubicar = useCallback(() => {
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const ancho = Math.min(ANCHO, vw - BORDE * 2);
-    // Alto natural: lo fijo de la burbuja más todo lo que ocupa el texto.
-    const marco = burbuja.current?.offsetHeight ?? 200;
-    const visto = cuerpo.current?.clientHeight ?? 0;
-    const total = cuerpo.current?.scrollHeight ?? 0;
-    const techo = Math.min(marco - visto + total + 2, Math.round(vh * 0.8));
+    const b = burbuja.current;
+    if (!b) return;
+    // El área visible de verdad (sin la barra de desplazamiento de la página).
+    const vw = document.documentElement.clientWidth;
+    const vh = document.documentElement.clientHeight;
+
+    // El alto que necesita la burbuja para mostrar TODO su texto con cada
+    // ancho posible: nunca se recorta ni se desplaza; si no cabe, se ensancha.
+    // Se mide sobre una copia invisible: tocar la burbuja de verdad dispararía
+    // su observador de tamaño y la animación, y se quedaría trabada.
+    const copia = b.cloneNode(true) as HTMLDivElement;
+    copia.style.cssText = 'position:fixed;left:-10000px;top:0;visibility:hidden;transition:none;max-height:none';
+    b.parentElement?.appendChild(copia);
+    const medidas = [...new Set(ANCHOS.map((w) => Math.min(w, vw - BORDE * 2)))].map((ancho) => {
+      copia.style.width = `${ancho}px`;
+      return { ancho, alto: copia.offsetHeight };
+    });
+    copia.remove();
 
     const encajar = (c: Caja): Caja => ({
       ...c,
@@ -63,42 +73,42 @@ export function Tour({ pasos, abierto, alCerrar }: Props) {
       const y = Math.min(c.top + c.alto, z.bottom) - Math.max(c.top, z.top);
       return x > 0 && y > 0 ? (x * y) / (z.width * z.height) : 0;
     };
-    const enVertical = (z: DOMRect, abajo: boolean): Caja | null => {
-      const libre = abajo ? vh - z.bottom - MARGEN - BORDE : z.top - MARGEN - BORDE;
-      if (libre < MIN_ALTO) return null;
-      const alto = Math.min(techo, libre);
-      return encajar({ left: z.left + z.width / 2 - ancho / 2, top: abajo ? z.bottom + MARGEN : z.top - alto - MARGEN, ancho, alto });
-    };
-    const enCostado = (z: DOMRect, derecha: boolean): Caja | null => {
-      const libre = (derecha ? vw - z.right : z.left) - MARGEN - BORDE;
-      if (libre < MIN_LADO) return null;
-      const an = Math.min(ancho, libre);
-      const alto = Math.min(techo, vh - BORDE * 2);
-      return encajar({ left: derecha ? z.right + MARGEN : z.left - an - MARGEN, top: z.top + z.height / 2 - alto / 2, ancho: an, alto });
-    };
-    const alPie = (z: DOMRect | null): Caja => {
-      const alto = Math.min(techo, vh - BORDE * 2);
-      const centro = z ? z.left + z.width / 2 : vw / 2;
-      return encajar({ left: centro - ancho / 2, top: vh - alto - BORDE, ancho, alto });
-    };
     const poner = (c: Caja) =>
       setPos((p) => {
         const n = { left: Math.round(c.left), top: Math.round(c.top), ancho: c.ancho, alto: c.alto };
         return p && p.left === n.left && p.top === n.top && p.ancho === n.ancho && p.alto === n.alto ? p : n;
       });
+    const caben = medidas.filter((m) => m.alto <= vh - BORDE * 2);
+    const mayor = medidas[medidas.length - 1];
 
     const el = paso?.objetivo ? document.querySelector(paso.objetivo) : null;
     if (!el) {
       setFoco(null);
-      const alto = Math.min(techo, vh - BORDE * 2);
-      return poner(encajar({ left: (vw - ancho) / 2, top: (vh - alto) / 2, ancho, alto }));
+      const m = caben[0] ?? mayor;
+      return poner(encajar({ left: (vw - m.ancho) / 2, top: (vh - m.alto) / 2, ancho: m.ancho, alto: m.alto }));
     }
     const r = el.getBoundingClientRect();
     setFoco({ left: r.left - 6, top: r.top - 6, width: r.width + 12, height: r.height + 12 });
+
+    // Candidatos: con cada ancho, debajo, encima, a los lados y al pie. Solo
+    // valen los que caben enteros; gana el primero que no tapa lo señalado
+    // (los anchos más angostos primero), si no, el que menos lo tapa.
+    const candidatos: Caja[] = [];
+    for (const { ancho, alto } of caben) {
+      const centroX = r.left + r.width / 2 - ancho / 2;
+      if (vh - r.bottom - MARGEN - BORDE >= alto) candidatos.push(encajar({ left: centroX, top: r.bottom + MARGEN, ancho, alto }));
+      if (r.top - MARGEN - BORDE >= alto) candidatos.push(encajar({ left: centroX, top: r.top - alto - MARGEN, ancho, alto }));
+      const centroY = r.top + r.height / 2 - alto / 2;
+      if (vw - r.right - MARGEN - BORDE >= ancho) candidatos.push(encajar({ left: r.right + MARGEN, top: centroY, ancho, alto }));
+      if (r.left - MARGEN - BORDE >= ancho) candidatos.push(encajar({ left: r.left - ancho - MARGEN, top: centroY, ancho, alto }));
+    }
+    for (const { ancho, alto } of caben) {
+      candidatos.push(encajar({ left: r.left + r.width / 2 - ancho / 2, top: vh - alto - BORDE, ancho, alto }));
+      candidatos.push(encajar({ left: r.left + r.width / 2 - ancho / 2, top: BORDE, ancho, alto }));
+    }
     let elegido: Caja | null = null;
     let menor = Infinity;
-    for (const c of [enVertical(r, true), enVertical(r, false), enCostado(r, true), enCostado(r, false), alPie(r)]) {
-      if (!c) continue;
+    for (const c of candidatos) {
       const t = tapado(c, r);
       if (t === 0) {
         elegido = c;
@@ -109,7 +119,7 @@ export function Tour({ pasos, abierto, alCerrar }: Props) {
         elegido = c;
       }
     }
-    poner(elegido ?? alPie(r));
+    poner(elegido ?? encajar({ left: (vw - mayor.ancho) / 2, top: BORDE, ancho: mayor.ancho, alto: Math.min(mayor.alto, vh - BORDE * 2) }));
   }, [paso]);
 
   // Al cambiar de paso: traer lo señalado a la vista y ubicar la burbuja.
@@ -187,7 +197,8 @@ export function Tour({ pasos, abierto, alCerrar }: Props) {
           left: pos?.left ?? 0,
           top: pos?.top ?? 0,
           width: pos?.ancho ?? ANCHO,
-          maxHeight: pos?.alto,
+          // Solo en pantallas diminutas, donde ni el ancho mayor alcanza, se limita el alto.
+          maxHeight: pos && pos.alto >= document.documentElement.clientHeight - BORDE * 2 ? pos.alto : undefined,
           opacity: pos ? 1 : 0,
         }}
       >

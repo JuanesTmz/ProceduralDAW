@@ -569,22 +569,29 @@ export function pasosDe(pantalla: Pantalla, track: Track | null): PasoTour[] {
             'Truco para empezar: pongan pocas notas, separadas, que suban y bajen poco a poco. Una melodía simple deja lugar a la voz. Recuerden que la voz es lo principal.',
         },
         {
+          id: 'x.lado',
+          objetivo: '.matriz-lado .nv-selector',
+          titulo: 'Dos pestañas: Escala y Con qué suena',
+          texto:
+            'A la derecha están las dos cosas que cambian cómo suena tu melodía. <b>Escala</b>: el color de las notas. <b>Con qué suena</b>: el instrumento. Abajo, el volumen.',
+        },
+        {
           id: 'x.escala',
-          objetivo: '.matriz-ventana .pistas__lista',
+          objetivo: '.matriz-escalas',
           titulo: 'La escala: el color de la melodía',
           texto:
-            'La escala decide qué notas hay en las filas. <b>Mayor</b> suena luminosa, <b>Menor</b> triste, <b>Frigia</b> tensa, <b>Dórica</b> nostálgica, <b>Pentatónica</b> suelta.',
+            'La escala decide qué notas hay en las filas. <b>Mayor</b> suena luminosa, <b>Menor</b> triste, <b>Frigia</b> tensa, <b>Dórica</b> nostálgica, <b>Pentatónica</b> suelta. Toca una y escucha.',
           detalle:
-            'En la pieza, la emoción de cada escena cambia la escala sola. Lo que eligen aquí es la escala de base.',
+            'En la pieza, la emoción de cada escena cambia la escala sola. Lo que eliges aquí es la escala de base.',
         },
         {
           id: 'x.instrumento',
-          objetivo: '.matriz-ventana .nv-instrumento',
+          objetivo: '.matriz-lado .nv-selector',
           titulo: 'Con qué suena la melodía',
           texto:
-            'El <b>sintetizador</b>, un sonido de la app (marimba, piano…) o <b>un efecto suyo</b>. Cualquier sonido se <b>afina solo</b> en cada fila: su voz diciendo «ah», un silbido o una botella pueden tocar la melodía. Con ▶ lo escuchan antes de elegirlo.',
+            'En la pestaña <b>Con qué suena</b> eliges el <b>sintetizador</b>, un sonido de la app (marimba, piano…) o <b>un efecto tuyo</b>, que se <b>afina solo</b> en cada fila. Con ▶ lo escuchas antes de elegirlo.',
           detalle:
-            'Con un sonido propio, la app escucha en qué nota está y lo afina desde ahí. Si dice que no encontró un tono claro (pasa con golpes y ruidos), elijan la nota a mano en «Tu sonido está en».',
+            'Con un sonido propio, la app escucha en qué nota está y lo afina desde ahí. Si dice que no encontró un tono claro (pasa con golpes y ruidos), elige la nota a mano en «Tu sonido está en».',
         },
         {
           id: 'x.pie',

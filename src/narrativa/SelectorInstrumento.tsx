@@ -25,7 +25,8 @@ function Oir({ url }: { url: string }) {
   );
 }
 
-export function SelectorInstrumento() {
+/** `compacto`: para columnas angostas (la matriz), en cuadrícula de dos. */
+export function SelectorInstrumento({ compacto = false }: { compacto?: boolean } = {}) {
   const { proyecto, actualizar } = useProyecto();
   const { melodia } = proyecto.patron;
   const [escuchando, setEscuchando] = useState(false);
@@ -65,7 +66,7 @@ export function SelectorInstrumento() {
   const actual = (url?: string) => melodia.instrumento === 'sample' && melodia.sampleUrl === url;
 
   return (
-    <div className="nv-instrumento">
+    <div className={`nv-instrumento ${compacto ? 'nv-instrumento--compacto' : ''}`}>
       <div className="nv-instrumento__grupo">
         <span className="nv-instrumento__titulo">De la app</span>
         <div className="nv-instrumento__fichas">
