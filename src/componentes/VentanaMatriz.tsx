@@ -24,6 +24,7 @@ import {
   type NombreEscala,
 } from '../generativo/escalas';
 import { Ventana } from './Ventana';
+import { BotonTutorial } from '../narrativa/BotonTutorial';
 
 const ESCALAS: NombreEscala[] = ['menorPentatonica', 'menor', 'dorica', 'frigia', 'mayor'];
 
@@ -129,6 +130,7 @@ export function VentanaMatriz({ alCerrar }: { alCerrar: () => void }) {
       alCerrar={cerrar}
       pie={
         <>
+          <BotonTutorial id="instrumento" texto="Tu sonido como instrumento" chico />
           <button type="button" className="boton" onClick={oir}>
             ▶ Oír la melodía
           </button>

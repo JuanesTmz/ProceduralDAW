@@ -17,6 +17,7 @@ import { MusicaIA, parametrosMusica } from './MusicaIA';
 import { MusicaMU } from './MusicaMU';
 import { ParametrosDatos } from './ParametrosDatos';
 import { VentanaSonidosPistas } from './VentanaSonidosPistas';
+import { BotonTutorial } from './BotonTutorial';
 
 type Herramienta = { tipo: 'golpes' } | { tipo: 'melodia' } | { tipo: 'datos' } | { tipo: 'sonidos'; pista?: string };
 
@@ -110,6 +111,7 @@ export function MusicaEscena({ escena, indice }: Props) {
           nota="Elige qué parámetros se mueven solos con un dato. Valen para toda la pieza."
           ancha
           alCerrar={cerrar}
+          pie={<BotonTutorial id="datos" chico />}
         >
           <div className="nv nv--incrustado">
             <ParametrosDatos clave="conexiones" grupos={parametrosMusica(proyecto, actualizar)} />

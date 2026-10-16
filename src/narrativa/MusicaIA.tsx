@@ -21,6 +21,7 @@ import { CuadroXY } from '../componentes/CuadroXY';
 import { Ventana } from '../componentes/Ventana';
 import type { Parametro } from './ParametrosDatos';
 import { ID_MELODIA } from './VentanaSonidosPistas';
+import { BotonTutorial } from './BotonTutorial';
 
 const COLOR_MELODIA = '#5fd4ff';
 
@@ -243,6 +244,7 @@ function VentanaPad({ id, escena, alCerrar }: { id: string; escena: Escena | nul
       alCerrar={alCerrar}
       pie={
         <>
+          <BotonTutorial id="pad" chico />
           {!esMelodia && (
             <button type="button" className="boton" onClick={() => void motorAudio.escucharFila(id)}>
               ▶ Oír el sonido

@@ -5,6 +5,7 @@
  * Partir el texto vive en PartirTexto: tramos resaltados con límites que
  * se arrastran.
  */
+import { BotonTutorial } from './BotonTutorial';
 import { useState } from 'react';
 import { useProyecto } from '../estado/ProyectoContext';
 import { palabrasDe } from '../estado/proyecto';
@@ -35,6 +36,7 @@ export function PasoHistoria({ alSeguir }: { alSeguir: () => void }) {
           <h1 className="nv-titulo">Tu historia</h1>
           <p className="nv-sub">Lo primero y lo más importante: qué vas a contar de Medellín.</p>
         </div>
+        <BotonTutorial id="narrativa" texto="¿Qué es narrativa musical?" />
         <span className="nv-espacio" />
         <button
           type="button"
