@@ -99,6 +99,11 @@ class MotorVisual {
     this.avisarFallo = null;
   }
 
+  /** El canvas que se está pintando, para componerlo al exportar. */
+  get lienzoActual(): HTMLCanvasElement | null {
+    return this.lienzo;
+  }
+
   get activo(): boolean {
     return this.cuadro !== null;
   }

@@ -988,3 +988,17 @@
 .nv-reparto__tramo span { font-size: 11px; font-weight: 700; color: var(--color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .nv-reparto__tramo--sonando { background: color-mix(in srgb, var(--color) 38%, transparent); }
 .nv-reparto__limite { position: absolute; top: 0; bottom: 0; height: auto; margin: 0 0 0 -11px; z-index: 2; }
+
+/* ---------- exportar ---------- */
+.nv-exportando {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: end center;
+  padding: 0 0 120px;
+  background: linear-gradient(transparent 50%, #000a);
+  pointer-events: none;
+}
+.nv-exportando__caja { display: flex; flex-direction: column; gap: 10px; width: 460px; pointer-events: auto; box-shadow: 0 20px 60px #000c; }
+.nv-exportando__barra { width: 100%; height: 8px; }

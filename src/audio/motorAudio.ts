@@ -742,6 +742,8 @@ class MotorAudio {
     const generacion = this.generacionPieza;
     const arrancar = () => {
       if (this.generacionPieza !== generacion) return;
+      // Un audio que no cargó (borrado, archivo dañado) no frena la pieza.
+      if (!reproductor.loaded) return;
       if (reproductor.state === 'started') reproductor.stop();
       const ahora = Tone.now();
       // Si terminó de cargar tarde, entra por donde iba y no desde el principio.
