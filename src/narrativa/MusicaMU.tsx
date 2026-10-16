@@ -8,6 +8,7 @@
  * Los sonidos se cambian en la ventana Sonidos (tocando el de cada capa).
  * Dentro de una escena se puede tocar en vivo y grabar el gesto.
  */
+import { BotonTutorial } from './BotonTutorial';
 import { useEffect, useRef, useState } from 'react';
 import type { PointerEvent as EventoPuntero } from 'react';
 import { motorAudio } from '../audio/motorAudio';
@@ -70,6 +71,7 @@ export function MusicaMU({ escena, indice, alSonidos }: Props) {
       <div className="nv-tarjeta nv-musica__principal">
         <div className="nv-campo__fila">
           <strong className="nv-subtitulo">{escena ? 'Capas de esta escena' : 'Capas de toda la pieza'}</strong>
+          <BotonTutorial id="maquina" texto="¿Qué hace la Máquina?" chico />
           <span className="nv-espacio" />
           {escena?.niveles && (
             <button
@@ -306,7 +308,11 @@ function TocarEnVivo({ escena, indice }: { escena: Escena; indice: number }) {
 
   return (
     <>
-      <strong className="nv-subtitulo">Tocar en vivo</strong>
+      <div className="nv-campo__fila">
+        <strong className="nv-subtitulo">Tocar en vivo</strong>
+        <span className="nv-espacio" />
+        <BotonTutorial id="envivo" texto="Cómo" chico />
+      </div>
       <span className="nv-tenue nv-chico">Mueve el dedo mientras suena la escena.</span>
       <div
         ref={cuadro}

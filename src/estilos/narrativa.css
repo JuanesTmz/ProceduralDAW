@@ -1612,3 +1612,126 @@
 .tu-matriz-eje--abajo { bottom: 20px; }
 .tu-panel { position: absolute; }
 .tu-panel__cara { position: absolute; right: 22px; bottom: 22px; }
+
+/* tutoriales · entrega 2 y 3 */
+.tu-escena__voz { margin-top: auto; font-size: 16px; opacity: 0.7; }
+.tu-respiro {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 16px;
+  border-radius: 20px;
+  border: 5px dashed #14161f;
+  background: #c9b3ff;
+  color: #14161f;
+  font-size: 22px;
+  font-weight: 800;
+  box-shadow: 8px 8px 0 #14161f;
+  position: relative;
+}
+.tu-respiro em { font-style: normal; font-size: 18px; opacity: 0.75; }
+.tu-respiro__notas { margin-top: auto; font-size: 26px; }
+.tu-respiro__x {
+  position: absolute;
+  top: -16px;
+  right: -16px;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #ff5d8f;
+  border: 4px solid #14161f;
+  font-size: 22px;
+}
+.tu-linea { position: absolute; height: 90px; display: flex; align-items: center; gap: 6px; }
+.tu-linea span { flex: 1; border-radius: 6px; background: #a77bff; border: 3px solid #14161f; }
+.tu-pulso { font-size: 40px; font-weight: 900; color: #ff5d8f; text-shadow: 3px 3px 0 #14161f; }
+.tu-rotulito { position: absolute; font-size: 22px; font-weight: 800; color: #fff4e0; white-space: nowrap; }
+.tu-switch {
+  width: 92px;
+  height: 50px;
+  border-radius: 25px;
+  border: 5px solid #14161f;
+  background: #3a3f55;
+  padding: 4px;
+  box-shadow: 5px 5px 0 #14161f;
+  transition: background 0.2s;
+}
+.tu-switch span { display: block; width: 32px; height: 32px; border-radius: 50%; background: #fff4e0; border: 4px solid #14161f; transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.tu-switch[data-on='true'] { background: #3ee08f; }
+.tu-switch[data-on='true'] span { transform: translateX(40px); }
+.tu-tache { position: absolute; width: 46px; height: 60px; display: grid; place-items: center; font-size: 40px; font-weight: 900; color: #ff5d8f; text-shadow: 2px 2px 0 #14161f; }
+.tu-brillo { position: absolute; font-size: 30px; color: #ffc93c; text-shadow: 2px 2px 0 #14161f; }
+.tu-leyenda { position: absolute; display: flex; gap: 30px; font-size: 22px; font-weight: 700; color: #fff4e0; }
+.tu-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  border-radius: 18px;
+  border: 5px solid #14161f;
+  background: #fff4e0;
+  color: #14161f;
+  font-size: 22px;
+  font-weight: 800;
+  box-shadow: 6px 6px 0 #14161f;
+  white-space: nowrap;
+}
+.tu-menu span { padding: 6px 12px; border-radius: 10px; }
+.tu-menu--on { background: #ffc93c; }
+.tu-palabra {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 14px;
+  border: 4px solid transparent;
+  font-size: 34px;
+  font-weight: 800;
+  white-space: nowrap;
+  transition: color 0.15s;
+}
+.tu-cajita {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  border: 4px solid #14161f;
+  background: #ffc93c;
+  color: #14161f;
+  font-size: 20px;
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: 4px 4px 0 #14161f;
+}
+.tu-cajita--silencio { background: #a77bff; }
+.tu-rec {
+  display: inline-block;
+  padding: 8px 20px;
+  border-radius: 999px;
+  border: 4px solid #14161f;
+  background: #ff5d8f;
+  color: #14161f;
+  font-size: 24px;
+  font-weight: 900;
+  white-space: nowrap;
+  box-shadow: 5px 5px 0 #14161f;
+}
+.tu-tramo { position: absolute; border-radius: 12px; border: 3px solid #14161f; transition: transform 0.2s; }
+.tu-tramo b { position: absolute; left: 8px; top: -34px; font-size: 22px; color: #fff4e0; }
+.tu-limite { position: absolute; width: 6px; margin-left: -3px; border-radius: 3px; border: 2px solid #14161f; }
+.tu-limite span { position: absolute; left: 50%; bottom: -16px; width: 22px; height: 22px; margin-left: -11px; border-radius: 50%; background: inherit; border: 4px solid #14161f; }
+.tu-polaroid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 10px 14px;
+  background: #fff4e0;
+  border: 5px solid #14161f;
+  border-radius: 8px;
+  box-shadow: 8px 8px 0 #14161f;
+  color: #14161f;
+  font-weight: 800;
+  font-size: 22px;
+  text-align: center;
+}
+.tu-escalas { position: absolute; left: 300px; top: 470px; display: flex; gap: 14px; }
+.tu-nota { position: absolute; left: -78px; font-size: 20px; font-weight: 800; color: #fff4e0; width: 70px; text-align: right; }

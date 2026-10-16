@@ -386,3 +386,34 @@ export function Fundido({ duracion }: { duracion: number }) {
 }
 
 export { claves };
+
+/** Golpes cada `cada` fotogramas entre `desde` y `hasta` (para armar los sonidos). */
+export function cada(desde: number, hasta: number, paso: number, son: import('./motor').Son, salvo?: (f: number) => boolean): import('./motor').Golpe[] {
+  const lista: import('./motor').Golpe[] = [];
+  for (let f = desde; f < hasta; f += paso) if (!salvo?.(f)) lista.push({ f, son });
+  return lista;
+}
+
+/** Una casilla de ritmo de caricatura, posicionada en el lienzo. */
+export function Casilla({ x, y, ancho, alto, encendida, color = C.amarillo, cabeza = false, salto = 0, marcada = false, opacidad = 1 }: {
+  x: number; y: number; ancho: number; alto: number; encendida: boolean; color?: string; cabeza?: boolean; salto?: number; marcada?: boolean; opacidad?: number;
+}) {
+  return (
+    <div
+      className="tu-casilla"
+      style={{
+        left: x,
+        top: y,
+        width: ancho,
+        height: alto,
+        background: encendida ? color : marcada ? '#3a3f58' : '#2a2e40',
+        transform: `translateY(${-salto * 10}px) scale(${1 + salto * 0.15}, ${1 - salto * 0.07})`,
+        outline: cabeza ? '4px solid #fff' : undefined,
+        outlineOffset: 2,
+        opacity: opacidad,
+      }}
+    />
+  );
+}
+
+export const SONOTECA_URL = (id: string) => `${import.meta.env.BASE_URL}sonoteca/${id}.wav`;
