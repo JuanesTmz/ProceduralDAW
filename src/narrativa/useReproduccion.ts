@@ -1,6 +1,7 @@
 /**
  * Lo que la interfaz necesita saber del motor mientras suena: si está
- * sonando, qué escena va y por dónde va la pieza (0..1).
+ * sonando y qué escena va. La posición fina (cabezales, barras) no pasa por
+ * aquí: se lee del motor en cada cuadro con useCuadro, sin redibujar.
  */
 import { useEffect, useState } from 'react';
 import { motorAudio } from '../audio/motorAudio';
@@ -8,14 +9,13 @@ import { motorAudio } from '../audio/motorAudio';
 export function useReproduccion() {
   const [sonando, setSonando] = useState(motorAudio.estaSonando);
   const [seccion, setSeccion] = useState(-1);
-  const [progreso, setProgreso] = useState(0);
 
   useEffect(() => {
     const quitar = motorAudio.alCambiarSeccion((i) => setSeccion(i));
     let cuadro = 0;
+    // React no redibuja si el valor no cambió: esto solo cuesta al empezar y al parar.
     const mirar = () => {
       setSonando(motorAudio.estaSonando);
-      setProgreso(motorAudio.estaSonando ? motorAudio.progresoPieza : 0);
       cuadro = requestAnimationFrame(mirar);
     };
     cuadro = requestAnimationFrame(mirar);
@@ -25,5 +25,5 @@ export function useReproduccion() {
     };
   }, []);
 
-  return { sonando, seccion: sonando ? seccion : -1, progreso };
+  return { sonando, seccion: sonando ? seccion : -1 };
 }

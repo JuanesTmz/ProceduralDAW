@@ -15,6 +15,7 @@ import { duracionVoz, EMOCIONES } from '../estado/escenas';
 import type { Cajita, Escena } from '../estado/tipos';
 import { FraseConCajitas } from './FraseConCajitas';
 import { Onda } from './VozEscena';
+import { useCuadro } from './useCuadro';
 
 /** La voz entra un instante después de que empieza la escena (lo mismo que el motor). */
 const ENTRADA_VOZ = 0.15;
@@ -32,28 +33,34 @@ export function BarraEscena({ escena, indice, tipos }: Props) {
   const voz = duracionVoz(escena);
   const color = EMOCIONES[escena.emocion].color;
   const barra = useRef<HTMLDivElement>(null);
-  const [cabeza, setCabeza] = useState<number | null>(null);
+  const [sonando, setSonando] = useState(false);
+  const [dichas, setDichas] = useState(-1);
   const [desde, setDesde] = useState(0);
   const arrastrando = useRef(false);
+  const lleno = useRef<HTMLSpanElement>(null);
+  const cabeza = useRef<HTMLSpanElement>(null);
+  const reloj = useRef<HTMLSpanElement>(null);
+  const palabras = palabrasDe(escena.texto).length;
 
-  // Por dónde va, leído del motor en cada cuadro.
-  useEffect(() => {
-    let cuadro = 0;
-    const mirar = () => {
-      setCabeza(motorAudio.escenaSola === indice ? motorAudio.segundosEnSeccion : null);
-      cuadro = requestAnimationFrame(mirar);
-    };
-    cuadro = requestAnimationFrame(mirar);
-    return () => cancelAnimationFrame(cuadro);
-  }, [indice]);
+  // Por dónde va lo que se oye, cuadro a cuadro: se escribe directo en la
+  // barra. React solo redibuja cuando cambia una palabra o el play.
+  useCuadro(() => {
+    const pos = motorAudio.escenaSola === indice ? motorAudio.posicionOida : null;
+    const suena = pos !== null && pos.indice === indice;
+    const t = suena ? pos.segundos : desde;
+    const x = `${(Math.min(t, total) / total) * 100}%`;
+    if (lleno.current) lleno.current.style.width = x;
+    if (cabeza.current) {
+      cabeza.current.style.left = x;
+      cabeza.current.classList.toggle('nv-barra-escena__cabeza--quieta', !suena);
+    }
+    if (reloj.current) reloj.current.textContent = `${formatearReloj(t)} / ${formatearReloj(total)}`;
+    setSonando(suena);
+    setDichas(suena && !escena.respiro ? Math.ceil(((t - ENTRADA_VOZ) / Math.max(0.5, voz)) * palabras) : -1);
+  });
 
   // Cambiar de escena vuelve el punto de arranque al principio.
   useEffect(() => setDesde(0), [escena.id]);
-
-  const sonando = cabeza !== null;
-  const tiempo = sonando ? cabeza : desde;
-  const palabras = palabrasDe(escena.texto).length;
-  const dichas = sonando && !escena.respiro ? Math.ceil(((cabeza - ENTRADA_VOZ) / Math.max(0.5, voz)) * palabras) : -1;
 
   const segundoDe = (ev: EventoPuntero<HTMLDivElement>) => {
     const caja = barra.current!.getBoundingClientRect();
@@ -111,12 +118,10 @@ export function BarraEscena({ escena, indice, tipos }: Props) {
                 style={{ left: `${((ENTRADA_VOZ + (c.palabra / Math.max(1, palabras)) * voz) / total) * 100}%` }}
               />
             ))}
-          <span className="nv-barra-escena__lleno" style={{ width: `${(tiempo / total) * 100}%` }} />
-          <span className={`nv-barra-escena__cabeza ${sonando ? '' : 'nv-barra-escena__cabeza--quieta'}`} style={{ left: `${(tiempo / total) * 100}%` }} />
+          <span ref={lleno} className="nv-barra-escena__lleno" />
+          <span ref={cabeza} className="nv-barra-escena__cabeza nv-barra-escena__cabeza--quieta" />
         </div>
-        <span className="nv-mono nv-barra-escena__reloj">
-          {formatearReloj(tiempo)} / {formatearReloj(total)}
-        </span>
+        <span ref={reloj} className="nv-mono nv-barra-escena__reloj" />
       </div>
       {!escena.vozUrl && !escena.respiro && (
         <span className="nv-tenue nv-chico">Esta escena todavía no tiene voz grabada: la barra usa lo que tardaría en decirse.</span>

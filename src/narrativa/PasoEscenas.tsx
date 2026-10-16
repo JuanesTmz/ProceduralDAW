@@ -7,6 +7,7 @@
  * cambia con ella. La escala es fija, de 0 a 2:30, para que se vea cuánto
  * queda.
  */
+import { useRef } from 'react';
 import { motorAudio } from '../audio/motorAudio';
 import { useProyecto } from '../estado/ProyectoContext';
 import { duracionSeccion, formatearReloj } from '../estado/proyecto';
@@ -23,6 +24,7 @@ import { useOrdenArrastrable } from './useOrdenArrastrable';
 import { PRESETS } from '../estado/musica';
 import type { Escena } from '../estado/tipos';
 import { useReproduccion } from './useReproduccion';
+import { useCuadro } from './useCuadro';
 import { Onda } from './VozEscena';
 
 export function fondoEscena(e: Escena): string {
@@ -54,7 +56,17 @@ export function ChipEmocion({ e }: { e: Escena }) {
 
 export function PasoEscenas({ alEntrar, alGeneral }: { alEntrar: (id: string) => void; alGeneral: () => void }) {
   const { proyecto, actualizar } = useProyecto();
-  const { seccion: sonandoAhora, progreso, sonando } = useReproduccion();
+  const { seccion: sonandoAhora } = useReproduccion();
+  const cabezal = useRef<HTMLSpanElement>(null);
+  const totalRef = useRef(0);
+  // El cabezal sigue a lo que se oye, cuadro a cuadro.
+  useCuadro(() => {
+    const nodo = cabezal.current;
+    if (!nodo) return;
+    const sonando = motorAudio.estaSonando && motorAudio.posicionOida !== null;
+    nodo.style.display = sonando ? '' : 'none';
+    if (sonando) nodo.style.left = `calc(76px + (100% - 76px) * ${(motorAudio.progresoPieza * totalRef.current) / DURACION_MAXIMA})`;
+  });
   const lista = recorrido(proyecto);
   const { manejadores, agarrada } = useOrdenArrastrable(
     lista.map((e) => e.id),
@@ -73,6 +85,7 @@ export function PasoEscenas({ alEntrar, alGeneral }: { alEntrar: (id: string) =>
 
   const duraciones = proyecto.secciones.map((s) => duracionSeccion(proyecto, s));
   const total = duraciones.reduce((a, b) => a + b, 0);
+  totalRef.current = total;
   const pct = (s: number) => `${(s / DURACION_MAXIMA) * 100}%`;
   const queda = DURACION_MAXIMA - total;
   let numero = 0;
@@ -189,9 +202,7 @@ export function PasoEscenas({ alEntrar, alGeneral }: { alEntrar: (id: string) =>
         </div>
 
         <div className="nv-pieza__rejilla">
-          {sonando && (
-            <span className="nv-pieza__cabezal" style={{ left: `calc(76px + (100% - 76px) * ${(progreso * total) / DURACION_MAXIMA})` }} />
-          )}
+          <span ref={cabezal} className="nv-pieza__cabezal" style={{ display: 'none' }} />
           <span className="nv-pieza__etiqueta" />
           <div className="nv-pieza__carril">
             {lista.map((e, i) => (

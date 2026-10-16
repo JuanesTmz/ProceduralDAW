@@ -13,6 +13,7 @@ import { EMOCIONES, recorrido } from '../estado/escenas';
 import { Escenario } from './Escenario';
 import { descargar, exportarVideo, type Exportacion } from './exportarVideo';
 import { useReproduccion } from './useReproduccion';
+import { useCuadro } from './useCuadro';
 
 export function PasoFuncion() {
   const { proyecto } = useProyecto();
@@ -36,7 +37,20 @@ export function PasoFuncion() {
       descargar(blob, `sonora-${nombre}.webm`);
     }
   };
-  const { sonando, seccion, progreso } = useReproduccion();
+  const { sonando, seccion } = useReproduccion();
+  const llenos = useRef<(HTMLSpanElement | null)[]>([]);
+  const tramos = useRef<{ inicio: number; fin: number }[]>([]);
+  // Las barras se llenan con lo que se oye, cuadro a cuadro.
+  useCuadro(() => {
+    const progreso = motorAudio.progresoPieza;
+    const oye = motorAudio.posicionOida !== null;
+    tramos.current.forEach((t, i) => {
+      const nodo = llenos.current[i];
+      if (!nodo) return;
+      const lleno = oye ? Math.max(0, Math.min(1, (progreso - t.inicio) / (t.fin - t.inicio || 1))) : 0;
+      nodo.style.width = `${lleno * 100}%`;
+    });
+  });
   const [sinMusica, setSinMusica] = useState(motorAudio.musicaSilenciada);
   const lista = recorrido(proyecto);
   const actual = lista[seccion] ?? lista[0];
@@ -53,6 +67,11 @@ export function PasoFuncion() {
   const duraciones = proyecto.secciones.map((s) => duracionSeccion(proyecto, s));
   const total = duraciones.reduce((a, b) => a + b, 0) || 1;
   let acumulado = 0;
+  tramos.current = duraciones.map((d) => {
+    const inicio = acumulado / total;
+    acumulado += d;
+    return { inicio, fin: acumulado / total };
+  });
 
   const alternarMusica = (silencio: boolean) => {
     setSinMusica(silencio);
@@ -71,15 +90,11 @@ export function PasoFuncion() {
       <div className="nv-progreso">
         {lista.map((e, i) => {
           const d = duraciones[i] ?? 0;
-          const inicio = acumulado / total;
-          acumulado += d;
-          const fin = acumulado / total;
-          const lleno = sonando ? Math.max(0, Math.min(1, (progreso - inicio) / (fin - inicio))) : 0;
           const color = EMOCIONES[e.emocion].color;
           return (
             <div key={e.id} className="nv-progreso__tramo" style={{ flexGrow: d }}>
               <span className="nv-progreso__barra" style={{ background: `${color}40` }}>
-                <span style={{ width: `${lleno * 100}%`, background: color }} />
+                <span ref={(n) => void (llenos.current[i] = n)} style={{ width: 0, background: color }} />
               </span>
               <span className="nv-chico" style={{ color: i === seccion ? color : undefined }}>
                 {e.nombre}

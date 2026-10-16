@@ -110,6 +110,11 @@ class MotorAudio {
   /** Cuándo empezó la sección que suena y cuánto dura (segundos de audio). */
   private inicioSeccionT = 0;
   private duracionSeccionT = 1;
+  /**
+   * Cuándo empieza a oírse cada sección (reloj de audio). La pantalla se
+   * guía por esto y no por los pasos, que se agendan un poco antes de sonar.
+   */
+  private iniciosOidos: { indice: number; t: number }[] = [];
   /** Las cajitas de silencio callan la música aquí, sin tocar lo demás. */
   private silenciador: Tone.Gain | null = null;
   /** Los sonidos de las cajitas: no se agachan con la voz, acompañan la palabra. */
@@ -165,17 +170,33 @@ class MotorAudio {
     return Tone.now() - this.inicioNarracion;
   }
 
-  /** Avance de la pieza completa, de 0 a 1. Lo lee la barra de progreso. */
+  /** Avance de la pieza completa, de 0 a 1, en segundos de lo que se está oyendo. */
   get progresoPieza(): number {
     const proyecto = this.proyecto;
-    if (!proyecto || this.modo !== 'pieza') return 0;
-    const total = proyecto.secciones.reduce((suma, s) => suma + s.compases, 0);
+    const pos = this.posicionOida;
+    if (!proyecto || !pos) return 0;
+    const duraciones = proyecto.secciones.map((s) => this.duracionSeccion(s));
+    const total = duraciones.reduce((a, b) => a + b, 0);
     if (total === 0) return 0;
-    const previas = proyecto.secciones
-      .slice(0, this.indiceSeccion)
-      .reduce((suma, s) => suma + s.compases, 0);
-    const dentro = this.vueltaEnSeccion + this.paso / proyecto.patron.cantidadPasos;
-    return Math.min(1, (previas + dentro) / total);
+    const previas = duraciones.slice(0, pos.indice).reduce((a, b) => a + b, 0);
+    return Math.min(1, (previas + pos.segundos) / total);
+  }
+
+  /** El instante del reloj de audio que está saliendo por el parlante ahora. */
+  private get ahoraOido(): number {
+    const ctx = Tone.getContext().rawContext as AudioContext;
+    return ctx.currentTime - (ctx.outputLatency || 0);
+  }
+
+  /** Qué sección se está oyendo y cuántos segundos lleva, o null si no suena la pieza. */
+  get posicionOida(): { indice: number; segundos: number } | null {
+    if (!this.estaSonando || this.modo !== 'pieza' || this.iniciosOidos.length === 0) return null;
+    const ahora = this.ahoraOido;
+    let actual = this.iniciosOidos[0];
+    for (const x of this.iniciosOidos) if (x.t <= ahora) actual = x;
+    const s = this.proyecto?.secciones[actual.indice];
+    const largo = s ? this.duracionSeccion(s) : Infinity;
+    return { indice: actual.indice, segundos: Math.max(0, Math.min(largo, ahora - actual.t)) };
   }
 
   /** Arranca el contexto de audio y arma el grafo. Idempotente. */
@@ -285,8 +306,10 @@ class MotorAudio {
     this.inicioPieza = inicio;
     this.generacionPieza += 1;
 
+    this.iniciosOidos = [];
     if (this.modo === 'pieza') {
       const primera = this.proyecto?.secciones[this.desde];
+      if (primera && this.proyecto) Tone.getTransport().bpm.value = this.proyecto.bpm * primera.factorTempo;
       let corrido = 0;
       if (primera && this.desdeSegundo > 0 && this.proyecto) {
         // Arrancar a mitad de escena: se salta a la vuelta y al paso que tocan.
@@ -381,7 +404,7 @@ class MotorAudio {
 
   /** La escena que suena si se tocó una sola, o -1. */
   get escenaSola(): number {
-    return this.estaSonando && this.soloUna ? this.indiceSeccion : -1;
+    return this.estaSonando && this.soloUna ? this.desde : -1;
   }
 
   /** Cuánto dura la sección i, en segundos. */
@@ -415,6 +438,8 @@ class MotorAudio {
     }
     this.desde = 0;
     this.soloUna = false;
+    this.iniciosOidos = [];
+    transporte.bpm.cancelScheduledValues(0);
     this.modulador?.gain.cancelScheduledValues(Tone.now());
     if (this.modulador) this.modulador.gain.value = 1;
     this.silenciador?.gain.cancelScheduledValues(Tone.now());
@@ -583,9 +608,13 @@ class MotorAudio {
       return;
     }
 
-    this.aplicarSeccion(siguiente, tiempo);
+    // `tiempo` es el último paso de la sección que termina: la siguiente
+    // empieza un paso después, con el tempo que traía la anterior.
+    const anterior = proyecto.secciones[this.indiceSeccion - 1];
+    const inicio = tiempo + 60 / (proyecto.bpm * (anterior?.factorTempo ?? 1)) / 4;
+    this.aplicarSeccion(siguiente, inicio);
     const indice = this.indiceSeccion;
-    Tone.getDraw().schedule(() => this.avisarSeccion(indice), tiempo);
+    Tone.getDraw().schedule(() => this.avisarSeccion(indice), inicio);
   }
 
   /** Ajusta volumen, tempo y desvanecido al entrar en una sección. */
@@ -594,6 +623,7 @@ class MotorAudio {
     if (!ganancia) return;
 
     this.inicioSeccionT = tiempo - corrido;
+    this.iniciosOidos.push({ indice: this.indiceSeccion, t: tiempo - corrido });
     this.duracionSeccionT = Math.max(0.5, this.duracionSeccion(seccion));
     const objetivo = volumenDeIntensidad(seccion.intensidad);
     ganancia.cancelScheduledValues(tiempo);
@@ -607,7 +637,9 @@ class MotorAudio {
       ganancia.rampTo(0.0015, Math.max(0.5, duracion * 0.92), tiempo + 0.12);
     }
 
-    this.aplicarTempo(seccion);
+    // El tempo cambia justo en el borde, sin rampa: así la duración de cada
+    // escena es exacta y la pantalla no se desfasa.
+    if (this.proyecto) Tone.getTransport().bpm.setValueAtTime(this.proyecto.bpm * seccion.factorTempo, tiempo);
     this.lanzarVozEscena(seccion, tiempo, corrido);
     this.lanzarCajitas(seccion, tiempo, corrido);
   }
@@ -648,16 +680,16 @@ class MotorAudio {
     }
   }
 
-  /** Por dónde va la sección que suena, de 0 a 1. Lo usa el gesto en vivo. */
+  /** Por dónde va la sección que se oye, de 0 a 1. Lo usa el gesto en vivo. */
   get fraccionSeccion(): number {
-    if (!this.estaSonando) return 0;
-    return Math.max(0, Math.min(1, (Tone.now() - this.inicioSeccionT) / this.duracionSeccionT));
+    const pos = this.posicionOida;
+    if (!pos) return 0;
+    return Math.min(1, pos.segundos / Math.max(0.5, this.duracionDe(pos.indice)));
   }
 
-  /** Segundos desde que empezó la sección que suena. */
+  /** Segundos que lleva oyéndose la sección actual. */
   get segundosEnSeccion(): number {
-    if (!this.estaSonando) return 0;
-    return Math.max(0, Tone.now() - this.inicioSeccionT);
+    return this.posicionOida?.segundos ?? 0;
   }
 
   /** El valor de un dato ahora mismo, en la sección que suena (para el visual). */
