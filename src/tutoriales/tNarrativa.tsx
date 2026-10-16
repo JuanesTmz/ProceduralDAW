@@ -1,14 +1,14 @@
 /**
  * Tutorial: ¿qué es narrativa musical?
  *
- * La Narradora cuenta; su texto se parte en escenas de colores; debajo,
+ * El Gato cuenta; su texto se parte en escenas de colores; debajo,
  * la voz, la música y el visual siguen el arco (la música crece en la
  * tensión). Después la voz manda: la música se aparta cuando ella habla.
  */
 import { EMOCIONES } from '../estado/escenas';
 import type { Emocion } from '../estado/tipos';
 import { claves, interpolar, resorte, suave, useFotograma, type Composicion, type Golpe } from './motor';
-import { C, Etiqueta, Fondo, Fundido, Narradora, Onda, Pos, Rotulos, TINTA } from './piezas';
+import { C, Etiqueta, Fondo, Fundido, Gato, Onda, Pos, Rotulos, TINTA } from './piezas';
 
 const DURA = 600;
 const ESCENAS: { emo: Emocion; nombre: string; energia: number }[] = [
@@ -55,7 +55,7 @@ function Dibujo() {
       </Pos>
 
       <Pos x={narradoraX} y={narradoraY} escala={resorte(f, 4) * narradoraS}>
-        <Narradora habla={habla} mira={1} />
+        <Gato habla={habla} mira={1} />
       </Pos>
 
       {/* El globo con la historia */}

@@ -2,7 +2,7 @@
  * Las piezas de los tutoriales, en estilo caricatura: contorno grueso,
  * colores planos y saturados, sombra dura, y todo entra con resorte.
  *
- * Personajes: la Narradora (la que cuenta la historia) y la Maquinita (la
+ * Personajes: el Gato de fábula (el que cuenta la historia) y la Maquinita (la
  * que sigue reglas y lee datos). Objetos con cara: micrófono, botella y
  * bombo. Más la mano que señala, los rótulos y los estallidos.
  */
@@ -147,38 +147,93 @@ export function Mano({ x, y, toca = 0 }: { x: number; y: number; toca?: number }
 
 // ------------------------------------------------------------ personajes
 
-/** La Narradora: la que cuenta la historia. `habla` (0..1) abre la boca. */
-export function Narradora({ habla = 0, mira = 0 }: { habla?: number; mira?: number }) {
+/**
+ * El Gato: el narrador de fábula, el que cuenta la historia. Atigrado, con
+ * boina y bufanda. `habla` (0..1) abre la boca y mueve la pata; `mira`
+ * corre las pupilas.
+ */
+export function Gato({ habla = 0, mira = 0 }: { habla?: number; mira?: number }) {
   const f = useFotograma();
-  const parpadea = f % 110 > 104;
+  const parpadea = f % 120 > 113;
   const respira = Math.sin(f / 18) * 3;
+  const cola = Math.sin(f / 16) * 18;
+  const pata = habla > 0 ? -30 - habla * 25 : Math.sin(f / 30) * 5;
+  const naranja = '#f29a3a';
+  const raya = '#c4621f';
   return (
-    <svg width="220" height="300" viewBox="0 0 220 300" style={{ overflow: 'visible' }}>
-      <ellipse cx="110" cy="292" rx="70" ry="10" fill="#000" opacity="0.25" />
+    <svg width="230" height="310" viewBox="0 0 230 310" style={{ overflow: 'visible' }}>
+      <ellipse cx="115" cy="300" rx="72" ry="10" fill="#000" opacity="0.25" />
+      {/* cola */}
+      <path
+        d={`M150 268 C 205 262, ${215 + cola} 210, ${190 + cola} 160 C ${180 + cola} 140, ${200 + cola} 128, ${212 + cola} 140`}
+        fill="none"
+        stroke={TINTA}
+        strokeWidth="26"
+        strokeLinecap="round"
+      />
+      <path
+        d={`M150 268 C 205 262, ${215 + cola} 210, ${190 + cola} 160 C ${180 + cola} 140, ${200 + cola} 128, ${212 + cola} 140`}
+        fill="none"
+        stroke={naranja}
+        strokeWidth="16"
+        strokeLinecap="round"
+      />
+      {/* patas de abajo */}
+      <ellipse cx="88" cy="292" rx="22" ry="12" fill={C.crema} stroke={TINTA} strokeWidth={TRAZO} />
+      <ellipse cx="142" cy="292" rx="22" ry="12" fill={C.crema} stroke={TINTA} strokeWidth={TRAZO} />
       {/* cuerpo */}
-      <path d={`M40 300 C40 ${222 + respira} 70 ${206 + respira} 110 ${206 + respira} C150 ${206 + respira} 180 ${222 + respira} 180 300 Z`} fill={C.rosa} stroke={TINTA} strokeWidth={TRAZO} />
-      <path d={`M92 ${208 + respira} L110 ${236 + respira} L128 ${208 + respira}`} fill={C.crema} stroke={TINTA} strokeWidth={4} strokeLinejoin="round" />
-      {/* pelo de atrás */}
-      <path d="M38 118 C30 40 190 40 182 118 C196 160 180 196 160 200 L60 200 C40 196 24 160 38 118 Z" fill="#2b1d33" stroke={TINTA} strokeWidth={TRAZO} />
-      {/* cara */}
-      <ellipse cx="110" cy="128" rx="62" ry="68" fill={C.piel} stroke={TINTA} strokeWidth={TRAZO} />
-      {/* flequillo */}
-      <path d="M50 108 C58 62 160 54 172 104 C150 86 120 92 104 78 C92 96 70 98 50 108 Z" fill="#2b1d33" stroke={TINTA} strokeWidth={4} strokeLinejoin="round" />
+      <path d={`M62 290 C52 ${236 + respira} 76 ${196 + respira} 115 ${196 + respira} C154 ${196 + respira} 178 ${236 + respira} 168 290 Z`} fill={naranja} stroke={TINTA} strokeWidth={TRAZO} />
+      <ellipse cx="115" cy={252 + respira / 2} rx="30" ry="34" fill={C.crema} />
+      <path d="M72 250 L84 246 M70 268 L84 266 M158 250 L146 246 M160 268 L146 266" stroke={raya} strokeWidth="5" strokeLinecap="round" />
+      {/* brazo que gesticula */}
+      <g transform={`rotate(${pata} 160 216)`}>
+        <path d="M160 216 C 182 222, 190 240, 186 256" fill="none" stroke={TINTA} strokeWidth="22" strokeLinecap="round" />
+        <path d="M160 216 C 182 222, 190 240, 186 256" fill="none" stroke={naranja} strokeWidth="12" strokeLinecap="round" />
+        <circle cx="186" cy="258" r="11" fill={C.crema} stroke={TINTA} strokeWidth="4" />
+      </g>
+      <path d="M70 216 C 50 226, 46 244, 52 258" fill="none" stroke={TINTA} strokeWidth="22" strokeLinecap="round" />
+      <path d="M70 216 C 50 226, 46 244, 52 258" fill="none" stroke={naranja} strokeWidth="12" strokeLinecap="round" />
+      <circle cx="52" cy="260" r="11" fill={C.crema} stroke={TINTA} strokeWidth="4" />
+      {/* bufanda */}
+      <path d={`M70 ${196 + respira} C 90 ${212 + respira}, 140 ${212 + respira}, 160 ${196 + respira} L 156 ${184 + respira} C 136 ${196 + respira}, 94 ${196 + respira}, 74 ${184 + respira} Z`} fill={C.rosa} stroke={TINTA} strokeWidth="4" strokeLinejoin="round" />
+      <path d={`M138 ${206 + respira} L ${150 + cola / 4} ${248 + respira} L ${128 + cola / 4} ${250 + respira} L 124 ${208 + respira} Z`} fill={C.rosa} stroke={TINTA} strokeWidth="4" strokeLinejoin="round" />
+      {/* orejas */}
+      <path d="M58 92 L64 30 L104 68 Z" fill={naranja} stroke={TINTA} strokeWidth={TRAZO} strokeLinejoin="round" />
+      <path d="M68 76 L71 46 L92 66 Z" fill={C.rosa} />
+      <path d="M172 92 L166 30 L126 68 Z" fill={naranja} stroke={TINTA} strokeWidth={TRAZO} strokeLinejoin="round" />
+      <path d="M162 76 L159 46 L138 66 Z" fill={C.rosa} />
+      {/* cabeza */}
+      <ellipse cx="115" cy="124" rx="74" ry="64" fill={naranja} stroke={TINTA} strokeWidth={TRAZO} />
+      <path d="M100 66 L104 86 M115 62 L115 84 M130 66 L126 86" stroke={raya} strokeWidth="5" strokeLinecap="round" />
+      <path d="M44 118 L60 122 M44 136 L58 136 M186 118 L170 122 M186 136 L172 136" stroke={raya} strokeWidth="5" strokeLinecap="round" />
+      {/* boina */}
+      <g transform="rotate(-14 96 62)">
+        <ellipse cx="96" cy="62" rx="52" ry="18" fill={C.lila} stroke={TINTA} strokeWidth={TRAZO} />
+        <circle cx="96" cy="42" r="7" fill={C.lila} stroke={TINTA} strokeWidth="4" />
+      </g>
+      {/* hocico */}
+      <ellipse cx="115" cy="148" rx="34" ry="24" fill={C.crema} stroke={TINTA} strokeWidth="4" />
       {/* ojos */}
       {parpadea ? (
-        <path d="M78 130 L96 130 M124 130 L142 130" stroke={TINTA} strokeWidth={5} strokeLinecap="round" />
+        <path d="M76 118 Q88 126 100 118 M130 118 Q142 126 154 118" stroke={TINTA} strokeWidth="5" fill="none" strokeLinecap="round" />
       ) : (
         <>
-          <ellipse cx="87" cy="128" rx="11" ry="14" fill="#fff" stroke={TINTA} strokeWidth={3.5} />
-          <ellipse cx="133" cy="128" rx="11" ry="14" fill="#fff" stroke={TINTA} strokeWidth={3.5} />
-          <circle cx={88 + mira * 4} cy="131" r="6" fill={TINTA} />
-          <circle cx={134 + mira * 4} cy="131" r="6" fill={TINTA} />
+          <path d="M74 118 Q88 100 102 118 Q88 132 74 118 Z" fill="#b6f26a" stroke={TINTA} strokeWidth="4" />
+          <path d="M128 118 Q142 100 156 118 Q142 132 128 118 Z" fill="#b6f26a" stroke={TINTA} strokeWidth="4" />
+          <ellipse cx={88 + mira * 4} cy="118" rx="3.5" ry="10" fill={TINTA} />
+          <ellipse cx={142 + mira * 4} cy="118" rx="3.5" ry="10" fill={TINTA} />
+          <circle cx={84 + mira * 4} cy="113" r="2.5" fill="#fff" />
+          <circle cx={138 + mira * 4} cy="113" r="2.5" fill="#fff" />
         </>
       )}
-      <ellipse cx="70" cy="152" rx="10" ry="6" fill={C.rosa} opacity="0.5" />
-      <ellipse cx="150" cy="152" rx="10" ry="6" fill={C.rosa} opacity="0.5" />
-      {/* boca */}
-      <ellipse cx="110" cy="164" rx={12 + habla * 4} ry={3 + habla * 12} fill="#7a1f3d" stroke={TINTA} strokeWidth={3.5} />
+      {/* nariz, boca y bigotes */}
+      <path d="M107 138 L123 138 L115 147 Z" fill={C.rosa} stroke={TINTA} strokeWidth="3" strokeLinejoin="round" />
+      {habla > 0.05 ? (
+        <ellipse cx="115" cy={158 + habla * 3} rx={9 + habla * 3} ry={3 + habla * 9} fill="#7a1f3d" stroke={TINTA} strokeWidth="3.5" />
+      ) : (
+        <path d="M102 154 Q108 160 115 154 Q122 160 128 154" stroke={TINTA} strokeWidth="3.5" fill="none" strokeLinecap="round" />
+      )}
+      <path d="M86 146 L46 140 M86 154 L48 158 M144 146 L184 140 M144 154 L182 158" stroke={TINTA} strokeWidth="3" strokeLinecap="round" />
     </svg>
   );
 }

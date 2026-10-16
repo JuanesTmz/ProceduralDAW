@@ -10,7 +10,7 @@ import { euclidiano } from '../generativo/euclidiano';
 import { EMOCIONES } from '../estado/escenas';
 import type { Emocion } from '../estado/tipos';
 import { interpolar, resorte, suave, useFotograma, type Composicion, type Golpe } from './motor';
-import { Bombo, C, Etiqueta, Fondo, Fundido, Maquinita, Narradora, Pos, Rotulos, TINTA } from './piezas';
+import { Bombo, C, Etiqueta, Fondo, Fundido, Maquinita, Gato, Pos, Rotulos, TINTA } from './piezas';
 
 const DURA = 600;
 const ESCENAS: { emo: Emocion; fuerza: number; nombre: string }[] = [
@@ -120,7 +120,7 @@ function Dibujo() {
       {fase2 && (
         <>
           <Pos x={260} y={400} escala={resorte(f, 425) * 0.95}>
-            <Narradora habla={habla} mira={1} />
+            <Gato habla={habla} mira={1} />
           </Pos>
           <Pos x={640} y={380} escala={resorte(f, 432)}>
             <Etiqueta color={C.crema} tam={22}>
