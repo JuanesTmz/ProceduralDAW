@@ -10,6 +10,7 @@
  * «Agregar» es literal: una pista nueva no existe en la canción hasta que
  * el estudiante dice que sí. Mientras tanto es un borrador que se puede oír.
  */
+import { useEscucha } from './useEscucha';
 import { BotonTutorial } from '../narrativa/BotonTutorial';
 import { useRef, useState } from 'react';
 import { motorAudio } from '../audio/motorAudio';
@@ -106,33 +107,40 @@ export function VentanaGolpes({ inicial, alCerrar }: Props) {
 
   // ------------------------------------------------------------- escuchar
 
-  /** Solo esta pista: se pone en solo, suena el bucle y nada más estorba. */
+  const escucha = useEscucha();
+
+  /** Solo esta pista: se pone en solo, suena el bucle y nada más estorba. Otra vez: para. */
   const oirSola = () => {
     if (!fila) return;
-    actualizar((p) => {
-      for (const f of p.patron.filas) f.soloActivo = f.id === fila.id;
-      p.patron.melodia.soloActivo = false;
-      p.modoReproduccion = 'patron';
+    escucha.alternar('sola', () => {
+      actualizar((p) => {
+        for (const f of p.patron.filas) f.soloActivo = f.id === fila.id;
+        p.patron.melodia.soloActivo = false;
+        p.modoReproduccion = 'patron';
+      });
+      motorAudio.cambiarModo('patron');
+      void motorAudio.reproducir();
     });
-    motorAudio.cambiarModo('patron');
-    void motorAudio.reproducir();
   };
 
-  const oirConTodo = () => {
-    actualizar((p) => {
-      for (const f of p.patron.filas) f.soloActivo = false;
-      p.patron.melodia.soloActivo = false;
-      p.modoReproduccion = 'patron';
+  const oirConTodo = () =>
+    escucha.alternar('todo', () => {
+      actualizar((p) => {
+        for (const f of p.patron.filas) f.soloActivo = false;
+        p.patron.melodia.soloActivo = false;
+        p.modoReproduccion = 'patron';
+      });
+      motorAudio.cambiarModo('patron');
+      void motorAudio.reproducir();
     });
-    motorAudio.cambiarModo('patron');
-    void motorAudio.reproducir();
-  };
 
-  /** Al cerrar nadie se queda en solo: la mezcla vuelve como estaba. */
+  /** Al cerrar nadie se queda en solo, y lo que sonaba aquí se para. */
   const cerrar = () => {
+    escucha.parar();
     actualizar((p) => {
       for (const f of p.patron.filas) f.soloActivo = false;
       p.patron.melodia.soloActivo = false;
+      p.modoReproduccion = 'pieza';
     });
     alCerrar();
   };
@@ -239,10 +247,10 @@ export function VentanaGolpes({ inicial, alCerrar }: Props) {
         <>
           <BotonTutorial id="golpes" chico />
           <button type="button" className="boton" onClick={oirSola} disabled={!fila}>
-            ▶ Solo este
+            {escucha.sonandoAqui === 'sola' ? '❚❚ Pausar' : '▶ Solo este'}
           </button>
           <button type="button" className="boton" onClick={oirConTodo}>
-            ▶ Con los demás
+            {escucha.sonandoAqui === 'todo' ? '❚❚ Pausar' : '▶ Con los demás'}
           </button>
           <span className="pie__hueco" />
           {enBorrador ? (

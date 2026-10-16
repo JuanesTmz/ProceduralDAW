@@ -9,6 +9,7 @@
  * Lo musical no cambia: cada fila es un grado de la escala, así que
  * cualquier cosa que el estudiante dibuje suena afinada.
  */
+import { useEscucha } from './useEscucha';
 import { useEffect, useRef } from 'react';
 import { motorAudio } from '../audio/motorAudio';
 import { useProyecto } from '../estado/ProyectoContext';
@@ -102,7 +103,8 @@ export function VentanaMatriz({ alCerrar }: { alCerrar: () => void }) {
     pintar.alSoltar();
   };
 
-  const oir = () => {
+  const escucha = useEscucha();
+  const oir = () => escucha.alternar('melodia', () => {
     actualizar((p) => {
       p.patron.melodia.soloActivo = true;
       for (const f of p.patron.filas) f.soloActivo = false;
@@ -110,11 +112,13 @@ export function VentanaMatriz({ alCerrar }: { alCerrar: () => void }) {
     });
     motorAudio.cambiarModo('patron');
     void motorAudio.reproducir();
-  };
+  });
 
   const cerrar = () => {
+    escucha.parar();
     actualizar((p) => {
       p.patron.melodia.soloActivo = false;
+      p.modoReproduccion = 'pieza';
     });
     alCerrar();
   };
@@ -133,7 +137,7 @@ export function VentanaMatriz({ alCerrar }: { alCerrar: () => void }) {
           <BotonTutorial id="matriz" chico />
           <BotonTutorial id="instrumento" texto="Tu sonido como instrumento" chico />
           <button type="button" className="boton" onClick={oir}>
-            ▶ Oír la melodía
+            {escucha.sonandoAqui ? '❚❚ Pausar' : '▶ Oír la melodía'}
           </button>
           <span className="pie__hueco" />
           <button
