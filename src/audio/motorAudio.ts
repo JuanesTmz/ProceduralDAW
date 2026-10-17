@@ -155,6 +155,11 @@ class MotorAudio {
     return this.iniciado && Tone.getTransport().state === 'started';
   }
 
+  /** Suena y todavía no llegó al final (las colas del cierre ya no cuentan). */
+  get sigueSonando() {
+    return this.estaSonando && !this.terminando;
+  }
+
   /** La sección que suena, o -1 si está en bucle o detenido. */
   get seccionActual() {
     if (this.modo !== 'pieza' || !this.estaSonando) return -1;
