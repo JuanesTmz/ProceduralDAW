@@ -16,10 +16,10 @@ import { Ventana } from '../componentes/Ventana';
 import { MusicaIA, parametrosMusica } from './MusicaIA';
 import { MusicaMU } from './MusicaMU';
 import { ParametrosDatos } from './ParametrosDatos';
-import { VentanaSonidosPistas } from './VentanaSonidosPistas';
+import { ID_MELODIA, VentanaSonidosPistas } from './VentanaSonidosPistas';
 import { BotonTutorial } from './BotonTutorial';
 
-type Herramienta = { tipo: 'golpes' } | { tipo: 'melodia' } | { tipo: 'datos' } | { tipo: 'sonidos'; pista?: string };
+type Herramienta = { tipo: 'golpes'; pista?: string } | { tipo: 'melodia' } | { tipo: 'datos' } | { tipo: 'sonidos'; pista?: string };
 
 interface Props {
   escena: Escena | null;
@@ -56,14 +56,17 @@ export function MusicaEscena({ escena, indice }: Props) {
           </button>
         )}
         <span className="nv-espacio" />
-        <span className="nv-herramientas__editar" data-tour="editar">
-          <button type="button" className="nv-boton nv-boton--suave" onClick={() => setHerramienta({ tipo: 'golpes' })}>
-            Editar golpes a mano
-          </button>
-          <button type="button" className="nv-boton nv-boton--suave" onClick={() => setHerramienta({ tipo: 'melodia' })}>
-            Editar melodía
-          </button>
-        </span>
+        {/* En Música Urbana la edición a mano va dentro de cada capa. */}
+        {esIA && (
+          <span className="nv-herramientas__editar" data-tour="editar">
+            <button type="button" className="nv-boton nv-boton--suave" onClick={() => setHerramienta({ tipo: 'golpes' })}>
+              Editar golpes a mano
+            </button>
+            <button type="button" className="nv-boton nv-boton--suave" onClick={() => setHerramienta({ tipo: 'melodia' })}>
+              Editar melodía
+            </button>
+          </span>
+        )}
       </div>
 
       {!escena && (
@@ -98,10 +101,15 @@ export function MusicaEscena({ escena, indice }: Props) {
       {esIA ? (
         <MusicaIA escena={escena} alSonidos={alSonidos} />
       ) : (
-        <MusicaMU escena={escena} indice={indice} alSonidos={alSonidos} />
+        <MusicaMU
+          escena={escena}
+          indice={indice}
+          alSonidos={alSonidos}
+          alEditar={(pista) => setHerramienta(pista === ID_MELODIA ? { tipo: 'melodia' } : { tipo: 'golpes', pista })}
+        />
       )}
 
-      {herramienta?.tipo === 'golpes' && <VentanaGolpes alCerrar={cerrar} />}
+      {herramienta?.tipo === 'golpes' && <VentanaGolpes inicial={herramienta.pista} alCerrar={cerrar} />}
       {herramienta?.tipo === 'melodia' && <VentanaMatriz alCerrar={cerrar} />}
       {herramienta?.tipo === 'sonidos' && <VentanaSonidosPistas pista={herramienta.pista} alCerrar={cerrar} />}
       {herramienta?.tipo === 'datos' && (

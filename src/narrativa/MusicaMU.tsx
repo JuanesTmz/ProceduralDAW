@@ -23,6 +23,8 @@ interface Props {
   escena: Escena | null;
   indice: number;
   alSonidos: (pista: string) => void;
+  /** Abre la edición fina de una capa: sus golpes, o la matriz si es la melodía. */
+  alEditar: (pista: string) => void;
 }
 
 const NIVELES = ['Apagada', 'Suave', 'Media', 'Fuerte'];
@@ -42,7 +44,7 @@ function Interruptor({ encendido, alCambiar }: { encendido: boolean; alCambiar: 
   );
 }
 
-export function MusicaMU({ escena, indice, alSonidos }: Props) {
+export function MusicaMU({ escena, indice, alSonidos, alEditar }: Props) {
   const { proyecto, actualizar } = useProyecto();
   const seccion = escena ? proyecto.secciones.find((s) => s.id === escena.id) : undefined;
   const { patron } = proyecto;
@@ -94,8 +96,9 @@ export function MusicaMU({ escena, indice, alSonidos }: Props) {
             <span>Sonido</span>
             <span>{escena ? 'Fuerza en esta escena' : 'Volumen'}</span>
             <span>Máquina</span>
+            <span>A mano</span>
           </div>
-          {patron.filas.map((f) => (
+          {patron.filas.map((f, k) => (
             <div key={f.id} className="nv-capa">
               <span className="nv-capa__nombre">
                 <span className="nv-punto" style={{ background: f.color }} />
@@ -148,6 +151,15 @@ export function MusicaMU({ escena, indice, alSonidos }: Props) {
                   })
                 }
               />
+              <button
+                type="button"
+                className="nv-boton nv-boton--chico nv-capa__editar"
+                data-tour={k === 0 ? 'editar' : undefined}
+                title={`Poner los golpes de ${f.nombre} a mano`}
+                onClick={() => alEditar(f.id)}
+              >
+                ✎ Golpes
+              </button>
             </div>
           ))}
           <div className="nv-capa">
@@ -193,6 +205,14 @@ export function MusicaMU({ escena, indice, alSonidos }: Props) {
               encendido={Boolean(patron.melodia.maquina)}
               alCambiar={() => actualizar((p) => (p.patron.melodia.maquina = !p.patron.melodia.maquina))}
             />
+            <button
+              type="button"
+              className="nv-boton nv-boton--chico nv-capa__editar"
+              title="Poner las notas de la melodía a mano"
+              onClick={() => alEditar(ID_MELODIA)}
+            >
+              ✎ Melodía
+            </button>
           </div>
         </div>
       </div>

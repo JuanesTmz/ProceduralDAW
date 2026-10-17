@@ -1768,3 +1768,6 @@
 .nv-instrumento--compacto .nv-instrumento__par > button:last-child { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
 .nv-instrumento--compacto .nv-instrumento__nota { grid-column: 1 / -1; }
 .nv-instrumento--compacto .nv-instrumento__afinar { flex-direction: column; align-items: stretch; gap: 6px; }
+/* Música Urbana: cada capa con su botón para editarla a mano. */
+.nv-capa:not(.nv-capa--ia) { grid-template-columns: 130px 170px 1fr 60px 108px; }
+.nv-capa__editar { white-space: nowrap; }

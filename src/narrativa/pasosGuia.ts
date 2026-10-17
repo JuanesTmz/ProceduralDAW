@@ -360,8 +360,9 @@ export function pasosDe(pantalla: Pantalla, track: Track | null): PasoTour[] {
           objetivo: '[data-tour="editar"]',
           seccion: 'EDICIÓN FINA',
           titulo: 'Golpes y melodía a mano',
-          texto:
-            '<b>Editar golpes a mano</b> abre la grilla de casillas, para poner cada golpe exactamente donde quieran. <b>Editar melodía</b> abre la matriz de notas. Las dos tienen su guía adentro.',
+          texto: ia
+            ? '<b>Editar golpes a mano</b> abre la grilla de casillas, para poner cada golpe exactamente donde quieran. <b>Editar melodía</b> abre la matriz de notas. Las dos tienen su guía adentro.'
+            : 'Cada capa tiene su botón <b>✎ Golpes</b>: abre la grilla de casillas de esa capa para poner cada golpe donde quieran. La melodía tiene <b>✎ Melodía</b>, que abre la matriz de notas. Las dos tienen su guía adentro.',
           final: 'A sonar',
         },
       ];
