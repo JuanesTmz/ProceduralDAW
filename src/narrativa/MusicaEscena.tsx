@@ -16,7 +16,7 @@ import { Ventana } from '../componentes/Ventana';
 import { MusicaIA, parametrosMusica } from './MusicaIA';
 import { MusicaMU } from './MusicaMU';
 import { ParametrosDatos } from './ParametrosDatos';
-import { ID_MELODIA, VentanaSonidosPistas } from './VentanaSonidosPistas';
+import { ID_MELODIA, PISTA_NUEVA, VentanaSonidosPistas } from './VentanaSonidosPistas';
 
 type Herramienta = { tipo: 'golpes'; pista?: string } | { tipo: 'melodia' } | { tipo: 'datos' } | { tipo: 'sonidos'; pista?: string };
 
@@ -35,6 +35,8 @@ export function MusicaEscena({ escena, indice }: Props) {
 
   return (
     <div className="nv-pestana">
+      {/* En Música Urbana los sonidos se agregan desde el pie de las capas. */}
+      {esIA && (
       <div className="nv-herramientas">
         <button type="button" className="nv-herramienta" data-tour="sonidos" onClick={() => alSonidos()}>
           <span className="nv-herramienta__icono">♪</span>
@@ -43,8 +45,7 @@ export function MusicaEscena({ escena, indice }: Props) {
             <span className="nv-tenue nv-chico">biblioteca y tus efectos</span>
           </span>
         </button>
-        {esIA && (
-          <button type="button" className="nv-herramienta nv-herramienta--ia" data-tour="datos" onClick={() => setHerramienta({ tipo: 'datos' })}>
+        <button type="button" className="nv-herramienta nv-herramienta--ia" data-tour="datos" onClick={() => setHerramienta({ tipo: 'datos' })}>
             <span className="nv-herramienta__icono">↯</span>
             <span>
               <strong>Datos</strong>
@@ -53,8 +54,8 @@ export function MusicaEscena({ escena, indice }: Props) {
               </span>
             </span>
           </button>
-        )}
       </div>
+      )}
 
       {!escena && (
         <div className="nv-presets">
@@ -106,6 +107,7 @@ export function MusicaEscena({ escena, indice }: Props) {
           indice={indice}
           alSonidos={alSonidos}
           alEditar={(pista) => setHerramienta(pista === ID_MELODIA ? { tipo: 'melodia' } : { tipo: 'golpes', pista })}
+          alAgregar={() => alSonidos(PISTA_NUEVA)}
         />
       )}
 

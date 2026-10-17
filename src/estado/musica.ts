@@ -396,6 +396,8 @@ export function agregarPista(p: Proyecto, valor: string): string {
   const fila = crearFila('bombo', p.patron.cantidadPasos, { volumen: 0.7 });
   p.patron.filas.push(fila);
   ponerSonido(p, fila.id, valor);
+  // En las escenas donde ya se eligió qué suena, la capa nueva entra sonando.
+  for (const e of [...p.escenas, ...p.respiros]) if (e.niveles) e.niveles[fila.id] = 2;
   return fila.id;
 }
 

@@ -289,9 +289,10 @@ export function pasosDe(pantalla: Pantalla, track: Track | null): PasoTour[] {
           id: 'm.sonidos',
           objetivo: '[data-tour="sonidos"]',
           seccion: 'LAS HERRAMIENTAS',
-          titulo: 'Sonidos',
-          texto:
-            'Abre la ventana donde eligen <b>con qué suena cada pista</b>: la batería, los sonidos de la biblioteca o los efectos que ustedes graben. Adentro tiene su propia guía.',
+          titulo: ia ? 'Sonidos' : 'Agregar un sonido',
+          texto: ia
+            ? 'Abre la ventana donde eligen <b>con qué suena cada pista</b>: la batería, los sonidos de la biblioteca o los efectos que ustedes graben. Adentro tiene su propia guía.'
+            : '<b>+ Agregar sonido</b> abre la biblioteca para sumar una capa nueva: la batería, los sonidos de la Sonoteca o los efectos que ustedes graben. Las capas nuevas solo se agregan desde aquí.',
         },
         ...(ia
           ? [
@@ -323,13 +324,20 @@ export function pasosDe(pantalla: Pantalla, track: Track | null): PasoTour[] {
           : [
               {
                 id: 'm.capas',
-                objetivo: '.nv-lista-sonidos',
+                objetivo: '.nv-lista-sonidos, .nv-celdas',
                 seccion: 'LAB MÚSICA URBANA · LAS CAPAS',
                 titulo: 'Las capas',
                 texto:
                   'Cada fila es una capa de la música. <b>Toquen su nombre</b> para cambiarla por otro sonido o por un efecto grabado por ustedes. <b>Suena / Callada</b> la enciende o la calla solo en esta escena.',
                 detalle:
                   'Aquí todo es a mano: suena exactamente lo que dibujan. Qué tan fuerte suena lo decide la <b>Intensidad</b> de la escena, arriba, junto a la emoción.',
+              },
+              {
+                id: 'm.vista',
+                objetivo: '.nv-selector--vista',
+                titulo: 'Lista o celdas',
+                texto:
+                  '<b>Lista</b>: cada capa en una fila limpia. <b>Celdas</b>: ven los golpes de cada capa en casillas, como una línea de tiempo, y los ponen o quitan tocando. Es lo mismo visto de dos formas.',
               },
               {
                 id: 'm.vivo',

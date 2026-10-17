@@ -17,6 +17,19 @@ import type { Escena, PuntoGesto } from '../estado/tipos';
 import { ID_MELODIA } from './VentanaSonidosPistas';
 import { useReproduccion } from './useReproduccion';
 import { origenSonido, Suena } from './FilaSonido';
+import { CeldasCapas } from './CeldasCapas';
+
+type Vista = 'lista' | 'celdas';
+const CLAVE_VISTA = 'sonora-vista-capas';
+
+/** Cómo quiere ver las capas quien usa esta tablet (una comodidad, no parte del proyecto). */
+function leerVista(): Vista {
+  try {
+    return localStorage.getItem(CLAVE_VISTA) === 'celdas' ? 'celdas' : 'lista';
+  } catch {
+    return 'lista';
+  }
+}
 
 interface Props {
   escena: Escena | null;
@@ -24,11 +37,22 @@ interface Props {
   alSonidos: (pista: string) => void;
   /** Abre la edición de una capa: sus golpes, o la matriz si es la melodía. */
   alEditar: (pista: string) => void;
+  /** Abre la biblioteca de Sonidos para agregar una capa nueva. */
+  alAgregar: () => void;
 }
 
 const COLOR_MELODIA = '#5fd4ff';
 
-export function MusicaMU({ escena, indice, alSonidos, alEditar }: Props) {
+export function MusicaMU({ escena, indice, alSonidos, alEditar, alAgregar }: Props) {
+  const [vista, setVista] = useState<Vista>(leerVista);
+  const cambiarVista = (v: Vista) => {
+    setVista(v);
+    try {
+      localStorage.setItem(CLAVE_VISTA, v);
+    } catch {
+      // Sin almacenamiento solo se olvida la preferencia.
+    }
+  };
   const { proyecto, actualizar } = useProyecto();
   const seccion = escena ? proyecto.secciones.find((s) => s.id === escena.id) : undefined;
   const { patron } = proyecto;
@@ -80,6 +104,26 @@ export function MusicaMU({ escena, indice, alSonidos, alEditar }: Props) {
       <div className="nv-tarjeta nv-musica__principal">
         <div className="nv-campo__fila">
           <strong className="nv-subtitulo">{escena ? 'Capas de esta escena' : 'Capas de toda la pieza'}</strong>
+          <div className="nv-selector nv-selector--vista" role="group" aria-label="Cómo ver las capas">
+            <button
+              type="button"
+              className={`nv-selector__op ${vista === 'lista' ? 'nv-selector__op--activa' : ''}`}
+              aria-pressed={vista === 'lista'}
+              onClick={() => cambiarVista('lista')}
+              title="Ver las capas como lista"
+            >
+              ☰ Lista
+            </button>
+            <button
+              type="button"
+              className={`nv-selector__op ${vista === 'celdas' ? 'nv-selector__op--activa' : ''}`}
+              aria-pressed={vista === 'celdas'}
+              onClick={() => cambiarVista('celdas')}
+              title="Ver los golpes de cada capa en celdas"
+            >
+              ▦ Celdas
+            </button>
+          </div>
           <span className="nv-espacio" />
           {escena?.niveles && (
             <button
@@ -96,6 +140,15 @@ export function MusicaMU({ escena, indice, alSonidos, alEditar }: Props) {
             </button>
           )}
         </div>
+        {vista === 'celdas' ? (
+          <CeldasCapas
+            capas={filas}
+            suena={escena ? suena : undefined}
+            alSuena={escena ? alternar : undefined}
+            alSonidos={alSonidos}
+            alNotas={() => alEditar(ID_MELODIA)}
+          />
+        ) : (
         <div className="nv-lista-sonidos">
           {filas.map((f, k) => (
             <div key={f.id} className={`nv-fila-son ${suena(f.id) ? '' : 'nv-fila-son--muda'}`}>
@@ -146,6 +199,12 @@ export function MusicaMU({ escena, indice, alSonidos, alEditar }: Props) {
               </button>
             </div>
           ))}
+        </div>
+        )}
+        <div className="nv-capas__pie">
+          <button type="button" className="nv-boton nv-boton--chico nv-agregar-capa" data-tour="sonidos" onClick={alAgregar}>
+            + Agregar sonido
+          </button>
         </div>
       </div>
 

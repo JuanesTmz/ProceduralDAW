@@ -7,14 +7,14 @@
  * sonido que la toca, a la derecha la lista de pistas para saltar entre
  * ellas. La pieza completa ya se ve detrás, en la pista repartida.
  *
- * «Agregar» es literal: una pista nueva no existe en la canción hasta que
- * el estudiante dice que sí. Mientras tanto es un borrador que se puede oír.
+ * Aquí no se agregan capas: eso se hace en la biblioteca de Sonidos, que
+ * es donde se elige con qué suena cada una.
  */
 import { useEscucha } from './useEscucha';
 import { useRef, useState } from 'react';
 import { motorAudio } from '../audio/motorAudio';
 import { useProyecto } from '../estado/ProyectoContext';
-import { colorDeSonido, crearFila, NOMBRES_SONIDO, redimensionarPatron } from '../estado/proyecto';
+import { colorDeSonido, NOMBRES_SONIDO, redimensionarPatron } from '../estado/proyecto';
 import { useCabezaLectora } from '../hooks/useCabezaLectora';
 import { usePintarArrastrando } from '../hooks/usePintarArrastrando';
 import type { TipoSonido } from '../estado/tipos';
@@ -26,16 +26,6 @@ const CASILLAS: (16 | 32 | 64)[] = [16, 32, 64];
 /** El kit sintetizado de la app, que siempre está. */
 const PERCUSION: TipoSonido[] = ['bombo', 'redoblante', 'hihat', 'palma', 'tom', 'aro'];
 
-/** El borrador: una pista que todavía no está en la canción. */
-interface Borrador {
-  nombre: string;
-  tipo: TipoSonido;
-  sampleUrl?: string;
-  pasos: boolean[];
-}
-
-const NUEVA = '__nueva__';
-
 interface Props {
   /** Con qué pista abrir, si se llegó tocando una en la pista repartida. */
   inicial?: string | null;
@@ -46,39 +36,23 @@ export function VentanaGolpes({ inicial, alCerrar }: Props) {
   const { proyecto, actualizar } = useProyecto();
   const { patron } = proyecto;
 
-  const [elegida, setElegida] = useState<string>(
-    inicial ?? patron.filas[0]?.id ?? NUEVA,
-  );
-  const [borrador, setBorrador] = useState<Borrador | null>(null);
+  const [elegida, setElegida] = useState<string>(inicial ?? patron.filas[0]?.id ?? '');
   const [familia, setFamilia] = useState<'percusion' | 'propios'>('percusion');
   const [pintando, setPintando] = useState<boolean | null>(null);
   const cabeza = useRef<HTMLDivElement>(null);
 
   useCabezaLectora(cabeza, patron.cantidadPasos);
 
-  const fila = patron.filas.find((f) => f.id === elegida) ?? null;
-  const enBorrador = elegida === NUEVA && borrador !== null;
-
-  const pasos = enBorrador ? borrador!.pasos : (fila?.pasos ?? []);
-  const color = enBorrador
-    ? colorDeSonido(borrador!.tipo, borrador!.sampleUrl)
-    : (fila?.color ?? 'var(--acento)');
-  const nombre = enBorrador ? borrador!.nombre : (fila?.nombre ?? '');
-  const sampleUrl = enBorrador ? borrador!.sampleUrl : fila?.sampleUrl;
-  const tipo = enBorrador ? borrador!.tipo : fila?.tipo;
+  const fila = patron.filas.find((f) => f.id === elegida) ?? patron.filas[0] ?? null;
+  const pasos = fila?.pasos ?? [];
+  const color = fila?.color ?? 'var(--acento)';
+  const nombre = fila?.nombre ?? '';
+  const sampleUrl = fila?.sampleUrl;
+  const tipo = fila?.tipo;
 
   // ------------------------------------------------------------- dibujar
 
   const marcar = (paso: number, encender: boolean) => {
-    if (enBorrador) {
-      setBorrador((b) => {
-        if (!b) return b;
-        const copia = [...b.pasos];
-        copia[paso] = encender;
-        return { ...b, pasos: copia };
-      });
-      return;
-    }
     if (!fila) return;
     actualizar((p) => {
       const f = p.patron.filas.find((x) => x.id === fila.id);
@@ -147,15 +121,6 @@ export function VentanaGolpes({ inicial, alCerrar }: Props) {
   // --------------------------------------------------------- elegir sonido
 
   const ponerSonido = (nuevo: { tipo: TipoSonido; nombre: string; sampleUrl?: string }) => {
-    if (elegida === NUEVA) {
-      setBorrador((b) => ({
-        nombre: nuevo.nombre,
-        tipo: nuevo.tipo,
-        sampleUrl: nuevo.sampleUrl,
-        pasos: b?.pasos ?? new Array(patron.cantidadPasos).fill(false),
-      }));
-      return;
-    }
     if (!fila) return;
     actualizar((p) => {
       const f = p.patron.filas.find((x) => x.id === fila.id);
@@ -168,34 +133,7 @@ export function VentanaGolpes({ inicial, alCerrar }: Props) {
     window.setTimeout(() => void motorAudio.escucharFila(fila.id), 60);
   };
 
-  // ------------------------------------------------------- agregar y quitar
-
-  const empezarNueva = () => {
-    setElegida(NUEVA);
-    setBorrador({
-      nombre: NOMBRES_SONIDO.bombo,
-      tipo: 'bombo',
-      pasos: new Array(patron.cantidadPasos).fill(false),
-    });
-  };
-
-  const agregar = () => {
-    if (!borrador) return;
-    let id = '';
-    actualizar((p) => {
-      const nueva = crearFila(borrador.tipo, p.patron.cantidadPasos, {
-        nombre: borrador.nombre,
-        sampleUrl: borrador.sampleUrl,
-      });
-      nueva.pasos = [...borrador.pasos];
-      id = nueva.id;
-      p.patron.filas.push(nueva);
-      // Entra sonando en todas las partes: si no, se agrega y no pasa nada.
-      for (const seccion of p.secciones) seccion.capasActivas.push(nueva.id);
-    });
-    setBorrador(null);
-    setElegida(id);
-  };
+  // ---------------------------------------------------------------- quitar
 
   const quitar = () => {
     if (!fila) return;
@@ -205,32 +143,19 @@ export function VentanaGolpes({ inicial, alCerrar }: Props) {
         seccion.capasActivas = seccion.capasActivas.filter((x) => x !== fila.id);
       }
     });
-    setElegida(patron.filas.find((f) => f.id !== fila.id)?.id ?? NUEVA);
-    if (patron.filas.length <= 1) empezarNueva();
+    setElegida(patron.filas.find((f) => f.id !== fila.id)?.id ?? '');
   };
 
   // ----------------------------------------------------------------- vista
 
   const golpes = pasos.filter(Boolean).length;
 
-  const lista = [
-    ...patron.filas.map((f) => ({
-      id: f.id,
-      nombre: f.nombre,
-      color: f.color,
-      nota: `${f.pasos.filter(Boolean).length} golpes`,
-    })),
-    ...(borrador
-      ? [
-          {
-            id: NUEVA,
-            nombre: borrador.nombre,
-            color: colorDeSonido(borrador.tipo, borrador.sampleUrl),
-            nota: 'sin agregar',
-          },
-        ]
-      : []),
-  ];
+  const lista = patron.filas.map((f) => ({
+    id: f.id,
+    nombre: f.nombre,
+    color: f.color,
+    nota: `${f.pasos.filter(Boolean).length} golpes`,
+  }));
 
   const propios = proyecto.sonidos;
 
@@ -251,25 +176,14 @@ export function VentanaGolpes({ inicial, alCerrar }: Props) {
             {escucha.sonandoAqui === 'todo' ? '❚❚ Pausar' : '▶ Con los demás'}
           </button>
           <span className="pie__hueco" />
-          {enBorrador ? (
-            <button
-              type="button"
-              className="boton boton--primario"
-              onClick={agregar}
-              disabled={golpes === 0}
-            >
-              Agregar a la canción
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="boton boton--peligro"
-              onClick={quitar}
-              disabled={patron.filas.length <= 1}
-            >
-              Quitar de la canción
-            </button>
-          )}
+          <button
+            type="button"
+            className="boton boton--peligro"
+            onClick={quitar}
+            disabled={patron.filas.length <= 1}
+          >
+            Quitar esta capa
+          </button>
         </>
       }
     >
@@ -383,18 +297,9 @@ export function VentanaGolpes({ inicial, alCerrar }: Props) {
           <ListaPistas
             titulo="Pistas"
             pistas={lista}
-            elegida={elegida}
-            alElegir={(id) => {
-              setElegida(id);
-              if (id !== NUEVA) setBorrador(null);
-            }}
-            pie={
-              !borrador && (
-                <button type="button" className="boton boton--chico" onClick={empezarNueva}>
-                  + Nueva pista
-                </button>
-              )
-            }
+            elegida={fila?.id ?? ''}
+            alElegir={setElegida}
+            pie={<p className="pista__nota">Las capas nuevas se agregan en la biblioteca de Sonidos.</p>}
           />
         </div>
       </div>

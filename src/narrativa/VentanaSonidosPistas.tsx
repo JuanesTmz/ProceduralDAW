@@ -24,7 +24,9 @@ import { SelectorInstrumento } from './SelectorInstrumento';
 
 const KIT: TipoSonido[] = ['bombo', 'redoblante', 'hihat', 'palma', 'tom', 'aro'];
 export const ID_MELODIA = 'melodia';
-const NUEVA = '__nueva__';
+/** Abre la biblioteca lista para agregar una capa nueva. */
+export const PISTA_NUEVA = '__nueva__';
+const NUEVA = PISTA_NUEVA;
 
 interface Props {
   /** La pista que llega elegida al abrir. */

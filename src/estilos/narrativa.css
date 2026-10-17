@@ -1885,3 +1885,47 @@
 .pad__leyenda span { display: inline-flex; align-items: center; gap: 6px; }
 .pad__leyenda i.pad__casilla { width: 12px; border-radius: 3px; box-shadow: none; }
 .pad__vuelta { margin-left: auto; color: var(--nv-tenue); }
+
+/* ---------- Música Urbana: ver las capas como lista o como celdas ---------- */
+.nv-selector--vista { margin-left: 12px; }
+.nv-selector--vista .nv-selector__op { padding: 6px 12px; min-height: 32px; font-size: 12px; }
+.nv-capas__pie { display: flex; justify-content: flex-end; margin-top: auto; padding-top: 4px; }
+.nv-agregar-capa { border-style: dashed; border-color: var(--nv-mu); color: var(--nv-mu); }
+.nv-agregar-capa:hover { background: #ff7ab81a; }
+
+.nv-celdas {
+  position: relative;
+  display: grid;
+  grid-template-columns: 190px 1fr auto;
+  column-gap: 12px;
+  row-gap: 6px;
+  align-items: center;
+}
+.nv-celdas__cabeza { grid-column: 2; position: relative; align-self: stretch; pointer-events: none; z-index: 2; }
+.nv-celdas__nombre {
+  grid-column: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 8px 10px 8px 8px;
+  border-radius: 10px;
+  background: var(--nv-s2);
+  text-align: left;
+}
+.nv-celdas__nombre:hover { background: var(--nv-s3); }
+.nv-celdas__pasos { grid-column: 2; display: grid; gap: 4px; padding: 6px; border-radius: 10px; background: var(--nv-s2); touch-action: none; }
+.nv-celdas__pasos--melodia { cursor: pointer; }
+.nv-celdas__suena { grid-column: 3; }
+.nv-celda {
+  height: 30px;
+  border-radius: 6px;
+  background: #ffffff0d !important;
+  border: 1px solid #ffffff10 !important;
+  transition: background 0.12s, box-shadow 0.12s;
+}
+.nv-celda--tiempo { background: #ffffff17 !important; }
+.nv-celda--on { background: var(--color) !important; border-color: var(--color) !important; box-shadow: 0 0 8px color-mix(in srgb, var(--color) 45%, transparent); }
+.nv-celdas__pasos--melodia .nv-celda { pointer-events: none; height: 22px; }
+.nv-celdas__fila { display: contents; }
+.nv-celdas__fila--muda > .nv-celdas__nombre, .nv-celdas__fila--muda > .nv-celdas__pasos { opacity: 0.35; }
