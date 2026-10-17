@@ -1,12 +1,14 @@
 /**
- * Lo que la interfaz necesita saber del motor mientras suena: si está
- * sonando y qué escena va. La posición fina (cabezales, barras) no pasa por
- * aquí: se lee del motor en cada cuadro con useCuadro, sin redibujar.
+ * Lo que la interfaz necesita saber del motor mientras suena: qué se pidió
+ * oír (la clave de la reproducción activa), si suena la pieza y qué escena
+ * va. La posición fina (cabezales, barras) no pasa por aquí: se lee del
+ * motor en cada cuadro con useCuadro, sin redibujar.
  */
 import { useEffect, useState } from 'react';
 import { motorAudio } from '../audio/motorAudio';
 
 export function useReproduccion() {
+  const [activa, setActiva] = useState<string | null>(motorAudio.claveActiva);
   const [sonando, setSonando] = useState(motorAudio.estaSonando);
   const [seccion, setSeccion] = useState(-1);
 
@@ -15,6 +17,7 @@ export function useReproduccion() {
     let cuadro = 0;
     // React no redibuja si el valor no cambió: esto solo cuesta al empezar y al parar.
     const mirar = () => {
+      setActiva(motorAudio.claveActiva);
       setSonando(motorAudio.estaSonando);
       cuadro = requestAnimationFrame(mirar);
     };
@@ -25,5 +28,11 @@ export function useReproduccion() {
     };
   }, []);
 
-  return { sonando, seccion: sonando ? seccion : -1 };
+  return {
+    activa,
+    sonando,
+    /** Suena la pieza completa (no una escena ni un sonido suelto). */
+    sonandoPieza: activa === 'pieza',
+    seccion: sonando ? seccion : -1,
+  };
 }

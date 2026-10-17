@@ -145,14 +145,14 @@ export function MusicaMU({ escena, indice, alSonidos, alEditar, alAgregar }: Pro
             alSuena={escena ? alternar : undefined}
             alSonidos={alSonidos}
             alNotas={() => alEditar(ID_MELODIA)}
-            solo={solo.sonando}
+            suenaSolo={solo.suena}
             alSolo={solo.alternar}
           />
         ) : (
         <div className="nv-lista-sonidos">
           {filas.map((f, k) => (
             <div key={f.id} className={`nv-fila-son ${suena(f.id) ? '' : 'nv-fila-son--muda'}`}>
-              <BotonSolo sonando={solo.sonando === f.id} nombre={f.nombre} alTocar={() => solo.alternar(f.id)} />
+              <BotonSolo sonando={solo.suena(f.id)} nombre={f.nombre} alTocar={() => solo.alternar(f.id)} />
               <button
                 type="button"
                 className="nv-fila-son__elegir"

@@ -96,7 +96,7 @@ export function EditorEscena({ id, pestana, alPestana, alIr, alVolver }: Props) 
 }
 
 function EscucharPieza() {
-  const { sonando } = useReproduccion();
+  const { sonandoPieza: sonando } = useReproduccion();
   return (
     <button
       type="button"

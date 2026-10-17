@@ -11,6 +11,8 @@ export interface VozPercusion {
   /** Nodo de entrada al que se conecta el volumen de la fila. */
   salida: Tone.Gain;
   disparar: (tiempo: number, velocidad: number) => void;
+  /** Corta lo que esté sonando o agendado (los samples largos no se apagan solos). */
+  parar?: () => void;
   liberar: () => void;
 }
 
@@ -169,6 +171,7 @@ export function crearVozSample(url: string, alCargar?: () => void): VozPercusion
       player.volume.value = Tone.gainToDb(Math.max(velocidad, 0.001));
       player.start(tiempo);
     },
+    parar: () => player.stop(),
     liberar: () => {
       player.dispose();
       salida.dispose();

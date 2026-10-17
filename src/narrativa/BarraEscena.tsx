@@ -45,18 +45,20 @@ export function BarraEscena({ escena, indice, tipos }: Props) {
   // Por dónde va lo que se oye, cuadro a cuadro: se escribe directo en la
   // barra. React solo redibuja cuando cambia una palabra o el play.
   useCuadro(() => {
-    const pos = motorAudio.escenaSola === indice ? motorAudio.posicionOida : null;
-    const suena = pos !== null && pos.indice === indice;
-    const t = suena ? pos.segundos : desde;
+    // ■ solo si lo que suena es ESTA escena (no un sonido suelto ni la pieza).
+    const suena = motorAudio.claveActiva === `escena:${indice}`;
+    const pos = suena ? motorAudio.posicionOida : null;
+    const sonandoYa = pos !== null && pos.indice === indice;
+    const t = sonandoYa ? pos.segundos : desde;
     const x = `${(Math.min(t, total) / total) * 100}%`;
     if (lleno.current) lleno.current.style.width = x;
     if (cabeza.current) {
       cabeza.current.style.left = x;
-      cabeza.current.classList.toggle('nv-barra-escena__cabeza--quieta', !suena);
+      cabeza.current.classList.toggle('nv-barra-escena__cabeza--quieta', !sonandoYa);
     }
     if (reloj.current) reloj.current.textContent = `${formatearReloj(t)} / ${formatearReloj(total)}`;
     setSonando(suena);
-    setDichas(suena && !escena.respiro ? Math.ceil(((t - ENTRADA_VOZ) / Math.max(0.5, voz)) * palabras) : -1);
+    setDichas(sonandoYa && !escena.respiro ? Math.ceil(((t - ENTRADA_VOZ) / Math.max(0.5, voz)) * palabras) : -1);
   });
 
   // Cambiar de escena vuelve el punto de arranque al principio.

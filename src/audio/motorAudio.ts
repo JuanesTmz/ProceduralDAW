@@ -49,6 +49,38 @@ interface EntradaVoz {
 }
 
 /** Aviso que el motor manda a la interfaz en cada paso, para pintar la cabeza lectora. */
+/**
+ * Lo que se puede reproducir. Todo botón de «oír» de la app pide una de
+ * estas cuatro cosas, y el motor solo hace una a la vez: lo último que se
+ * pidió interrumpe a lo anterior.
+ *
+ *  - pieza:  toda la pieza, escena tras escena, con voz.
+ *  - escena: una sola escena, con voz y cajitas, y para al terminarla.
+ *  - capa:   un solo sonido aislado (id de fila, o 'melodia'). Dentro de una
+ *            escena suena como en ella y para al terminarla; en General
+ *            (escena -1) es el patrón en bucle.
+ *  - bucle:  el patrón en bucle, con todas las capas.
+ */
+export type Reproduccion =
+  | { tipo: 'pieza' }
+  | { tipo: 'escena'; indice: number; desde?: number }
+  | { tipo: 'capa'; id: string; escena: number }
+  | { tipo: 'bucle' };
+
+/** El nombre estable de una reproducción: así cada botón sabe si es la que suena. */
+export function claveDe(r: Reproduccion): string {
+  switch (r.tipo) {
+    case 'pieza':
+      return 'pieza';
+    case 'escena':
+      return `escena:${r.indice}`;
+    case 'capa':
+      return `capa:${r.escena}:${r.id}`;
+    default:
+      return 'bucle';
+  }
+}
+
 export type OyentePaso = (paso: number) => void;
 
 /** Aviso al entrar en una sección nueva. -1 cuando la pieza termina. */
@@ -74,6 +106,8 @@ class MotorAudio {
   private muestreadorMatriz: Tone.Sampler | null = null;
   private urlMuestreador: string | undefined;
   private notaMuestreador: string | undefined;
+  /** El audio del sonido propio ya cargado, para rehacer el sampler sin volver a bajarlo. */
+  private bufferMuestreador: AudioBuffer | null = null;
 
   private voces = new Map<string, EntradaVoz>();
 
@@ -96,6 +130,14 @@ class MotorAudio {
    * siempre manda lo último que se tocó.
    */
   private soloPista: string | null = null;
+  /**
+   * Cuenta cada petición de play y cada stop. Una petición que despierta
+   * (de cargar el audio, o de un temporizador) con otro número ya no vale:
+   * otra cosa pasó entretanto, y no se pisa.
+   */
+  private pedido = 0;
+  /** Lo que se pidió oír ahora, desde el instante en que se pidió. */
+  private pedida: Reproduccion | null = null;
   private gananciaSeccion: Tone.Gain | null = null;
   /** Baja la música mientras habla la voz de una escena, y la sube al terminar. */
   private agacharse: Tone.Gain | null = null;
@@ -166,6 +208,16 @@ class MotorAudio {
     return this.estaSonando && !this.terminando;
   }
 
+  /** La clave de lo que se pidió oír (suene ya o esté cargando), o null. */
+  get claveActiva(): string | null {
+    return this.pedida ? claveDe(this.pedida) : null;
+  }
+
+  /** Cuál es el pedido actual: sirve para saber si algo lo arrancó uno mismo. */
+  get numeroDePedido(): number {
+    return this.pedido;
+  }
+
   /** La sección que suena, o -1 si está en bucle o detenido. */
   get seccionActual() {
     if (this.modo !== 'pieza' || !this.estaSonando) return -1;
@@ -210,6 +262,64 @@ class MotorAudio {
     return { indice: actual.indice, segundos: Math.max(0, Math.min(largo, ahora - actual.t)) };
   }
 
+  /** El reloj del contexto, sin el adelanto de Tone: lo que ya está sonando de verdad. */
+  private get relojReal(): number {
+    return (Tone.getContext().rawContext as AudioContext).currentTime;
+  }
+
+  /**
+   * Calla la música desde ahora hasta `hasta`. Tone agenda los golpes con
+   * 100 ms de adelanto: sin esto, al parar o cambiar de reproducción
+   * todavía sonarían los últimos golpes de lo anterior.
+   */
+  private cortarLoAgendado(hasta: number): void {
+    const g = this.modulador?.gain;
+    if (!g) return;
+    g.cancelScheduledValues(0);
+    g.setValueAtTime(0, this.relojReal);
+    g.setValueAtTime(1, hasta);
+  }
+
+  /**
+   * Corta lo que todavía suena: las muestras largas de las capas y las notas
+   * de la melodía, que de otro modo se oyen hasta el final de su cola
+   * (la campana tarda más de un segundo en apagarse).
+   */
+  private cortarSonando(): void {
+    for (const e of this.voces.values()) e.voz.parar?.();
+    // Las notas de la campana tienen más de un segundo de cola y el eco las
+    // repite: no hay forma de apagarlas a medias. Se arma la cadena de nuevo,
+    // y lo que sonaba se corta de golpe con el nodo viejo.
+    this.armarMatriz();
+  }
+
+  /**
+   * La cadena de la melodía: campana → eco → volumen → bus. Se arma al
+   * iniciar y cada vez que se corta, para empezar siempre sin restos.
+   */
+  private armarMatriz(): void {
+    if (!this.bus) return;
+    const volumen = this.gananciaMatriz?.gain.value ?? 0.7;
+    this.matriz?.dispose();
+    this.ecoMatriz?.dispose();
+    this.gananciaMatriz?.dispose();
+    this.gananciaMatriz = new Tone.Gain(volumen).connect(this.bus);
+    this.ecoMatriz = new Tone.FeedbackDelay({
+      delayTime: '8n.',
+      feedback: 0.34,
+      wet: 0.28,
+    }).connect(this.gananciaMatriz);
+    this.matriz = new Tone.PolySynth(Tone.Synth, {
+      oscillator: { type: 'triangle' },
+      envelope: { attack: 0.004, decay: 1.1, sustain: 0.015, release: 1.4 },
+    }).connect(this.ecoMatriz);
+    this.matriz.maxPolyphony = 24;
+    this.matriz.volume.value = -11;
+    // El sonido propio de la melodía cuelga del eco: se rehace también,
+    // porque su cola seguiría sonando por la cadena nueva.
+    this.armarMuestreador();
+  }
+
   /** Arranca el contexto de audio y arma el grafo. Idempotente. */
   async iniciar(): Promise<void> {
     if (this.iniciado) return;
@@ -240,18 +350,7 @@ class MotorAudio {
 
     // Voz de la matriz: campana suave con cola, para que los acordes se
     // superpongan y la grilla suene envolvente aunque se toquen notas sueltas.
-    this.gananciaMatriz = new Tone.Gain(0.7).connect(this.bus);
-    this.ecoMatriz = new Tone.FeedbackDelay({
-      delayTime: '8n.',
-      feedback: 0.34,
-      wet: 0.28,
-    }).connect(this.gananciaMatriz);
-    this.matriz = new Tone.PolySynth(Tone.Synth, {
-      oscillator: { type: 'triangle' },
-      envelope: { attack: 0.004, decay: 1.1, sustain: 0.015, release: 1.4 },
-    }).connect(this.ecoMatriz);
-    this.matriz.maxPolyphony = 24;
-    this.matriz.volume.value = -11;
+    this.armarMatriz();
 
     // La voz cuelga del maestro, no del bus: el filtro, el eco y el
     // desvanecido del cierre son de la música, no del relato.
@@ -299,17 +398,67 @@ class MotorAudio {
     for (const oyente of this.oyentesSeccion) oyente(indice);
   }
 
-  /** Empieza a reproducir el patrón en bucle. */
-  async reproducir(): Promise<void> {
+  /**
+   * El único camino a «sonar». Lo anterior se corta en seco, se espera a
+   * que el audio esté listo, y si mientras tanto llegó otro pedido (o un
+   * stop), este se deja caer sin sonar.
+   */
+  async reproducirCon(r: Reproduccion): Promise<void> {
+    this.detener();
+    const mio = ++this.pedido;
+    this.pedida = r;
     await this.iniciar();
-    if (this.estaSonando) return;
+    if (mio !== this.pedido) return;
 
+    switch (r.tipo) {
+      case 'pieza':
+        this.modo = 'pieza';
+        this.desde = 0;
+        this.soloUna = false;
+        this.soloPista = null;
+        this.desdeSegundo = 0;
+        break;
+      case 'escena':
+        this.modo = 'pieza';
+        this.desde = Math.max(0, r.indice);
+        this.soloUna = true;
+        this.soloPista = null;
+        this.desdeSegundo = Math.max(0, r.desde ?? 0);
+        break;
+      case 'capa':
+        this.modo = r.escena >= 0 ? 'pieza' : 'patron';
+        this.desde = Math.max(0, r.escena);
+        this.soloUna = r.escena >= 0;
+        this.soloPista = r.id;
+        this.desdeSegundo = 0;
+        break;
+      default:
+        this.modo = 'patron';
+        this.desde = 0;
+        this.soloUna = false;
+        this.soloPista = null;
+        this.desdeSegundo = 0;
+    }
+    this.arrancar();
+  }
+
+  /** Compatibilidad con las pantallas viejas: el patrón o la pieza, según el modo. */
+  async reproducir(): Promise<void> {
+    if (this.pedida) return;
+    await this.reproducirCon(this.modo === 'pieza' ? { tipo: 'pieza' } : { tipo: 'bucle' });
+  }
+
+  /** Pone en marcha el reloj con lo que `reproducirCon` dejó dispuesto. */
+  private arrancar(): void {
     const transporte = Tone.getTransport();
     this.paso = 0;
     this.vuelta = 0;
     this.indiceSeccion = this.modo === 'pieza' ? this.desde : 0;
     this.vueltaEnSeccion = 0;
     this.terminando = false;
+    // Los golpes que quedaron agendados de lo anterior no suenan: el volumen
+    // de la música vuelve justo cuando arranca lo nuevo.
+    this.cortarLoAgendado(Tone.now() + 0.098);
 
     // Un solo origen de tiempo para la música y para la voz: así la
     // narración cae siempre en el mismo punto, sin importar cuándo se cargó.
@@ -337,7 +486,7 @@ class MotorAudio {
       this.desdeSegundo = 0;
       if (primera) this.aplicarSeccion(primera, inicio, corrido);
       this.avisarSeccion(this.desde);
-      if (this.desde === 0) this.lanzarNarracion();
+      if (this.desde === 0 && !this.soloPista) this.lanzarNarracion();
     } else {
       this.gananciaSeccion?.gain.cancelScheduledValues(Tone.now());
       this.gananciaSeccion?.gain.rampTo(1, 0.05);
@@ -394,51 +543,34 @@ class MotorAudio {
     else void Tone.loaded().then(arrancar);
   }
 
-  /**
-   * Una pista sola, sin nada más: ni las demás capas, ni la voz, ni las
-   * cajitas. Interrumpe lo que sonaba; otro play la interrumpe a ella.
-   * Si la pista está callada en esa escena, igual se oye: se pidió oírla.
-   */
+  /** Un sonido aislado. Ver `Reproduccion`. */
   async reproducirSolo(id: string, escena = -1): Promise<void> {
-    if (this.estaSonando) this.detener();
-    // Dentro de una escena suena como en ella (su pad, su intensidad) y
-    // para al terminarla; afuera, el patrón en bucle.
-    this.modo = escena >= 0 ? 'pieza' : 'patron';
-    this.desde = Math.max(0, escena);
-    this.soloUna = escena >= 0;
-    this.soloPista = id;
-    await this.reproducir();
+    await this.reproducirCon({ tipo: 'capa', id, escena });
   }
 
   /** La pista que suena aislada, o null. */
   get pistaSola(): string | null {
-    return this.estaSonando ? this.soloPista : null;
+    return this.pedida?.tipo === 'capa' ? this.pedida.id : null;
   }
 
   /** Toca la pieza entera, de la primera escena a la última. */
   async reproducirPieza(): Promise<void> {
-    if (this.estaSonando) this.detener();
-    this.soloPista = null;
-    this.modo = 'pieza';
-    this.desde = 0;
-    this.soloUna = false;
-    await this.reproducir();
+    await this.reproducirCon({ tipo: 'pieza' });
   }
 
   /** Toca una sola escena de la pieza, y para al terminarla. Puede arrancar a mitad. */
   async reproducirEscena(indice: number, desdeSegundo = 0): Promise<void> {
-    if (this.estaSonando) this.detener();
-    this.soloPista = null;
-    this.modo = 'pieza';
-    this.desde = Math.max(0, indice);
-    this.soloUna = true;
-    this.desdeSegundo = Math.max(0, desdeSegundo);
-    await this.reproducir();
+    await this.reproducirCon({ tipo: 'escena', indice, desde: desdeSegundo });
+  }
+
+  /** El patrón en bucle, con todas las capas. */
+  async reproducirBucle(): Promise<void> {
+    await this.reproducirCon({ tipo: 'bucle' });
   }
 
   /** La escena que suena si se tocó una sola, o -1. */
   get escenaSola(): number {
-    return this.estaSonando && this.soloUna ? this.desde : -1;
+    return this.pedida?.tipo === 'escena' ? this.pedida.indice : -1;
   }
 
   /** Cuánto dura la sección i, en segundos. */
@@ -447,26 +579,31 @@ class MotorAudio {
     return s ? this.duracionSeccion(s) : 0;
   }
 
-  /** Bucle del patrón, o recorrido completo por el arco. */
+  /** Bucle del patrón, o recorrido completo por el arco (pantallas viejas). */
   cambiarModo(modo: ModoReproduccion): void {
     if (this.modo === modo) return;
-    const sonaba = this.estaSonando;
-    if (sonaba) this.detener();
+    const sonaba = this.pedida !== null;
     this.modo = modo;
-    if (sonaba) void this.reproducir();
+    if (sonaba) void this.reproducirCon(modo === 'pieza' ? { tipo: 'pieza' } : { tipo: 'bucle' });
   }
 
   detener(): void {
+    // Cualquier petición que esté esperando (carga de audio, temporizador) ya no vale.
+    this.pedido += 1;
+    this.pedida = null;
     this.soloPista = null;
     if (!this.iniciado) return;
     const transporte = Tone.getTransport();
     transporte.stop();
     transporte.position = 0;
-    this.matriz?.releaseAll();
+    this.cortarSonando();
     this.generacionPieza += 1;
     this.inicioNarracion = 0;
-    if (this.narrador?.state === 'started') this.narrador.stop();
-    for (const voz of this.vocesEscena.values()) if (voz.state === 'started') voz.stop();
+    // Se para todo sin mirar el estado: lo agendado para más adelante
+    // (la voz entra 0,15 s después, las cajitas más tarde) también se cancela.
+    this.narrador?.stop();
+    for (const voz of this.vocesEscena.values()) voz.stop();
+    for (const r of this.sueltas.values()) r.stop();
     if (this.agacharse) {
       this.agacharse.gain.cancelScheduledValues(Tone.now());
       this.agacharse.gain.value = 1;
@@ -475,11 +612,11 @@ class MotorAudio {
     this.soloUna = false;
     this.iniciosOidos = [];
     transporte.bpm.cancelScheduledValues(0);
-    this.modulador?.gain.cancelScheduledValues(Tone.now());
-    if (this.modulador) this.modulador.gain.value = 1;
+    // Los golpes que ya estaban agendados no se oyen; el volumen vuelve enseguida
+    // para que una prueba de sonido justo después sí suene.
+    this.cortarLoAgendado(this.relojReal + 0.2);
     this.silenciador?.gain.cancelScheduledValues(Tone.now());
     if (this.silenciador) this.silenciador.gain.value = 1;
-    for (const r of this.sueltas.values()) if (r.state === 'started') r.stop();
     this.paso = 0;
     this.vueltaEnSeccion = 0;
     this.indiceSeccion = 0;
@@ -507,6 +644,9 @@ class MotorAudio {
   private tocarPaso(tiempo: number): void {
     const proyecto = this.proyecto;
     if (!proyecto || this.terminando) return;
+    // Tras un stop, el reloj de Tone todavía entrega unos 100 ms de pasos que ya
+    // tenía encolados. Esos no son de esta reproducción: ni suenan ni cuentan.
+    if (!this.pedida || tiempo < this.inicioPieza - 0.005) return;
 
     const { patron } = proyecto;
     const paso = this.paso % patron.cantidadPasos;
@@ -519,7 +659,8 @@ class MotorAudio {
     }
     const semillaActiva = seccion ? seccion.semilla : proyecto.semilla;
     // Sección a mano: suena exactamente lo dibujado, sin azar ni adelgazado.
-    const aMano = seccion?.modo === 'manual';
+    // (Y en Música Urbana el patrón en bucle también: lo dibujado, sin azar.)
+    const aMano = seccion ? seccion.modo === 'manual' : proyecto.track === 'musica';
     const factorDensidad = seccion && !aMano ? densidadDeIntensidad(seccion.intensidad) : 1;
 
     // El remate: los últimos pasos antes de cambiar de parte suenan seguros
@@ -965,11 +1106,19 @@ class MotorAudio {
       gain.linearRampToValueAtTime(0, tiempo + 0.12);
     }
     const espera = Math.max(0, (tiempo - Tone.now()) * 1000) + 250;
-    window.setTimeout(() => this.detener(), espera);
+    // Solo corta si nadie pidió otra cosa entretanto: si no, un ▶ pulsado
+    // justo al terminar la escena se llevaría el stop de la escena anterior.
+    const mio = this.pedido;
+    window.setTimeout(() => {
+      if (this.pedido === mio) this.detener();
+    }, espera);
   }
 
   /** Mute/solo: si alguna fila está en solo, solo suenan las que estén en solo. */
   private filaSuena(fila: Fila, filas: Fila[]): boolean {
+    // La app nueva no tiene mute ni solo en el proyecto: qué suena lo dicen las
+    // escenas. Si un proyecto viejo los dejó marcados, no pueden callar nada.
+    if (this.proyecto?.track) return true;
     if (fila.silenciada) return false;
     const haySolo = filas.some((f) => f.soloActivo);
     return !haySolo || fila.soloActivo;
@@ -1041,11 +1190,25 @@ class MotorAudio {
     if (this.urlMuestreador === url && this.notaMuestreador === nota) return;
     this.urlMuestreador = url;
     this.notaMuestreador = nota;
+    this.bufferMuestreador = null;
+    this.armarMuestreador();
+    if (!url) return;
+    const buffer = new Tone.ToneAudioBuffer(url, () => {
+      // Si mientras cargaba cambió el sonido, este ya no vale.
+      if (this.urlMuestreador !== url || this.notaMuestreador !== nota) return;
+      this.bufferMuestreador = buffer.get() as AudioBuffer;
+      this.armarMuestreador();
+    });
+  }
+
+  /** (Re)arma el sampler con el audio ya cargado; sin audio, no hay sampler. */
+  private armarMuestreador(): void {
     this.muestreadorMatriz?.dispose();
     this.muestreadorMatriz = null;
-    if (!url || !this.ecoMatriz) return;
+    const nota = this.notaMuestreador;
+    if (!this.bufferMuestreador || !this.ecoMatriz || !nota) return;
     this.muestreadorMatriz = new Tone.Sampler({
-      urls: { [nota]: url },
+      urls: { [nota]: this.bufferMuestreador },
       attack: 0.002,
       // Corto: la cola la pone el eco de la matriz, no el sample.
       release: 0.35,

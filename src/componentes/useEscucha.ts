@@ -1,75 +1,57 @@
 /**
- * Los botones de «oír» de una ventana: tocar una vez suena, tocar otra vez
- * para. Y al cerrar la ventana (por donde sea) se para solo: lo que se
- * empezó a oír aquí no se queda sonando en bucle detrás.
+ * Los botones de «oír» de una ventana o de una lista.
  *
- * Mientras un botón está en «Pausar», se mira al motor en cada cuadro: en
- * cuanto deja de sonar —porque terminó la escena, porque se paró con la
- * barra espaciadora o con otro play— el botón vuelve a «oír». No depende
- * de alcanzar a ver el instante exacto en que cambia.
+ * No llevan su propia cuenta de qué suena: le preguntan al motor cuál es la
+ * reproducción activa, en cada cuadro. Así un botón solo aparece como «Pausar»
+ * si es EL que suena, y vuelve a «oír» en cuanto otra cosa lo reemplaza
+ * (otro botón, la escena, la pieza, la barra espaciadora) o termina sola.
+ *
+ * Al cerrarse la ventana se para lo que se arrancó desde ella, y solo eso.
  */
 import { useEffect, useRef, useState } from 'react';
-import { motorAudio } from '../audio/motorAudio';
-
-/** Cuánto se espera a que arranque (cargar sonidos) antes de darlo por fallido. */
-const ESPERA_ARRANQUE = 4000;
+import { claveDe, motorAudio, type Reproduccion } from '../audio/motorAudio';
 
 export function useEscucha() {
-  const [sonandoAqui, setSonandoAqui] = useState<string | null>(null);
-  const propio = useRef<string | null>(null);
-  const empezo = useRef(0);
-  const yaSono = useRef(false);
-  /** Cómo saber si lo que suena sigue siendo lo de este botón. */
-  const sigue = useRef<() => boolean>(() => motorAudio.sigueSonando);
+  const [activa, setActiva] = useState<string | null>(motorAudio.claveActiva);
+  /** El número de pedido del último play que se arrancó desde aquí. */
+  const mio = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!sonandoAqui) return;
     let cuadro = 0;
     const mirar = () => {
-      if (sigue.current()) yaSono.current = true;
-      else if (yaSono.current || performance.now() - empezo.current > ESPERA_ARRANQUE) {
-        propio.current = null;
-        setSonandoAqui(null);
-        return;
-      }
+      setActiva(motorAudio.claveActiva);
       cuadro = requestAnimationFrame(mirar);
     };
     cuadro = requestAnimationFrame(mirar);
     return () => cancelAnimationFrame(cuadro);
-  }, [sonandoAqui]);
+  }, []);
 
-  // Al desmontarse la ventana, se para lo que se empezó aquí.
+  /** ¿Es esta la reproducción que suena ahora? */
+  const suena = (r: Reproduccion) => activa === claveDe(r);
+
+  const eraMio = () => mio.current !== null && mio.current === motorAudio.numeroDePedido && motorAudio.claveActiva !== null;
+
+  // Al desmontarse la ventana, se para lo que se empezó aquí (y solo eso).
   useEffect(
     () => () => {
-      if (propio.current) motorAudio.detener();
+      if (eraMio()) motorAudio.detener();
     },
     [],
   );
 
   const parar = () => {
-    if (!propio.current) return;
-    propio.current = null;
-    setSonandoAqui(null);
-    motorAudio.detener();
+    if (eraMio()) motorAudio.detener();
   };
 
-  /**
-   * Suena con `arrancar`, o para si ya sonaba este mismo botón. `sigueSiendo`
-   * dice si lo que suena todavía es lo suyo (si otro play lo reemplazó, el
-   * botón vuelve a «oír» aunque el motor siga sonando).
-   */
-  const alternar = (id: string, arrancar: () => void, sigueSiendo?: () => boolean) => {
-    if (propio.current === id) {
-      parar();
+  /** Suena `r`, o para si ya sonaba exactamente eso. Si sonaba otra cosa, la reemplaza. */
+  const alternar = (r: Reproduccion) => {
+    if (motorAudio.claveActiva === claveDe(r)) {
+      motorAudio.detener();
       return;
     }
-    propio.current = id;
-    empezo.current = performance.now();
-    yaSono.current = false;
-    sigue.current = sigueSiendo ?? (() => motorAudio.sigueSonando);
-    setSonandoAqui(id);
-    arrancar();
+    void motorAudio.reproducirCon(r);
+    mio.current = motorAudio.numeroDePedido;
   };
 
-  return { sonandoAqui, alternar, parar };
+  return { suena, alternar, parar };
 }

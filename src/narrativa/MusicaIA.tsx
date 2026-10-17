@@ -9,7 +9,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent as EventoTecla, PointerEvent as EventoPuntero } from 'react';
-import { motorAudio } from '../audio/motorAudio';
+import { motorAudio, type Reproduccion } from '../audio/motorAudio';
 import { useProyecto } from '../estado/ProyectoContext';
 import { buscarEscena, recorrido } from '../estado/escenas';
 import { COLOR_GRUPO, fuente, moverReglaGeneral } from '../estado/musica';
@@ -126,7 +126,7 @@ export function MusicaIA({ escena, alSonidos, alNotas }: Props) {
             alSonidos={() => alSonidos(p.id)}
             alSuena={() => alternarSuena(p.id)}
             alPad={() => setPad(p.id)}
-            solo={solo.sonando === p.id}
+            solo={solo.suena(p.id)}
             alSolo={() => solo.alternar(p.id)}
             alNotas={p.id === ID_MELODIA ? alNotas : undefined}
           />
@@ -306,11 +306,9 @@ function VentanaPad({ id, escena, alCerrar }: { id: string; escena: Escena | nul
       }
     });
 
-  const oir = () =>
-    escucha.alternar('pad', () => {
-      const i = escena ? recorrido(proyecto).findIndex((e) => e.id === escena.id) : -1;
-      void (i >= 0 ? motorAudio.reproducirEscena(i) : motorAudio.reproducirPieza());
-    });
+  const indiceEscena = escena ? recorrido(proyecto).findIndex((e) => e.id === escena.id) : -1;
+  const queSuena: Reproduccion = indiceEscena >= 0 ? { tipo: 'escena', indice: indiceEscena } : { tipo: 'bucle' };
+  const oir = () => escucha.alternar(queSuena);
 
   const donde = { left: `${pista.golpes * 100}%`, top: `${(1 - pista.azar) * 100}%` };
 
@@ -324,7 +322,7 @@ function VentanaPad({ id, escena, alCerrar }: { id: string; escena: Escena | nul
       pie={
         <>
           <button type="button" className="boton" onClick={oir}>
-            {escucha.sonandoAqui ? '❚❚ Pausar' : escena ? '▶ Oír la escena' : '▶ Oír la pieza'}
+            {escucha.suena(queSuena) ? '❚❚ Pausar' : escena ? '▶ Oír la escena' : '▶ Oír la pieza'}
           </button>
           <span className="pie__hueco" />
           {escena && pista.propia && (

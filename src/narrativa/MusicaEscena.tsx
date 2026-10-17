@@ -111,8 +111,8 @@ export function MusicaEscena({ escena, indice }: Props) {
         />
       )}
 
-      {herramienta?.tipo === 'golpes' && <VentanaGolpes inicial={herramienta.pista} alCerrar={cerrar} />}
-      {herramienta?.tipo === 'melodia' && <VentanaMatriz alCerrar={cerrar} />}
+      {herramienta?.tipo === 'golpes' && <VentanaGolpes inicial={herramienta.pista} escena={indice} alCerrar={cerrar} />}
+      {herramienta?.tipo === 'melodia' && <VentanaMatriz escena={indice} alCerrar={cerrar} />}
       {herramienta?.tipo === 'sonidos' && <VentanaSonidosPistas pista={herramienta.pista} alCerrar={cerrar} />}
       {herramienta?.tipo === 'datos' && (
         <Ventana

@@ -12,7 +12,7 @@
  */
 import { useEscucha } from './useEscucha';
 import { useRef, useState } from 'react';
-import { motorAudio } from '../audio/motorAudio';
+import { motorAudio, type Reproduccion } from '../audio/motorAudio';
 import { useProyecto } from '../estado/ProyectoContext';
 import { colorDeSonido, NOMBRES_SONIDO, redimensionarPatron } from '../estado/proyecto';
 import { useCabezaLectora } from '../hooks/useCabezaLectora';
@@ -29,10 +29,12 @@ const PERCUSION: TipoSonido[] = ['bombo', 'redoblante', 'hihat', 'palma', 'tom',
 interface Props {
   /** Con qué pista abrir, si se llegó tocando una en la pista repartida. */
   inicial?: string | null;
+  /** La escena desde la que se abrió (su índice), o -1 si fue desde General. */
+  escena?: number;
   alCerrar: () => void;
 }
 
-export function VentanaGolpes({ inicial, alCerrar }: Props) {
+export function VentanaGolpes({ inicial, escena = -1, alCerrar }: Props) {
   const { proyecto, actualizar } = useProyecto();
   const { patron } = proyecto;
 
@@ -81,36 +83,14 @@ export function VentanaGolpes({ inicial, alCerrar }: Props) {
   // ------------------------------------------------------------- escuchar
 
   const escucha = useEscucha();
+  // Dentro de una escena suena como en ella (con sus capas calladas y su
+  // intensidad); en General, el patrón en bucle.
+  const sola: Reproduccion = { tipo: 'capa', id: fila?.id ?? '', escena };
+  const conTodo: Reproduccion = escena >= 0 ? { tipo: 'escena', indice: escena } : { tipo: 'bucle' };
 
-  /** Solo esta pista, en bucle y sin nada más. Otra vez: para. */
-  const oirSola = () => {
-    if (!fila) return;
-    escucha.alternar(
-      'sola',
-      () => void motorAudio.reproducirSolo(fila.id),
-      () => motorAudio.sigueSonando && motorAudio.pistaSola === fila.id,
-    );
-  };
-
-  const oirConTodo = () =>
-    escucha.alternar('todo', () => {
-      actualizar((p) => {
-        for (const f of p.patron.filas) f.soloActivo = false;
-        p.patron.melodia.soloActivo = false;
-        p.modoReproduccion = 'patron';
-      });
-      motorAudio.cambiarModo('patron');
-      void motorAudio.reproducir();
-    });
-
-  /** Al cerrar nadie se queda en solo, y lo que sonaba aquí se para. */
+  /** Al cerrar, lo que sonaba desde aquí se para. */
   const cerrar = () => {
     escucha.parar();
-    actualizar((p) => {
-      for (const f of p.patron.filas) f.soloActivo = false;
-      p.patron.melodia.soloActivo = false;
-      p.modoReproduccion = 'pieza';
-    });
     alCerrar();
   };
 
@@ -165,11 +145,11 @@ export function VentanaGolpes({ inicial, alCerrar }: Props) {
       alCerrar={cerrar}
       pie={
         <>
-          <button type="button" className="boton" onClick={oirSola} disabled={!fila}>
-            {escucha.sonandoAqui === 'sola' ? '❚❚ Pausar' : '▶ Solo este'}
+          <button type="button" className="boton" onClick={() => escucha.alternar(sola)} disabled={!fila}>
+            {escucha.suena(sola) ? '❚❚ Pausar' : '▶ Solo este'}
           </button>
-          <button type="button" className="boton" onClick={oirConTodo}>
-            {escucha.sonandoAqui === 'todo' ? '❚❚ Pausar' : '▶ Con los demás'}
+          <button type="button" className="boton" onClick={() => escucha.alternar(conTodo)}>
+            {escucha.suena(conTodo) ? '❚❚ Pausar' : escena >= 0 ? '▶ Con la escena' : '▶ Con los demás'}
           </button>
           <span className="pie__hueco" />
           <button

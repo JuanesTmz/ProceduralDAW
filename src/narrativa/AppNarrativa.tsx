@@ -75,7 +75,7 @@ export function AppNarrativa() {
       const t = ev.target as HTMLElement;
       if (ev.code !== 'Space' || t.closest('input, textarea, [contenteditable]')) return;
       ev.preventDefault();
-      if (motorAudio.estaSonando) motorAudio.detener();
+      if (motorAudio.claveActiva) motorAudio.detener();
       else if (indiceAbierta >= 0) void motorAudio.reproducirEscena(indiceAbierta);
       else if (proyecto.escenas.length > 0) void motorAudio.reproducirPieza();
     };

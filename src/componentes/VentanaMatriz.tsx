@@ -11,7 +11,7 @@
  */
 import { useEscucha } from './useEscucha';
 import { useEffect, useRef, useState } from 'react';
-import { motorAudio } from '../audio/motorAudio';
+import { motorAudio, type Reproduccion } from '../audio/motorAudio';
 import { useProyecto } from '../estado/ProyectoContext';
 import { SelectorInstrumento } from '../narrativa/SelectorInstrumento';
 import { useCabezaLectora } from '../hooks/useCabezaLectora';
@@ -44,7 +44,7 @@ const CARACTER: Partial<Record<NombreEscala, string>> = {
 
 const COLOR_MATRIZ = '#5fd4ff';
 
-export function VentanaMatriz({ alCerrar }: { alCerrar: () => void }) {
+export function VentanaMatriz({ escena = -1, alCerrar }: { escena?: number; alCerrar: () => void }) {
   const { proyecto, actualizar } = useProyecto();
   const { melodia, cantidadPasos } = proyecto.patron;
   const celdas = useRef(new Map<string, HTMLButtonElement>());
@@ -113,13 +113,9 @@ export function VentanaMatriz({ alCerrar }: { alCerrar: () => void }) {
 
   const escucha = useEscucha();
   const [lado, setLado] = useState<'escala' | 'sonido'>('escala');
-  // Solo la melodía: las capas de golpes no suenan mientras se escucha aquí.
-  const oir = () =>
-    escucha.alternar(
-      'melodia',
-      () => void motorAudio.reproducirSolo('melodia'),
-      () => motorAudio.sigueSonando && motorAudio.pistaSola === 'melodia',
-    );
+  // Solo la melodía, sin los golpes ni la voz. Dentro de una escena, como suena en ella.
+  const solaMelodia: Reproduccion = { tipo: 'capa', id: 'melodia', escena };
+  const oir = () => escucha.alternar(solaMelodia);
 
   const cerrar = () => {
     escucha.parar();
@@ -138,7 +134,7 @@ export function VentanaMatriz({ alCerrar }: { alCerrar: () => void }) {
       pie={
         <>
           <button type="button" className="boton" onClick={oir}>
-            {escucha.sonandoAqui ? '❚❚ Pausar' : '▶ Oír solo la melodía'}
+            {escucha.suena(solaMelodia) ? '❚❚ Pausar' : '▶ Oír solo la melodía'}
           </button>
           <span className="pie__hueco" />
           <button

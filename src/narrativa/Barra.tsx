@@ -29,7 +29,7 @@ interface Props {
 
 export function Barra({ paso, alCambiar, enEscena, guia }: Props) {
   const { proyecto, actualizar } = useProyecto();
-  const { sonando } = useReproduccion();
+  const { sonandoPieza: sonando } = useReproduccion();
   const hayEscenas = proyecto.escenas.length > 0;
   const total = hayEscenas ? duracionPieza(proyecto) : 0;
   const pasado = total > DURACION_MAXIMA;

@@ -37,7 +37,7 @@ export function PasoFuncion() {
       descargar(blob, `sonora-${nombre}.webm`);
     }
   };
-  const { sonando, seccion } = useReproduccion();
+  const { sonandoPieza: sonando, seccion } = useReproduccion();
   const llenos = useRef<(HTMLSpanElement | null)[]>([]);
   const tramos = useRef<{ inicio: number; fin: number }[]>([]);
   // Las barras se llenan con lo que se oye, cuadro a cuadro.

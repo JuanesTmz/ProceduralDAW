@@ -31,12 +31,12 @@ interface Props {
   alSuena?: (id: string) => void;
   alSonidos: (id: string) => void;
   alNotas: () => void;
-  /** La capa que suena sola ahora, y cómo pedir otra. */
-  solo: string | null;
+  /** Si una capa suena sola ahora, y cómo pedirla. */
+  suenaSolo: (id: string) => boolean;
   alSolo: (id: string) => void;
 }
 
-export function CeldasCapas({ capas, suena, alSuena, alSonidos, alNotas, solo, alSolo }: Props) {
+export function CeldasCapas({ capas, suena, alSuena, alSonidos, alNotas, suenaSolo, alSolo }: Props) {
   const { proyecto, actualizar } = useProyecto();
   const { patron } = proyecto;
   const n = patron.cantidadPasos;
@@ -85,7 +85,7 @@ export function CeldasCapas({ capas, suena, alSuena, alSonidos, alNotas, solo, a
         return (
           <div key={c.id} className={`nv-celdas__fila ${callada ? 'nv-celdas__fila--muda' : ''}`} style={{ ['--color' as string]: c.color }}>
             <span className="nv-celdas__nombre" style={{ gridRow: fila }}>
-              <BotonSolo sonando={solo === c.id} nombre={c.nombre} alTocar={() => alSolo(c.id)} />
+              <BotonSolo sonando={suenaSolo(c.id)} nombre={c.nombre} alTocar={() => alSolo(c.id)} />
               <button type="button" className="nv-celdas__sonido" onClick={() => alSonidos(c.id)} title="Cambiar el sonido">
                 <span className="nv-fila-son__punto" />
                 <span className="nv-fila-son__texto">
