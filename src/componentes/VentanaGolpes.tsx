@@ -11,7 +11,6 @@
  * el estudiante dice que sí. Mientras tanto es un borrador que se puede oír.
  */
 import { useEscucha } from './useEscucha';
-import { BotonTutorial } from '../narrativa/BotonTutorial';
 import { useRef, useState } from 'react';
 import { motorAudio } from '../audio/motorAudio';
 import { useProyecto } from '../estado/ProyectoContext';
@@ -245,7 +244,6 @@ export function VentanaGolpes({ inicial, alCerrar }: Props) {
       alCerrar={cerrar}
       pie={
         <>
-          <BotonTutorial id="golpes" chico />
           <button type="button" className="boton" onClick={oirSola} disabled={!fila}>
             {escucha.sonandoAqui === 'sola' ? '❚❚ Pausar' : '▶ Solo este'}
           </button>

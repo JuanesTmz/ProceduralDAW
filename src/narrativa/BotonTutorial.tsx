@@ -1,8 +1,9 @@
 /**
- * El botón «▶ Ver cómo funciona»: abre un tutorial animado.
- * Sin `id`, abre la galería con todos.
+ * El visor de los tutoriales animados. Se abre desde el menú de ayuda.
+ * Con `id` va directo a ese video; sin él, a la galería con todos.
+ * El catálogo se carga solo cuando se abre, para no pesar al arrancar.
  */
-import { Component, lazy, Suspense, useState } from 'react';
+import { Component, lazy, Suspense } from 'react';
 import type { ReactNode } from 'react';
 
 const VentanaTutoriales = lazy(() => import('../tutoriales/VentanaTutoriales'));
@@ -21,33 +22,12 @@ class Atajo extends Component<{ alFallar: () => void; children: ReactNode }, { f
   }
 }
 
-interface Props {
-  id?: string;
-  texto?: string;
-  /** Más chico, para cabeceras y pies de ventana. */
-  chico?: boolean;
-}
-
-export function BotonTutorial({ id, texto = 'Ver cómo funciona', chico }: Props) {
-  const [abierto, setAbierto] = useState(false);
+export function VisorTutorial({ id, alCerrar }: { id?: string; alCerrar: () => void }) {
   return (
-    <>
-      <button
-        type="button"
-        className={`nv-tutorial-boton ${chico ? 'nv-tutorial-boton--chico' : ''}`}
-        onClick={() => setAbierto(true)}
-        title="Ver un tutorial animado"
-      >
-        <span className="nv-tutorial-boton__icono">▶</span>
-        {texto}
-      </button>
-      {abierto && (
-        <Atajo alFallar={() => setAbierto(false)}>
-          <Suspense fallback={null}>
-            <VentanaTutoriales id={id} alCerrar={() => setAbierto(false)} />
-          </Suspense>
-        </Atajo>
-      )}
-    </>
+    <Atajo alFallar={alCerrar}>
+      <Suspense fallback={null}>
+        <VentanaTutoriales id={id} alCerrar={alCerrar} />
+      </Suspense>
+    </Atajo>
   );
 }

@@ -7,7 +7,6 @@
  * cambia con ella. La escala es fija, de 0 a 2:30, para que se vea cuánto
  * queda.
  */
-import { BotonTutorial } from './BotonTutorial';
 import { useRef } from 'react';
 import { motorAudio } from '../audio/motorAudio';
 import { useProyecto } from '../estado/ProyectoContext';
@@ -113,7 +112,6 @@ export function PasoEscenas({ alEntrar, alGeneral }: { alEntrar: (id: string) =>
           title="Opcional: un momento sin voz donde la música cuenta sola">
           + Respiro (opcional)
         </button>
-        <BotonTutorial id="respiros" texto="¿Para qué sirven?" chico />
       </div>
 
       <div className="nv-tarjetas">

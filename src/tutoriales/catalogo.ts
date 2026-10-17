@@ -9,7 +9,6 @@ import { tutorialEmocion } from './tEmocion';
 import { tutorialEnVivo } from './tEnVivo';
 import { tutorialGolpes } from './tGolpes';
 import { tutorialInstrumento } from './tInstrumento';
-import { tutorialMaquina } from './tMaquina';
 import { tutorialMatriz } from './tMatriz';
 import { tutorialNarrativa } from './tNarrativa';
 import { tutorialPad } from './tPad';
@@ -26,7 +25,6 @@ export const TUTORIALES: Composicion[] = [
   tutorialGolpes,
   tutorialMatriz,
   tutorialInstrumento,
-  tutorialMaquina,
   tutorialEnVivo,
   tutorialPad,
   tutorialDatos,

@@ -491,6 +491,7 @@ class MotorAudio {
     // y más fuerte, y la pista del redoble rellena lo que tenía vacío.
     const ultimaVuelta = Boolean(
       seccion &&
+        !aMano &&
         this.vueltaEnSeccion === seccion.compases - 1 &&
         this.indiceSeccion < proyecto.secciones.length - 1,
     );
@@ -517,12 +518,8 @@ class MotorAudio {
       const propios = seccion?.pasosFilas?.[filaBase.id];
       const fila = propios ? { ...filaBase, ...propios } : filaBase;
       const esRedoble = remate && fila.id === idRedoble;
-      // «Máquina» encendida en la capa: improvisa sobre lo dibujado, quita y agrega golpes.
-      const sinMaquina = mod?.golpes(fila.id) ?? { factor: 1, extra: 0 };
-      const golpes = fila.maquina
-        ? { factor: sinMaquina.factor * 0.82, extra: sinMaquina.extra + 0.22 }
-        : sinMaquina;
-      // Con el dato arriba, la máquina agrega golpes en los tiempos vacíos.
+      const golpes = mod?.golpes(fila.id) ?? { factor: 1, extra: 0 };
+      // Con el dato (o el gesto) arriba, se agregan golpes en los tiempos vacíos.
       if (!fila.pasos[paso] && !esRedoble && golpes.extra > 0 && paso % 2 === 0) {
         if (this.filaSuena(fila, patron.filas) && (!seccion || nivelDeCapa(seccion, fila.id) > 0)) {
           if (debeSonar(semillaActiva + 77, fila.id, paso, this.vuelta, golpes.extra)) {
@@ -537,8 +534,9 @@ class MotorAudio {
       // Sin sección (modo bucle) todo suena a tope; con sección manda su escalón.
       const nivel = seccion ? nivelDeCapa(seccion, fila.id) : 3;
       if (nivel === 0) continue;
+      // A mano (Música Urbana) suena todo lo dibujado; la fuerza solo cambia el golpe.
       const base = aMano
-        ? PROBABILIDAD_NIVEL[nivel]
+        ? 1
         : (fila.probabilidad[paso] ?? 1) * factorDensidad * PROBABILIDAD_NIVEL[nivel];
       const probabilidad = esRedoble
         ? 1
@@ -559,7 +557,7 @@ class MotorAudio {
     if (melodiaSuena) {
       // Se disparan juntas: en la matriz varias notas en la misma columna son un acorde.
       const escala = mod?.escala ?? seccion?.escala ?? melodia.escala;
-      const probMelodia = (mod?.melodia ?? 1) * (melodia.maquina ? 0.78 : 1);
+      const probMelodia = mod?.melodia ?? 1;
       const acorde = (seccion?.notas ?? melodia.notas)
         .filter((n) => n.paso === paso)
         .filter((n) =>

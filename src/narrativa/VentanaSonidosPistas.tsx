@@ -21,7 +21,6 @@ import { useGrabadora } from '../hooks/useGrabadora';
 import { Recortador } from '../componentes/Recortador';
 import { Ventana } from '../componentes/Ventana';
 import { SelectorInstrumento } from './SelectorInstrumento';
-import { BotonTutorial } from './BotonTutorial';
 
 const KIT: TipoSonido[] = ['bombo', 'redoblante', 'hihat', 'palma', 'tom', 'aro'];
 export const ID_MELODIA = 'melodia';
@@ -112,7 +111,6 @@ export function VentanaSonidosPistas({ pista, alCerrar }: Props) {
                 La melodía afina el sonido en cada casilla de la matriz. Sirve cualquiera: uno de la app o un efecto tuyo.
               </p>
               <SelectorInstrumento />
-              <BotonTutorial id="instrumento" texto="Ver cómo tu sonido se vuelve instrumento" chico />
             </>
           ) : (
             <>

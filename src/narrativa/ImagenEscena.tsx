@@ -7,7 +7,6 @@
  * solos con un dato (lo mismo que en la música); en Música Urbana, cómo
  * reacciona, el cuadro X/Y y los golpes visuales tocados en vivo.
  */
-import { BotonTutorial } from './BotonTutorial';
 import { useEffect, useRef, useState } from 'react';
 import type { PointerEvent as EventoPuntero } from 'react';
 import { motorAudio } from '../audio/motorAudio';
@@ -84,7 +83,6 @@ export function ImagenEscena({ escena, indice }: Props) {
         </div>
 
         <aside className="nv-tarjeta nv-imagen__lado">
-          <BotonTutorial id="visual" texto="¿Cómo reacciona el visual?" chico />
           <FotoEscena escena={escena} />
           {esIA ? <ImagenIA /> : <ImagenMU escena={escena} indice={indice} />}
         </aside>

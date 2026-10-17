@@ -6,7 +6,6 @@
  * su estado (grabada o no). Al terminar una, se sigue a la próxima.
  * Los respiros no aparecen: no tienen voz.
  */
-import { BotonTutorial } from './BotonTutorial';
 import { useEffect, useRef, useState } from 'react';
 import { useProyecto } from '../estado/ProyectoContext';
 import { formatearReloj } from '../estado/proyecto';
@@ -100,7 +99,6 @@ export function PasoVoz({ alSeguir }: { alSeguir: () => void }) {
             </button>
           ))}
         </div>
-        <BotonTutorial id="vozcorrida" texto="Grabar de corrido" chico />
       </div>
 
       {proyecto.modoVoz === 'corrido' ? (

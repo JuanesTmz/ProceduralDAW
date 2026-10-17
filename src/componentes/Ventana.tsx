@@ -43,8 +43,8 @@ export function Ventana({ titulo, nota, color, alCerrar, pie, ancha, alta, child
     caja.current?.focus();
 
     const alTeclear = (e: KeyboardEvent) => {
-      // Con la guía abierta, Escape cierra la guía y no la ventana.
-      if (e.key === 'Escape' && document.querySelector('.nv-tour')) return;
+      // Con la guía o un menú abiertos, Escape cierra eso y no la ventana.
+      if (e.key === 'Escape' && document.querySelector('.nv-tour, .nv-flotante')) return;
       // Con ventanas apiladas (un tutorial abierto desde otra ventana), solo responde la de arriba.
       const todas = document.querySelectorAll('.ventana');
       if (todas[todas.length - 1] !== caja.current) return;

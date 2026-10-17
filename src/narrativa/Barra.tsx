@@ -8,7 +8,6 @@ import { duracionPieza, formatearReloj } from '../estado/proyecto';
 import { DURACION_MAXIMA } from '../estado/escenas';
 import type { ReactNode } from 'react';
 import { useReproduccion } from './useReproduccion';
-import { BotonTutorial } from './BotonTutorial';
 
 export type Paso = 'historia' | 'voz' | 'escenas' | 'funcion';
 
@@ -77,7 +76,6 @@ export function Barra({ paso, alCambiar, enEscena, guia }: Props) {
           {sonando ? '■  Parar' : '▶  Escuchar'}
         </button>
       )}
-      <BotonTutorial texto="Tutoriales" chico />
       {guia}
       <button
         type="button"

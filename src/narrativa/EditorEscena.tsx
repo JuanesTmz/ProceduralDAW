@@ -24,7 +24,6 @@ import { BarraEscena } from './BarraEscena';
 import { ImagenEscena } from './ImagenEscena';
 import { MusicaEscena } from './MusicaEscena';
 import { useReproduccion } from './useReproduccion';
-import { BotonTutorial } from './BotonTutorial';
 
 export type Pestana = 'musica' | 'visual';
 
@@ -60,7 +59,6 @@ export function EditorEscena({ id, pestana, alPestana, alIr, alVolver }: Props) 
         <div className="nv-cabeza nv-cabeza--editor">
           <Nombre escena={escena} />
           {escena && <Sentir escena={escena} />}
-          {escena && !escena.respiro && <BotonTutorial id="emocion" texto="¿Qué cambia?" chico />}
           <span className="nv-espacio" />
           <div className="nv-selector nv-selector--pestanas">
             <button
@@ -255,7 +253,8 @@ function Sentir({ escena }: { escena: Escena }) {
           <RespiroAcciones id={escena.id} />
         </>
       ) : (
-        <div className="nv-selector nv-selector--chico">
+        <div className="nv-selector nv-selector--chico" role="group" aria-label="Intensidad de la escena">
+          <span className="nv-selector__rotulo">Intensidad</span>
           {([1, 2, 3] as Fuerza[]).map((f) => (
             <button
               key={f}

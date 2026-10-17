@@ -72,14 +72,14 @@ export function ParametrosDatos({ clave, grupos }: Props) {
                         {f.etiqueta}
                       </>
                     ) : (
-                      '✋ A mano'
+                      'Sin dato'
                     )}{' '}
                     ▾
                   </button>
                   {abierto === par.clave && (
                     <div className="nv-lista-flotante" onClick={(ev) => ev.stopPropagation()}>
                       <button type="button" onClick={() => usar(par.clave, null)}>
-                        ✋ A mano: lo pongo yo
+                        Sin dato
                       </button>
                       {fuentes.map((x) => (
                         <button key={x.clave} type="button" onClick={() => usar(par.clave, x.clave)}>

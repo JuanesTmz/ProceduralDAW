@@ -6,7 +6,6 @@
  * va y, tocándola o arrastrándola, se elige desde dónde suena. Solo suena
  * el lapso de esta escena, nunca la pieza entera.
  */
-import { BotonTutorial } from './BotonTutorial';
 import { useEffect, useRef, useState } from 'react';
 import type { PointerEvent as EventoPuntero } from 'react';
 import { motorAudio } from '../audio/motorAudio';
@@ -123,7 +122,6 @@ export function BarraEscena({ escena, indice, tipos }: Props) {
           <span ref={cabeza} className="nv-barra-escena__cabeza nv-barra-escena__cabeza--quieta" />
         </div>
         <span ref={reloj} className="nv-mono nv-barra-escena__reloj" />
-        {!escena.respiro && <BotonTutorial id="cajitas" texto="Cajitas" chico />}
       </div>
       {!escena.vozUrl && !escena.respiro && (
         <span className="nv-tenue nv-chico">Esta escena todavía no tiene voz grabada: la barra usa lo que tardaría en decirse.</span>

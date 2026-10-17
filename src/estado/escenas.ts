@@ -282,9 +282,10 @@ export function escenasASecciones(p: Proyecto): Seccion[] {
     let capasActivas: string[];
     const niveles: Record<string, number> = {};
     if (escena.niveles) {
-      // La escena se editó a mano: manda lo que dejó el estudiante.
+      // La escena se editó: manda qué capas dejó encendidas. La fuerza es
+      // una sola para toda la escena, no por capa.
       capasActivas = ids.filter((id) => (escena.niveles?.[id] ?? 0) > 0);
-      for (const id of capasActivas) niveles[id] = escena.niveles[id];
+      for (const id of capasActivas) niveles[id] = escena.fuerza;
     } else {
       const cuantasCapas = Math.max(1, Math.round(ids.length * (0.25 + 0.75 * intensidad)));
       capasActivas = ids.slice(0, cuantasCapas);
@@ -293,7 +294,8 @@ export function escenasASecciones(p: Proyecto): Seccion[] {
     return {
       id: escena.id,
       etiqueta: escena.nombre,
-      modo: 'procedural',
+      // Música Urbana suena tal cual se dibujó; IA, por reglas.
+      modo: p.track === 'musica' ? 'manual' : 'procedural',
       compases,
       semilla: (p.semilla + i * 37 + escena.version * 1009) % 10000,
       intensidad,

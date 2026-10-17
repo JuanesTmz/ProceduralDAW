@@ -1,10 +1,10 @@
 /**
  * La pestaña Música de una escena, o de toda la pieza (General).
  *
- * Arriba, las herramientas a un toque: Sonidos (con qué suena cada pista),
- * Datos (solo IA: qué se mueve solo), y la edición fina de golpes y
- * melodía. Debajo, la mecánica del lab: IA arma con reglas (tiras y
- * cuadro), Música Urbana samplea y toca (capas y tocar en vivo).
+ * Arriba, las herramientas a un toque: Sonidos (con qué suena cada pista)
+ * y Datos (solo IA: qué se mueve solo). Debajo, la mecánica del lab: IA
+ * arma con reglas (un pad por sonido), Música Urbana dibuja a mano y toca
+ * en vivo (la edición de golpes y notas va en cada capa).
  */
 import { useState } from 'react';
 import { useProyecto } from '../estado/ProyectoContext';
@@ -17,7 +17,6 @@ import { MusicaIA, parametrosMusica } from './MusicaIA';
 import { MusicaMU } from './MusicaMU';
 import { ParametrosDatos } from './ParametrosDatos';
 import { ID_MELODIA, VentanaSonidosPistas } from './VentanaSonidosPistas';
-import { BotonTutorial } from './BotonTutorial';
 
 type Herramienta = { tipo: 'golpes'; pista?: string } | { tipo: 'melodia' } | { tipo: 'datos' } | { tipo: 'sonidos'; pista?: string };
 
@@ -55,18 +54,6 @@ export function MusicaEscena({ escena, indice }: Props) {
             </span>
           </button>
         )}
-        <span className="nv-espacio" />
-        {/* En Música Urbana la edición a mano va dentro de cada capa. */}
-        {esIA && (
-          <span className="nv-herramientas__editar" data-tour="editar">
-            <button type="button" className="nv-boton nv-boton--suave" onClick={() => setHerramienta({ tipo: 'golpes' })}>
-              Editar golpes a mano
-            </button>
-            <button type="button" className="nv-boton nv-boton--suave" onClick={() => setHerramienta({ tipo: 'melodia' })}>
-              Editar melodía
-            </button>
-          </span>
-        )}
       </div>
 
       {!escena && (
@@ -95,6 +82,19 @@ export function MusicaEscena({ escena, indice }: Props) {
               onChange={(ev) => actualizar((p) => (p.bpm = Number(ev.target.value)))}
             />
           </label>
+          {!esIA && (
+            <label className="nv-preset nv-preset--tempo">
+              <strong>Swing · {proyecto.swing < 0.05 ? 'cuadrado' : proyecto.swing < 0.3 ? 'suelto' : 'cojo'}</strong>
+              <input
+                type="range"
+                min={0}
+                max={0.6}
+                step={0.01}
+                value={proyecto.swing}
+                onChange={(ev) => actualizar((p) => (p.swing = Number(ev.target.value)))}
+              />
+            </label>
+          )}
         </div>
       )}
 
@@ -119,7 +119,6 @@ export function MusicaEscena({ escena, indice }: Props) {
           nota="Elige qué parámetros se mueven solos con un dato. Valen para toda la pieza."
           ancha
           alCerrar={cerrar}
-          pie={<BotonTutorial id="datos" chico />}
         >
           <div className="nv nv--incrustado">
             <ParametrosDatos clave="conexiones" grupos={parametrosMusica(proyecto, actualizar)} />

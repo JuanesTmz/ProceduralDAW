@@ -1319,70 +1319,11 @@
 .nv-tour__puntos i.nv-tour__punto--on { background: var(--nv-acento); }
 .nv-tour__saltar { background: transparent; color: var(--nv-suave); }
 
-.nv-guia-boton {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px 8px 8px;
-  border-radius: 999px;
-  background: var(--nv-s2);
-  border: 1px solid var(--nv-linea);
-  color: var(--nv-texto);
-  font: 600 13px system-ui, sans-serif;
-  cursor: pointer;
-}
-.nv-guia-boton:hover { border-color: var(--nv-acento); }
-.nv-guia-boton__icono {
-  width: 24px;
-  height: 24px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--nv-acento);
-  color: #0f1117;
-  font-weight: 800;
-}
-.nv-guia-boton--nueva { border-color: var(--nv-acento); animation: nv-guia-pulso 1.8s ease-in-out infinite; }
-@keyframes nv-guia-pulso { 50% { box-shadow: 0 0 0 6px #ffb02033; } }
 @media (prefers-reduced-motion: reduce) {
   .nv-tour__foco, .nv-tour__burbuja { transition: none; }
-  .nv-guia-boton--nueva { animation: none; }
 }
-/* El botón de la guía también vive en las ventanas, fuera de .nv: colores fijos. */
-.nv-guia-boton { background: #222634; border-color: #353b4f; color: #eceef4; }
-.nv-guia-boton:hover, .nv-guia-boton--nueva { border-color: #ffb020; }
-.nv-guia-boton__icono { background: #ffb020; }
-.ventana__cabecera .nv-guia-boton { align-self: center; flex: none; }
 
 /* ---------- tutoriales animados ---------- */
-.nv-tutorial-boton {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 14px 7px 7px;
-  border-radius: 999px;
-  border: 2px solid #14161f;
-  background: #ffc93c;
-  color: #14161f;
-  font: 700 13px system-ui, sans-serif;
-  cursor: pointer;
-  box-shadow: 3px 3px 0 #14161f;
-  transition: transform 0.12s, box-shadow 0.12s;
-}
-.nv-tutorial-boton:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 #14161f; }
-.nv-tutorial-boton:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #14161f; }
-.nv-tutorial-boton__icono {
-  width: 22px;
-  height: 22px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: #14161f;
-  color: #ffc93c;
-  font-size: 10px;
-}
-.nv-tutorial-boton--chico { padding: 4px 11px 4px 4px; font-size: 12px; }
-.nv-tutorial-boton--chico .nv-tutorial-boton__icono { width: 20px; height: 20px; }
 
 .tu-ventana { display: flex; flex-direction: column; min-height: 0; }
 .tu-reproductor { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 1000px; margin: 0 auto; }
@@ -1771,3 +1712,156 @@
 /* Música Urbana: cada capa con su botón para editarla a mano. */
 .nv-capa:not(.nv-capa--ia) { grid-template-columns: 130px 170px 1fr 60px 108px; }
 .nv-capa__editar { white-space: nowrap; }
+
+/* ---------- listas de sonidos (los dos labs): una fila, tres cosas ---------- */
+.nv-lista-sonidos { display: flex; flex-direction: column; gap: 6px; }
+.nv-fila-son {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 8px 6px 6px;
+  border-radius: 12px;
+  background: var(--nv-s2);
+  transition: opacity 0.15s;
+}
+.nv-fila-son__elegir {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 210px;
+  padding: 6px 12px 6px 8px;
+  border-radius: 9px;
+  text-align: left;
+  transition: background 0.15s;
+}
+.nv-fila-son__elegir:hover { background: #ffffff0d; }
+.nv-fila-son__punto { width: 12px; height: 12px; border-radius: 50%; background: var(--color); box-shadow: 0 0 10px var(--color); flex: none; }
+.nv-fila-son__texto { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+.nv-fila-son__texto strong { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+.nv-fila-son__texto span { font-size: 12px; color: var(--nv-suave); }
+.nv-fila-son__flecha { margin-left: auto; color: var(--nv-suave); font-size: 13px; }
+.nv-fila-son__dato { font-size: 12px; font-weight: 600; white-space: nowrap; }
+.nv-fila-son__accion { min-width: 96px; justify-content: center; }
+.nv-fila-son__accion--propia { border-color: var(--nv-ia); color: var(--nv-ia); }
+.nv-fila-son__volumen { width: 180px; }
+.nv-fila-son--muda .nv-fila-son__elegir, .nv-fila-son--muda .nv-fila-son__dato, .nv-fila-son--muda .nv-fila-son__accion { opacity: 0.38; }
+
+.nv-suena {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 104px;
+  min-height: 36px;
+  padding: 4px 12px 4px 4px;
+  border-radius: 999px;
+  background: var(--nv-s3);
+  color: var(--nv-suave);
+  font-size: 12px;
+  font-weight: 600;
+  transition: background 0.15s, color 0.15s;
+}
+.nv-suena__perilla { width: 28px; height: 28px; border-radius: 50%; background: var(--nv-linea); transition: background 0.15s; }
+.nv-suena--on { background: color-mix(in srgb, var(--color) 22%, transparent); color: var(--nv-texto); }
+.nv-suena--on .nv-suena__perilla { background: var(--color); box-shadow: 0 0 10px var(--color); }
+
+.nv-minipad {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1px solid var(--nv-linea);
+  background: #ffffff08;
+  flex: none;
+}
+.nv-minipad span { position: absolute; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; }
+
+.nv-selector__rotulo { align-self: center; padding: 0 8px 0 10px; font-size: 12px; color: var(--nv-suave); }
+
+/* ---------- el pad del lab de IA: un cuadro, un punto y una frase ---------- */
+.pad { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 6px 0 2px; }
+.pad__marco { display: grid; grid-template-columns: 22px auto; grid-template-rows: auto 22px; gap: 8px; }
+.pad__cuadro {
+  position: relative;
+  width: min(46vh, 380px);
+  aspect-ratio: 1;
+  border-radius: 22px;
+  background:
+    linear-gradient(#ffffff0a 1px, transparent 1px) 0 0 / 25% 25%,
+    linear-gradient(90deg, #ffffff0a 1px, transparent 1px) 0 0 / 25% 25%,
+    linear-gradient(135deg, #1b1f2b, #11141c);
+  border: 1px solid #ffffff14;
+  overflow: hidden;
+  touch-action: none;
+  cursor: crosshair;
+  outline: none;
+}
+.pad__cuadro:focus-visible { box-shadow: 0 0 0 2px var(--color); }
+.pad__luz {
+  position: absolute;
+  width: 70%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--color) 30%, transparent), transparent 65%);
+  pointer-events: none;
+}
+.pad__punto {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: var(--color);
+  border: 3px solid #0f1117;
+  box-shadow: 0 0 0 2px var(--color), 0 0 26px var(--color);
+  pointer-events: none;
+}
+.pad__eje { display: flex; justify-content: space-between; font-size: 12px; color: var(--nv-suave); letter-spacing: 0.02em; }
+.pad__eje--y { writing-mode: vertical-rl; transform: rotate(180deg); flex-direction: row-reverse; }
+.pad__eje--x { grid-column: 2; }
+.pad__frase { margin: 0; font-size: 17px; font-weight: 600; color: var(--nv-texto); text-align: center; }
+.pad__dato { margin: -6px 0 0; font-size: 13px; text-align: center; }
+
+/* ---------- la ayuda: un solo «?» por pantalla ---------- */
+.nv-ayuda {
+  width: 38px;
+  height: 38px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid #353b4f !important;
+  background: #222634 !important;
+  color: #eceef4 !important;
+  font: 700 17px/1 system-ui, sans-serif;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.nv-ayuda:hover, .nv-ayuda--abierta { border-color: #b9a6ff !important; background: #2d2a44 !important; }
+.nv-ayuda--nueva { border-color: #b9a6ff !important; animation: nv-ayuda-pulso 1.8s ease-in-out infinite; }
+@keyframes nv-ayuda-pulso { 50% { box-shadow: 0 0 0 6px #b9a6ff2e; } }
+@media (prefers-reduced-motion: reduce) { .nv-ayuda--nueva { animation: none; } }
+.ventana__cabecera .nv-ayuda { align-self: center; }
+.nv-ayuda__menu { min-width: 260px; padding: 6px; }
+.nv-ayuda__item {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px !important;
+  border-radius: 8px;
+  text-align: left;
+  font-size: 14px;
+}
+.nv-ayuda__item:hover { background: #ffffff10; }
+.nv-ayuda__item--principal { font-weight: 600; }
+.nv-ayuda__item--todos { color: var(--nv-suave); font-size: 13px; border-top: 1px solid var(--nv-linea); border-radius: 0 0 8px 8px; margin-top: 4px; }
+.nv-ayuda__icono { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: #b9a6ff26; color: #b9a6ff; font-size: 11px; flex: none; }
+.nv-ayuda__titulo { display: block; padding: 8px 12px 2px; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--nv-tenue); }
+.nv-musica--sola { grid-template-columns: 1fr; }
+.ventana:has(.pad) { width: min(540px, calc(100vw - 32px)); }
+/* Escenas: el respiro ya no se corta, y la línea de la pieza usa el alto que tiene. */
+.nv-tarjeta-respiro { width: 116px; padding-top: 30px; }
+.nv-pieza { justify-content: center; }
+.nv-pieza__carril--voz, .nv-pieza__carril--musica { height: 64px; }
+.nv-pieza__carril--imagen { height: 96px; }
