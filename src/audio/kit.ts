@@ -10,7 +10,11 @@ export interface VozPercusion {
   tipo: TipoSonido;
   /** Nodo de entrada al que se conecta el volumen de la fila. */
   salida: Tone.Gain;
-  disparar: (tiempo: number, velocidad: number) => void;
+  /**
+   * `maxDuracion`: hasta cuánto puede sonar este golpe (segundos). Solo recorta
+   * los sonidos que son más largos que eso; los cortos suenan enteros.
+   */
+  disparar: (tiempo: number, velocidad: number, maxDuracion?: number) => void;
   /** Corta lo que esté sonando o agendado (los samples largos no se apagan solos). */
   parar?: () => void;
   liberar: () => void;
@@ -161,15 +165,20 @@ function crearAro(): VozPercusion {
 /** Voz que reproduce un sample subido por el estudiante. */
 export function crearVozSample(url: string, alCargar?: () => void): VozPercusion {
   const salida = new Tone.Gain(1);
-  const player = new Tone.Player({ url, onload: alCargar }).connect(salida);
+  // Un fundido corto para que el recorte de un sonido largo no suene a clic.
+  const player = new Tone.Player({ url, onload: alCargar, fadeOut: 0.05 }).connect(salida);
 
   return {
     tipo: 'sample',
     salida,
-    disparar: (tiempo, velocidad) => {
+    disparar: (tiempo, velocidad, maxDuracion) => {
       if (!player.loaded) return;
       player.volume.value = Tone.gainToDb(Math.max(velocidad, 0.001));
-      player.start(tiempo);
+      if (maxDuracion !== undefined && player.buffer.duration > maxDuracion) {
+        player.start(tiempo, 0, maxDuracion);
+      } else {
+        player.start(tiempo);
+      }
     },
     parar: () => player.stop(),
     liberar: () => {

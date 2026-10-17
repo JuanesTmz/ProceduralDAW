@@ -700,7 +700,7 @@ class MotorAudio {
       if (!fila.pasos[paso] && !esRedoble && golpes.extra > 0 && paso % 2 === 0) {
         if (this.filaSuena(fila, patron.filas) && (!seccion || this.nivelEn(seccion, fila.id) > 0)) {
           if (debeSonar(semillaActiva + 77, fila.id, paso, this.vuelta, golpes.extra)) {
-            this.voces.get(fila.id)?.voz.disparar(cuando, 0.45 * (mod?.velocidad ?? 1));
+            this.voces.get(fila.id)?.voz.disparar(cuando, 0.45 * (mod?.velocidad ?? 1), this.espacioDelGolpe(fila.pasos, paso, segundosPorPaso));
             if (fila.tipo === 'bombo') this.envolventeBombo = 1;
           }
         }
@@ -725,7 +725,11 @@ class MotorAudio {
         acentoDePaso(paso, patron.cantidadPasos) *
         humanizar(semillaActiva, fila.id, paso, this.vuelta) *
         (ajuste?.velocidad ?? 1);
-      this.voces.get(fila.id)?.voz.disparar(cuando, Math.min(1, velocidad * (mod?.velocidad ?? 1)));
+      this.voces.get(fila.id)?.voz.disparar(
+        cuando,
+        Math.min(1, velocidad * (mod?.velocidad ?? 1)),
+        this.espacioDelGolpe(fila.pasos, paso, segundosPorPaso),
+      );
       if (fila.tipo === 'bombo') this.envolventeBombo = 1;
     }
 
@@ -766,6 +770,24 @@ class MotorAudio {
 
     this.vueltaEnSeccion += 1;
     if (this.vueltaEnSeccion >= seccion.compases) this.avanzarSeccion(tiempo);
+  }
+
+  /**
+   * Cuánto espacio tiene un golpe: desde su casilla hasta el siguiente golpe
+   * de la misma capa (dando la vuelta al patrón), y nunca menos de un tiempo
+   * para que no suene a clic. Los sonidos largos se recortan a esto; los
+   * cortos no lo notan. La voz y las cajitas de la letra no pasan por aquí.
+   */
+  private espacioDelGolpe(pasos: boolean[], paso: number, segundosPorPaso: number): number {
+    const n = pasos.length;
+    let hasta = n;
+    for (let d = 1; d < n; d++) {
+      if (pasos[(paso + d) % n]) {
+        hasta = d;
+        break;
+      }
+    }
+    return Math.max(4, hasta) * segundosPorPaso;
   }
 
   /** Pasa a la sección siguiente, o termina la pieza si ya no hay más. */
