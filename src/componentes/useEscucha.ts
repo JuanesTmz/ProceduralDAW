@@ -19,12 +19,14 @@ export function useEscucha() {
   const propio = useRef<string | null>(null);
   const empezo = useRef(0);
   const yaSono = useRef(false);
+  /** Cómo saber si lo que suena sigue siendo lo de este botón. */
+  const sigue = useRef<() => boolean>(() => motorAudio.sigueSonando);
 
   useEffect(() => {
     if (!sonandoAqui) return;
     let cuadro = 0;
     const mirar = () => {
-      if (motorAudio.sigueSonando) yaSono.current = true;
+      if (sigue.current()) yaSono.current = true;
       else if (yaSono.current || performance.now() - empezo.current > ESPERA_ARRANQUE) {
         propio.current = null;
         setSonandoAqui(null);
@@ -51,8 +53,12 @@ export function useEscucha() {
     motorAudio.detener();
   };
 
-  /** Suena con `arrancar`, o para si ya sonaba este mismo botón. */
-  const alternar = (id: string, arrancar: () => void) => {
+  /**
+   * Suena con `arrancar`, o para si ya sonaba este mismo botón. `sigueSiendo`
+   * dice si lo que suena todavía es lo suyo (si otro play lo reemplazó, el
+   * botón vuelve a «oír» aunque el motor siga sonando).
+   */
+  const alternar = (id: string, arrancar: () => void, sigueSiendo?: () => boolean) => {
     if (propio.current === id) {
       parar();
       return;
@@ -60,6 +66,7 @@ export function useEscucha() {
     propio.current = id;
     empezo.current = performance.now();
     yaSono.current = false;
+    sigue.current = sigueSiendo ?? (() => motorAudio.sigueSonando);
     setSonandoAqui(id);
     arrancar();
   };

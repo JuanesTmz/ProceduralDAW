@@ -113,22 +113,16 @@ export function VentanaMatriz({ alCerrar }: { alCerrar: () => void }) {
 
   const escucha = useEscucha();
   const [lado, setLado] = useState<'escala' | 'sonido'>('escala');
-  const oir = () => escucha.alternar('melodia', () => {
-    actualizar((p) => {
-      p.patron.melodia.soloActivo = true;
-      for (const f of p.patron.filas) f.soloActivo = false;
-      p.modoReproduccion = 'patron';
-    });
-    motorAudio.cambiarModo('patron');
-    void motorAudio.reproducir();
-  });
+  // Solo la melodía: las capas de golpes no suenan mientras se escucha aquí.
+  const oir = () =>
+    escucha.alternar(
+      'melodia',
+      () => void motorAudio.reproducirSolo('melodia'),
+      () => motorAudio.sigueSonando && motorAudio.pistaSola === 'melodia',
+    );
 
   const cerrar = () => {
     escucha.parar();
-    actualizar((p) => {
-      p.patron.melodia.soloActivo = false;
-      p.modoReproduccion = 'pieza';
-    });
     alCerrar();
   };
 
@@ -144,7 +138,7 @@ export function VentanaMatriz({ alCerrar }: { alCerrar: () => void }) {
       pie={
         <>
           <button type="button" className="boton" onClick={oir}>
-            {escucha.sonandoAqui ? '❚❚ Pausar' : '▶ Oír la melodía'}
+            {escucha.sonandoAqui ? '❚❚ Pausar' : '▶ Oír solo la melodía'}
           </button>
           <span className="pie__hueco" />
           <button

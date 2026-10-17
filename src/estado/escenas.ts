@@ -309,12 +309,12 @@ export function escenasASecciones(p: Proyecto): Seccion[] {
       escala: perfil.escala,
       emocion: escena.emocion,
       fuerza: escena.fuerza,
-      gesto: escena.gesto,
       cajitas: escena.cajitas?.map((c) => ({
         ...c,
         t: (c.palabra / Math.max(1, palabrasDe(escena.texto).length)) * duracionVoz(escena),
       })),
-      ...reglasDeEscena(p, escena, i),
+      // El pad por escena es del lab de IA; en Música Urbana suena lo dibujado.
+      ...(p.track === 'ia' ? reglasDeEscena(p, escena, i) : {}),
       voz:
         escena.vozUrl && !escena.respiro
           ? { url: escena.vozUrl, duracion: escena.vozDuracion, desde: escena.vozDesde }

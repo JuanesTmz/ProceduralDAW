@@ -309,7 +309,7 @@ export function pasosDe(pantalla: Pantalla, track: Track | null): PasoTour[] {
                 seccion: 'LAB IA · LOS SONIDOS',
                 titulo: 'La lista de sonidos',
                 texto:
-                  'Cada fila es un sonido de la pieza. <b>Toquen su nombre</b> para cambiarlo por otro. <b>Suena / Callada</b> lo enciende o lo calla solo en esta escena. Si un dato lo mueve, aparece al lado con ↯. La <b>melodía</b> además se puede escribir a mano con <b>✎ Notas</b>.',
+                  'Cada fila es un sonido de la pieza. <b>Toquen su nombre</b> para cambiarlo por otro. <b>Suena / Callada</b> lo enciende o lo calla solo en esta escena. Si un dato lo mueve, aparece al lado con ↯. La <b>melodía</b> además se puede escribir a mano con <b>✎ Notas</b>. El <b>▶</b> de la izquierda toca ese sonido solo.',
               },
               {
                 id: 'm.pad',
@@ -340,18 +340,11 @@ export function pasosDe(pantalla: Pantalla, track: Track | null): PasoTour[] {
                   '<b>Lista</b>: cada capa en una fila limpia. <b>Celdas</b>: ven los golpes de cada capa en casillas, como una línea de tiempo, y los ponen o quitan tocando. Es lo mismo visto de dos formas.',
               },
               {
-                id: 'm.vivo',
-                objetivo: '.nv-xy',
-                titulo: 'Tocar en vivo',
+                id: 'm.solo',
+                objetivo: '.nv-solo',
+                titulo: 'Oír una capa sola',
                 texto:
-                  'Muevan el dedo en el cuadro <b>mientras suena</b>: <b>hacia arriba</b> más intenso y brillante, <b>hacia abajo</b> más suave; <b>a la derecha</b> más recargado de golpes.',
-              },
-              {
-                id: 'm.grabar-gesto',
-                objetivo: '.nv-musica__lado .nv-boton--rojo',
-                titulo: 'Grabar lo que tocan',
-                texto:
-                  '«Grabar mientras suena» hace sonar la escena y guarda cada movimiento del dedo. Desde ahí la escena suena <b>siempre igual a como la tocaron</b>. Abajo ven el gesto grabado y lo pueden borrar.',
+                  'El <b>▶</b> de cada capa la toca <b>sola</b>, sin las demás ni la voz. Si tocan otra, o la escena entera, la anterior se para: siempre suena lo último que tocaron.',
               },
             ]),
         {

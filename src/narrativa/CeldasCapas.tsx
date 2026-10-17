@@ -15,7 +15,7 @@ import { useProyecto } from '../estado/ProyectoContext';
 import { useCabezaLectora } from '../hooks/useCabezaLectora';
 import { usePintarArrastrando } from '../hooks/usePintarArrastrando';
 import { ID_MELODIA } from './VentanaSonidosPistas';
-import { Suena } from './FilaSonido';
+import { BotonSolo, Suena } from './FilaSonido';
 
 export interface CapaCeldas {
   id: string;
@@ -31,9 +31,12 @@ interface Props {
   alSuena?: (id: string) => void;
   alSonidos: (id: string) => void;
   alNotas: () => void;
+  /** La capa que suena sola ahora, y cómo pedir otra. */
+  solo: string | null;
+  alSolo: (id: string) => void;
 }
 
-export function CeldasCapas({ capas, suena, alSuena, alSonidos, alNotas }: Props) {
+export function CeldasCapas({ capas, suena, alSuena, alSonidos, alNotas, solo, alSolo }: Props) {
   const { proyecto, actualizar } = useProyecto();
   const { patron } = proyecto;
   const n = patron.cantidadPasos;
@@ -81,13 +84,16 @@ export function CeldasCapas({ capas, suena, alSuena, alSonidos, alNotas }: Props
         const esMelodia = c.id === ID_MELODIA;
         return (
           <div key={c.id} className={`nv-celdas__fila ${callada ? 'nv-celdas__fila--muda' : ''}`} style={{ ['--color' as string]: c.color }}>
-            <button type="button" className="nv-celdas__nombre" style={{ gridRow: fila }} onClick={() => alSonidos(c.id)} title="Cambiar el sonido">
-              <span className="nv-fila-son__punto" />
-              <span className="nv-fila-son__texto">
-                <strong>{c.nombre}</strong>
-                <span>{c.origen}</span>
-              </span>
-            </button>
+            <span className="nv-celdas__nombre" style={{ gridRow: fila }}>
+              <BotonSolo sonando={solo === c.id} nombre={c.nombre} alTocar={() => alSolo(c.id)} />
+              <button type="button" className="nv-celdas__sonido" onClick={() => alSonidos(c.id)} title="Cambiar el sonido">
+                <span className="nv-fila-son__punto" />
+                <span className="nv-fila-son__texto">
+                  <strong>{c.nombre}</strong>
+                  <span>{c.origen}</span>
+                </span>
+              </button>
+            </span>
             <div
               className={`nv-celdas__pasos ${esMelodia ? 'nv-celdas__pasos--melodia' : ''}`}
               style={{ gridTemplateColumns: `repeat(${n}, 1fr)`, gridRow: fila }}

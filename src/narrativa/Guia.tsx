@@ -30,7 +30,6 @@ const NOMBRES: Record<string, string> = {
   golpes: 'Las celdas de golpes',
   matriz: 'La matriz y las escalas',
   instrumento: 'Tu sonido se vuelve instrumento',
-  envivo: 'Tocar y grabar en vivo',
   pad: 'El Pad',
   datos: 'Los datos',
   visual: 'El visual reacciona',
@@ -47,7 +46,7 @@ function videosDe(pantalla: Pantalla, track: Track | null): string[] {
     case 'escenas':
       return ['respiros', 'emocion'];
     case 'escena-musica':
-      return ia ? ['emocion', 'pad', 'datos', 'cajitas'] : ['emocion', 'golpes', 'matriz', 'envivo', 'cajitas'];
+      return ia ? ['emocion', 'pad', 'datos', 'cajitas'] : ['emocion', 'golpes', 'matriz', 'cajitas'];
     case 'escena-visual':
       return ['visual', 'cajitas'];
     case 'ventana-golpes':

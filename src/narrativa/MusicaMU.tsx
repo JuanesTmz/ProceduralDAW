@@ -3,20 +3,17 @@
  *
  * Todo es a mano: suena exactamente lo que se dibujó. Cada capa es una
  * fila con su sonido (se toca para cambiarlo), si suena o no en esta
- * escena y su edición de golpes. La intensidad es una sola, la de la
- * escena, y está arriba junto a la emoción. Dentro de una escena se
- * puede tocar en vivo y grabar el gesto.
+ * escena, su edición de golpes y un ▶ para oírla sola. La intensidad es
+ * una sola, la de la escena, y está arriba junto a la emoción.
  */
-import { useEffect, useRef, useState } from 'react';
-import type { PointerEvent as EventoPuntero } from 'react';
-import { motorAudio } from '../audio/motorAudio';
+import { useState } from 'react';
 import { useProyecto } from '../estado/ProyectoContext';
 import { buscarEscena } from '../estado/escenas';
 import { nivelDeCapa } from '../generativo/motorGenerativo';
-import type { Escena, PuntoGesto } from '../estado/tipos';
+import type { Escena } from '../estado/tipos';
 import { ID_MELODIA } from './VentanaSonidosPistas';
-import { useReproduccion } from './useReproduccion';
-import { origenSonido, Suena } from './FilaSonido';
+import { BotonSolo, origenSonido, Suena } from './FilaSonido';
+import { useSolo } from '../componentes/useSolo';
 import { CeldasCapas } from './CeldasCapas';
 
 type Vista = 'lista' | 'celdas';
@@ -44,6 +41,7 @@ interface Props {
 const COLOR_MELODIA = '#5fd4ff';
 
 export function MusicaMU({ escena, indice, alSonidos, alEditar, alAgregar }: Props) {
+  const solo = useSolo(escena ? indice : -1);
   const [vista, setVista] = useState<Vista>(leerVista);
   const cambiarVista = (v: Vista) => {
     setVista(v);
@@ -100,7 +98,7 @@ export function MusicaMU({ escena, indice, alSonidos, alEditar, alAgregar }: Pro
   ];
 
   return (
-    <div className={`nv-musica ${escena ? '' : 'nv-musica--sola'}`}>
+    <div className="nv-musica nv-musica--sola">
       <div className="nv-tarjeta nv-musica__principal">
         <div className="nv-campo__fila">
           <strong className="nv-subtitulo">{escena ? 'Capas de esta escena' : 'Capas de toda la pieza'}</strong>
@@ -147,11 +145,14 @@ export function MusicaMU({ escena, indice, alSonidos, alEditar, alAgregar }: Pro
             alSuena={escena ? alternar : undefined}
             alSonidos={alSonidos}
             alNotas={() => alEditar(ID_MELODIA)}
+            solo={solo.sonando}
+            alSolo={solo.alternar}
           />
         ) : (
         <div className="nv-lista-sonidos">
           {filas.map((f, k) => (
             <div key={f.id} className={`nv-fila-son ${suena(f.id) ? '' : 'nv-fila-son--muda'}`}>
+              <BotonSolo sonando={solo.sonando === f.id} nombre={f.nombre} alTocar={() => solo.alternar(f.id)} />
               <button
                 type="button"
                 className="nv-fila-son__elegir"
@@ -208,146 +209,6 @@ export function MusicaMU({ escena, indice, alSonidos, alEditar, alAgregar }: Pro
         </div>
       </div>
 
-      {escena && (
-        <aside className="nv-tarjeta nv-musica__lado">
-          <TocarEnVivo escena={escena} indice={indice} />
-        </aside>
-      )}
     </div>
-  );
-}
-
-/**
- * Tocar en vivo: un cuadro X/Y que se mueve mientras suena la escena.
- * El gesto se oye al instante y, si se está grabando, queda guardado en
- * la escena para que suene igual cada vez.
- */
-function TocarEnVivo({ escena, indice }: { escena: Escena; indice: number }) {
-  const { actualizar } = useProyecto();
-  const { sonando } = useReproduccion();
-  const [punto, setPunto] = useState<{ x: number; y: number } | null>(null);
-  const [grabando, setGrabando] = useState(false);
-  const puntos = useRef<PuntoGesto[]>([]);
-  const cuadro = useRef<HTMLDivElement>(null);
-  const ultimo = useRef<{ x: number; y: number }>({ x: 0.5, y: 0.5 });
-  /** El audio arranca un instante después del toque: no se corta antes de que suene. */
-  const yaSono = useRef(false);
-
-  // Al terminar la escena se guarda lo grabado.
-  useEffect(() => {
-    if (!grabando) return;
-    if (sonando) {
-      yaSono.current = true;
-      return;
-    }
-    if (!yaSono.current) return;
-    const gesto = puntos.current;
-    setGrabando(false);
-    if (gesto.length > 1) {
-      actualizar((p) => {
-        const e = buscarEscena(p, escena.id);
-        if (e) e.gesto = gesto;
-      });
-    }
-  }, [sonando, grabando, actualizar, escena.id]);
-
-  // Mientras se graba, se toma una muestra del gesto unas 15 veces por segundo.
-  useEffect(() => {
-    if (!grabando) return;
-    const reloj = window.setInterval(() => {
-      if (!motorAudio.estaSonando) return;
-      puntos.current.push({ t: motorAudio.fraccionSeccion, ...ultimo.current });
-    }, 66);
-    return () => window.clearInterval(reloj);
-  }, [grabando]);
-
-  const leer = (ev: EventoPuntero<HTMLDivElement>) => {
-    const caja = cuadro.current!.getBoundingClientRect();
-    const x = Math.max(0, Math.min(1, (ev.clientX - caja.left) / caja.width));
-    const y = Math.max(0, Math.min(1, 1 - (ev.clientY - caja.top) / caja.height));
-    ultimo.current = { x, y };
-    setPunto({ x, y });
-    motorAudio.fijarGestoVivo({ x, y });
-  };
-
-  const grabar = () => {
-    puntos.current = [];
-    yaSono.current = false;
-    setGrabando(true);
-    void motorAudio.reproducirEscena(indice);
-  };
-
-  const gesto = escena.gesto ?? [];
-
-  return (
-    <>
-      <div className="nv-campo__fila">
-        <strong className="nv-subtitulo">Tocar en vivo</strong>
-      </div>
-      <span className="nv-tenue nv-chico">Mueve el dedo mientras suena la escena.</span>
-      <div
-        ref={cuadro}
-        className="nv-xy"
-        onPointerDown={(ev) => {
-          ev.currentTarget.setPointerCapture(ev.pointerId);
-          leer(ev);
-        }}
-        onPointerMove={(ev) => punto && leer(ev)}
-        onPointerUp={() => {
-          setPunto(null);
-          motorAudio.fijarGestoVivo(null);
-        }}
-        onPointerCancel={() => {
-          setPunto(null);
-          motorAudio.fijarGestoVivo(null);
-        }}
-      >
-        <span className="nv-xy__eje nv-xy__eje--arriba">intenso</span>
-        <span className="nv-xy__eje nv-xy__eje--abajo">suave</span>
-        <span className="nv-xy__eje nv-xy__eje--derecha">recargado →</span>
-        {punto && (
-          <span className="nv-xy__punto" style={{ left: `${punto.x * 100}%`, top: `${(1 - punto.y) * 100}%` }} />
-        )}
-      </div>
-      <button
-        type="button"
-        className={`nv-boton nv-boton--rojo nv-lleno ${grabando ? 'nv-latiendo' : ''}`}
-        onClick={() => (grabando ? motorAudio.detener() : grabar())}
-      >
-        <span className="nv-punto nv-punto--blanco" />
-        {grabando ? 'Grabando… toca para parar' : 'Grabar mientras suena'}
-      </button>
-      <div className="nv-gesto">
-        <div className="nv-campo__fila">
-          <span className="nv-tenue nv-chico">Gesto grabado en esta escena</span>
-          <span className="nv-espacio" />
-          {gesto.length > 0 && (
-            <button
-              type="button"
-              className="nv-enlace nv-chico"
-              onClick={() =>
-                actualizar((p) => {
-                  const e = buscarEscena(p, escena.id);
-                  if (e) e.gesto = undefined;
-                })
-              }
-            >
-              borrar
-            </button>
-          )}
-        </div>
-        {gesto.length === 0 ? (
-          <span className="nv-tenue nv-chico nv-italica">Todavía no hay gesto</span>
-        ) : (
-          <div className="nv-gesto__barras">
-            {Array.from({ length: 48 }, (_, i) => {
-              const t = i / 47;
-              const cerca = gesto.reduce((a, b) => (Math.abs(b.t - t) < Math.abs(a.t - t) ? b : a), gesto[0]);
-              return <span key={i} style={{ height: `${12 + cerca.y * 88}%` }} />;
-            })}
-          </div>
-        )}
-      </div>
-    </>
   );
 }

@@ -28,3 +28,19 @@ export function Suena({ encendido, color, alCambiar }: { encendido: boolean; col
     </button>
   );
 }
+
+/** ▶ de una capa: la toca sola, aislada. Otra vez (o cualquier otro play) la para. */
+export function BotonSolo({ sonando, nombre, alTocar }: { sonando: boolean; nombre: string; alTocar: () => void }) {
+  return (
+    <button
+      type="button"
+      className={`nv-solo ${sonando ? 'nv-solo--on' : ''}`}
+      aria-pressed={sonando}
+      aria-label={sonando ? `Parar ${nombre}` : `Oír solo ${nombre}`}
+      title={sonando ? 'Parar' : 'Oír solo este sonido'}
+      onClick={alTocar}
+    >
+      {sonando ? '❚❚' : '▶'}
+    </button>
+  );
+}

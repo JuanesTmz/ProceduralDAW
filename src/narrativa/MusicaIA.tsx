@@ -19,7 +19,8 @@ import { Ventana } from '../componentes/Ventana';
 import { useEscucha } from '../componentes/useEscucha';
 import type { Parametro } from './ParametrosDatos';
 import { ID_MELODIA } from './VentanaSonidosPistas';
-import { origenSonido, Suena } from './FilaSonido';
+import { BotonSolo, origenSonido, Suena } from './FilaSonido';
+import { useSolo } from '../componentes/useSolo';
 
 const COLOR_MELODIA = '#5fd4ff';
 
@@ -94,6 +95,8 @@ export function MusicaIA({ escena, alSonidos, alNotas }: Props) {
   const { actualizar } = useProyecto();
   const pistas = usePistas(escena);
   const [pad, setPad] = useState<string | null>(null);
+  const { proyecto } = useProyecto();
+  const solo = useSolo(escena ? recorrido(proyecto).findIndex((e) => e.id === escena.id) : -1);
 
   const alternarSuena = (id: string) =>
     actualizar((p) => {
@@ -123,6 +126,8 @@ export function MusicaIA({ escena, alSonidos, alNotas }: Props) {
             alSonidos={() => alSonidos(p.id)}
             alSuena={() => alternarSuena(p.id)}
             alPad={() => setPad(p.id)}
+            solo={solo.sonando === p.id}
+            alSolo={() => solo.alternar(p.id)}
             alNotas={p.id === ID_MELODIA ? alNotas : undefined}
           />
         ))}
@@ -140,6 +145,8 @@ function FilaPista({
   alSuena,
   alPad,
   alNotas,
+  solo,
+  alSolo,
 }: {
   pista: Pista;
   escena: Escena | null;
@@ -148,10 +155,13 @@ function FilaPista({
   alSuena: () => void;
   alPad: () => void;
   alNotas?: () => void;
+  solo: boolean;
+  alSolo: () => void;
 }) {
   const dato = useDato(pista.id);
   return (
     <div className={`nv-fila-son ${pista.suena ? '' : 'nv-fila-son--muda'}`}>
+      <BotonSolo sonando={solo} nombre={pista.nombre} alTocar={alSolo} />
       <button
         type="button"
         className="nv-fila-son__elegir"

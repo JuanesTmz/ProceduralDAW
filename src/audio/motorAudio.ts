@@ -90,6 +90,12 @@ class MotorAudio {
   private indiceSeccion = 0;
   private vueltaEnSeccion = 0;
   private terminando = false;
+  /**
+   * Una sola pista sonando aislada (un id de fila o 'melodia'), o nada.
+   * Vive aquí y no en el proyecto: cualquier otro play la borra, así que
+   * siempre manda lo último que se tocó.
+   */
+  private soloPista: string | null = null;
   private gananciaSeccion: Tone.Gain | null = null;
   /** Baja la música mientras habla la voz de una escena, y la sube al terminar. */
   private agacharse: Tone.Gain | null = null;
@@ -388,9 +394,31 @@ class MotorAudio {
     else void Tone.loaded().then(arrancar);
   }
 
+  /**
+   * Una pista sola, sin nada más: ni las demás capas, ni la voz, ni las
+   * cajitas. Interrumpe lo que sonaba; otro play la interrumpe a ella.
+   * Si la pista está callada en esa escena, igual se oye: se pidió oírla.
+   */
+  async reproducirSolo(id: string, escena = -1): Promise<void> {
+    if (this.estaSonando) this.detener();
+    // Dentro de una escena suena como en ella (su pad, su intensidad) y
+    // para al terminarla; afuera, el patrón en bucle.
+    this.modo = escena >= 0 ? 'pieza' : 'patron';
+    this.desde = Math.max(0, escena);
+    this.soloUna = escena >= 0;
+    this.soloPista = id;
+    await this.reproducir();
+  }
+
+  /** La pista que suena aislada, o null. */
+  get pistaSola(): string | null {
+    return this.estaSonando ? this.soloPista : null;
+  }
+
   /** Toca la pieza entera, de la primera escena a la última. */
   async reproducirPieza(): Promise<void> {
     if (this.estaSonando) this.detener();
+    this.soloPista = null;
     this.modo = 'pieza';
     this.desde = 0;
     this.soloUna = false;
@@ -400,6 +428,7 @@ class MotorAudio {
   /** Toca una sola escena de la pieza, y para al terminarla. Puede arrancar a mitad. */
   async reproducirEscena(indice: number, desdeSegundo = 0): Promise<void> {
     if (this.estaSonando) this.detener();
+    this.soloPista = null;
     this.modo = 'pieza';
     this.desde = Math.max(0, indice);
     this.soloUna = true;
@@ -428,6 +457,7 @@ class MotorAudio {
   }
 
   detener(): void {
+    this.soloPista = null;
     if (!this.iniciado) return;
     const transporte = Tone.getTransport();
     transporte.stop();
@@ -523,10 +553,11 @@ class MotorAudio {
       const propios = seccion?.pasosFilas?.[filaBase.id];
       const fila = propios ? { ...filaBase, ...propios } : filaBase;
       const esRedoble = remate && fila.id === idRedoble;
+      if (this.soloPista && this.soloPista !== fila.id) continue;
       const golpes = mod?.golpes(fila.id) ?? { factor: 1, extra: 0 };
       // Con el dato (o el gesto) arriba, se agregan golpes en los tiempos vacíos.
       if (!fila.pasos[paso] && !esRedoble && golpes.extra > 0 && paso % 2 === 0) {
-        if (this.filaSuena(fila, patron.filas) && (!seccion || nivelDeCapa(seccion, fila.id) > 0)) {
+        if (this.filaSuena(fila, patron.filas) && (!seccion || this.nivelEn(seccion, fila.id) > 0)) {
           if (debeSonar(semillaActiva + 77, fila.id, paso, this.vuelta, golpes.extra)) {
             this.voces.get(fila.id)?.voz.disparar(cuando, 0.45 * (mod?.velocidad ?? 1));
             if (fila.tipo === 'bombo') this.envolventeBombo = 1;
@@ -537,7 +568,7 @@ class MotorAudio {
       if (!fila.pasos[paso] && !esRedoble) continue;
       if (!this.filaSuena(fila, patron.filas)) continue;
       // Sin sección (modo bucle) todo suena a tope; con sección manda su escalón.
-      const nivel = seccion ? nivelDeCapa(seccion, fila.id) : 3;
+      const nivel = seccion ? this.nivelEn(seccion, fila.id) : 3;
       if (nivel === 0) continue;
       // A mano (Música Urbana) suena todo lo dibujado; la fuerza solo cambia el golpe.
       const base = aMano
@@ -558,7 +589,10 @@ class MotorAudio {
     }
 
     const melodia = patron.melodia;
-    const melodiaSuena = !melodia.silenciada && (!seccion || seccion.melodiaActiva);
+    const melodiaSuena =
+      !melodia.silenciada &&
+      (!seccion || seccion.melodiaActiva || this.soloPista === 'melodia') &&
+      (!this.soloPista || this.soloPista === 'melodia');
     if (melodiaSuena) {
       // Se disparan juntas: en la matriz varias notas en la misma columna son un acorde.
       const escala = mod?.escala ?? seccion?.escala ?? melodia.escala;
@@ -643,8 +677,16 @@ class MotorAudio {
     // El tempo cambia justo en el borde, sin rampa: así la duración de cada
     // escena es exacta y la pantalla no se desfasa.
     if (this.proyecto) Tone.getTransport().bpm.setValueAtTime(this.proyecto.bpm * seccion.factorTempo, tiempo);
+    // Con una pista sola no entran la voz ni las cajitas.
+    if (this.soloPista) return;
     this.lanzarVozEscena(seccion, tiempo, corrido);
     this.lanzarCajitas(seccion, tiempo, corrido);
+  }
+
+  /** El escalón de una capa en la sección; la que suena sola nunca está callada. */
+  private nivelEn(seccion: Seccion, id: string): number {
+    const nivel = nivelDeCapa(seccion, id);
+    return this.soloPista === id ? Math.max(nivel, seccion.fuerza ?? 2) : nivel;
   }
 
   /** Agenda lo que pasa en cada palabra con cajita: un sonido o un silencio. */
@@ -753,7 +795,8 @@ class MotorAudio {
   private modular(seccion: Seccion, tiempo: number) {
     const proyecto = this.proyecto!;
     const porDestino = new Map<string, { v: number; w: number }>();
-    for (const c of proyecto.conexiones) {
+    const conexiones = proyecto.track === 'ia' ? proyecto.conexiones : [];
+    for (const c of conexiones) {
       const v = this.valorFuente(c.fuente, seccion, tiempo);
       const w = c.cantidad / 3;
       const previo = porDestino.get(c.destino);
@@ -913,7 +956,15 @@ class MotorAudio {
   private terminarPieza(tiempo: number): void {
     if (this.terminando) return;
     this.terminando = true;
-    const espera = Math.max(0, (tiempo - Tone.now()) * 1000) + 1800;
+    // La música se apaga justo donde termina la línea de tiempo (las colas
+    // de las muestras largas no siguen sonando después) y ahí se para.
+    const gain = this.modulador?.gain;
+    if (gain) {
+      gain.cancelScheduledValues(tiempo);
+      gain.setValueAtTime(gain.value, tiempo);
+      gain.linearRampToValueAtTime(0, tiempo + 0.12);
+    }
+    const espera = Math.max(0, (tiempo - Tone.now()) * 1000) + 250;
     window.setTimeout(() => this.detener(), espera);
   }
 

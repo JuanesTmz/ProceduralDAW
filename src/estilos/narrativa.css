@@ -1913,7 +1913,6 @@
   background: var(--nv-s2);
   text-align: left;
 }
-.nv-celdas__nombre:hover { background: var(--nv-s3); }
 .nv-celdas__pasos { grid-column: 2; display: grid; gap: 4px; padding: 6px; border-radius: 10px; background: var(--nv-s2); touch-action: none; }
 .nv-celdas__pasos--melodia { cursor: pointer; }
 .nv-celdas__suena { grid-column: 3; }
@@ -1929,3 +1928,23 @@
 .nv-celdas__pasos--melodia .nv-celda { pointer-events: none; height: 22px; }
 .nv-celdas__fila { display: contents; }
 .nv-celdas__fila--muda > .nv-celdas__nombre, .nv-celdas__fila--muda > .nv-celdas__pasos { opacity: 0.35; }
+
+/* ▶ de cada capa: oírla sola */
+.nv-solo {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--nv-s3);
+  color: var(--nv-suave);
+  font-size: 11px;
+  transition: background 0.15s, color 0.15s;
+}
+.nv-solo:hover { color: var(--nv-texto); background: var(--nv-linea); }
+.nv-solo--on { background: var(--nv-texto); color: var(--nv-fondo); }
+.nv-celdas__nombre { padding: 4px 6px 4px 4px; gap: 6px; }
+.nv-celdas__sonido { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 4px 6px; border-radius: 8px; text-align: left; }
+.nv-celdas__sonido:hover { background: #ffffff0d; }
+.nv-celdas { grid-template-columns: 210px 1fr auto; }

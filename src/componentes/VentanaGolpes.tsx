@@ -82,18 +82,14 @@ export function VentanaGolpes({ inicial, alCerrar }: Props) {
 
   const escucha = useEscucha();
 
-  /** Solo esta pista: se pone en solo, suena el bucle y nada más estorba. Otra vez: para. */
+  /** Solo esta pista, en bucle y sin nada más. Otra vez: para. */
   const oirSola = () => {
     if (!fila) return;
-    escucha.alternar('sola', () => {
-      actualizar((p) => {
-        for (const f of p.patron.filas) f.soloActivo = f.id === fila.id;
-        p.patron.melodia.soloActivo = false;
-        p.modoReproduccion = 'patron';
-      });
-      motorAudio.cambiarModo('patron');
-      void motorAudio.reproducir();
-    });
+    escucha.alternar(
+      'sola',
+      () => void motorAudio.reproducirSolo(fila.id),
+      () => motorAudio.sigueSonando && motorAudio.pistaSola === fila.id,
+    );
   };
 
   const oirConTodo = () =>
