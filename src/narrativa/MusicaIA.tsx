@@ -7,7 +7,7 @@
  * Nada se dibuja a mano: en IA todo sale de las reglas y los datos.
  * En General vale para toda la pieza; dentro de una escena, solo para ella.
  */
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent as EventoTecla, PointerEvent as EventoPuntero } from 'react';
 import { motorAudio } from '../audio/motorAudio';
 import { useProyecto } from '../estado/ProyectoContext';
@@ -26,6 +26,8 @@ const COLOR_MELODIA = '#5fd4ff';
 interface Props {
   escena: Escena | null;
   alSonidos: (pista: string) => void;
+  /** Abre la matriz para escribir la melodía a mano. */
+  alNotas: () => void;
 }
 
 interface Pista {
@@ -35,6 +37,8 @@ interface Pista {
   color: string;
   golpes: number;
   azar: number;
+  /** Lo que reparte el pad en una vuelta: 0 silencio, 1 a veces, 2 siempre. */
+  casillas: number[];
   suena: boolean;
   propia: boolean;
 }
@@ -46,9 +50,14 @@ function usePistas(escena: Escena | null): Pista[] {
   const seccion = escena ? proyecto.secciones.find((s) => s.id === escena.id) : undefined;
   const m = patron.melodia;
   const rm = escena?.reglas?.melodia ?? m.regla;
+  const n = patron.cantidadPasos;
+  const notas = seccion?.notas ?? m.notas;
   return [
     ...patron.filas.map((f) => {
       const r = escena?.reglas?.[f.id] ?? f.regla;
+      const propios = seccion?.pasosFilas?.[f.id];
+      const pasos = propios?.pasos ?? f.pasos;
+      const prob = propios?.probabilidad ?? f.probabilidad;
       return {
         id: f.id,
         nombre: f.nombre,
@@ -56,6 +65,7 @@ function usePistas(escena: Escena | null): Pista[] {
         color: f.color,
         golpes: r.golpes,
         azar: r.azar,
+        casillas: pasos.map((on, i) => (!on ? 0 : (prob[i] ?? 1) > 0.92 ? 2 : 1)),
         suena: seccion ? nivelDeCapa(seccion, f.id) > 0 : true,
         propia: Boolean(escena?.reglas?.[f.id]),
       };
@@ -67,6 +77,7 @@ function usePistas(escena: Escena | null): Pista[] {
       color: COLOR_MELODIA,
       golpes: rm.golpes,
       azar: rm.azar,
+      casillas: Array.from({ length: n }, (_, i) => (notas.some((x) => x.paso === i) ? 2 : 0)),
       suena: seccion ? seccion.melodiaActiva : true,
       propia: Boolean(escena?.reglas?.melodia),
     },
@@ -79,7 +90,7 @@ function useDato(id: string) {
   return c ? fuente(proyecto, c.fuente) : undefined;
 }
 
-export function MusicaIA({ escena, alSonidos }: Props) {
+export function MusicaIA({ escena, alSonidos, alNotas }: Props) {
   const { actualizar } = useProyecto();
   const pistas = usePistas(escena);
   const [pad, setPad] = useState<string | null>(null);
@@ -112,6 +123,7 @@ export function MusicaIA({ escena, alSonidos }: Props) {
             alSonidos={() => alSonidos(p.id)}
             alSuena={() => alternarSuena(p.id)}
             alPad={() => setPad(p.id)}
+            alNotas={p.id === ID_MELODIA ? alNotas : undefined}
           />
         ))}
       </div>
@@ -127,6 +139,7 @@ function FilaPista({
   alSonidos,
   alSuena,
   alPad,
+  alNotas,
 }: {
   pista: Pista;
   escena: Escena | null;
@@ -134,6 +147,7 @@ function FilaPista({
   alSonidos: () => void;
   alSuena: () => void;
   alPad: () => void;
+  alNotas?: () => void;
 }) {
   const dato = useDato(pista.id);
   return (
@@ -159,6 +173,11 @@ function FilaPista({
       )}
       <span className="nv-espacio" />
       {escena && <Suena encendido={pista.suena} color={pista.color} alCambiar={alSuena} />}
+      {alNotas && (
+        <button type="button" className="nv-boton nv-boton--chico nv-fila-son__accion" onClick={alNotas}>
+          ✎ Notas
+        </button>
+      )}
       <button
         type="button"
         className={`nv-boton nv-boton--chico nv-fila-son__accion ${pista.propia ? 'nv-fila-son__accion--propia' : ''}`}
@@ -182,6 +201,41 @@ function MiniPad({ x, y, color }: { x: number; y: number; color: string }) {
   );
 }
 
+/**
+ * Las casillas de una vuelta: lo que el pad reparte. Llena = suena siempre,
+ * con borde = suena a veces, vacía = silencio. Tienen tamaño fijo y solo
+ * cambian de color, así que mover el punto no reacomoda nada.
+ */
+function Casillas({ casillas, paso, melodia }: { casillas: number[]; paso: number; melodia: boolean }) {
+  const siempre = casillas.filter((c) => c === 2).length;
+  const aVeces = casillas.filter((c) => c === 1).length;
+  return (
+    <div className="pad__casillas">
+      <div className="pad__fila" style={{ gridTemplateColumns: `repeat(${casillas.length}, 1fr)` }}>
+        {casillas.map((c, i) => (
+          <span
+            key={i}
+            className={`pad__casilla pad__casilla--${c === 2 ? 'siempre' : c === 1 ? 'aveces' : 'nada'} ${
+              i % 4 === 0 ? 'pad__casilla--tiempo' : ''
+            } ${i === paso ? 'pad__casilla--cabeza' : ''}`}
+          />
+        ))}
+      </div>
+      <div className="pad__leyenda">
+        <span>
+          <i className="pad__casilla pad__casilla--siempre" /> {siempre} {melodia ? (siempre === 1 ? 'nota' : 'notas') : 'siempre'}
+        </span>
+        {!melodia && (
+          <span>
+            <i className="pad__casilla pad__casilla--aveces" /> {aVeces} a veces
+          </span>
+        )}
+        <span className="pad__vuelta">una vuelta</span>
+      </div>
+    </div>
+  );
+}
+
 /** Lo que dice el punto del pad, en palabras. */
 function describir(x: number, y: number, melodia: boolean): string {
   const cuanto = x < 0.34 ? 'Pocos' : x < 0.67 ? 'Bastantes' : 'Muchos';
@@ -196,6 +250,8 @@ function VentanaPad({ id, escena, alCerrar }: { id: string; escena: Escena | nul
   const pista = usePistas(escena).find((p) => p.id === id);
   const dato = useDato(id);
   const escucha = useEscucha();
+  const [paso, setPaso] = useState(-1);
+  useEffect(() => motorAudio.alCambiarPaso(setPaso), []);
   const caja = useRef<HTMLDivElement>(null);
   const arrastrando = useRef(false);
   if (!pista) return null;
@@ -270,6 +326,7 @@ function VentanaPad({ id, escena, alCerrar }: { id: string; escena: Escena | nul
       }
     >
       <div className="nv nv--incrustado pad" style={{ ['--color' as string]: pista.color }}>
+        <Casillas casillas={pista.casillas} paso={paso} melodia={esMelodia} />
         <div className="pad__marco">
           <span className="pad__eje pad__eje--y">
             <span>cambia cada vez</span>

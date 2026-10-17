@@ -1782,7 +1782,7 @@
 .pad__marco { display: grid; grid-template-columns: 22px auto; grid-template-rows: auto 22px; gap: 8px; }
 .pad__cuadro {
   position: relative;
-  width: min(46vh, 380px);
+  width: min(40vh, 360px);
   aspect-ratio: 1;
   border-radius: 22px;
   background:
@@ -1865,3 +1865,23 @@
 .nv-pieza { justify-content: center; }
 .nv-pieza__carril--voz, .nv-pieza__carril--musica { height: 64px; }
 .nv-pieza__carril--imagen { height: 96px; }
+
+/* Las casillas del pad: lo que reparte en una vuelta. Tamaño fijo, solo cambia el color. */
+.pad__casillas { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+.pad__fila { display: grid; gap: 5px; }
+.pad__casilla {
+  display: inline-block;
+  aspect-ratio: 1;
+  border-radius: 7px;
+  background: #ffffff0a;
+  border: 1px solid #ffffff12;
+  transition: background 0.18s, border-color 0.18s, box-shadow 0.18s;
+}
+.pad__casilla--tiempo { border-color: #ffffff24; }
+.pad__casilla--siempre { background: var(--color); border-color: var(--color); box-shadow: 0 0 10px color-mix(in srgb, var(--color) 45%, transparent); }
+.pad__casilla--aveces { background: color-mix(in srgb, var(--color) 22%, transparent); border: 1px dashed var(--color); }
+.pad__casilla--cabeza { outline: 2px solid #ffffffcc; outline-offset: 1px; }
+.pad__leyenda { display: flex; align-items: center; gap: 16px; font-size: 12px; color: var(--nv-suave); }
+.pad__leyenda span { display: inline-flex; align-items: center; gap: 6px; }
+.pad__leyenda i.pad__casilla { width: 12px; border-radius: 3px; box-shadow: none; }
+.pad__vuelta { margin-left: auto; color: var(--nv-tenue); }

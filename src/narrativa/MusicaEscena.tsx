@@ -99,7 +99,7 @@ export function MusicaEscena({ escena, indice }: Props) {
       )}
 
       {esIA ? (
-        <MusicaIA escena={escena} alSonidos={alSonidos} />
+        <MusicaIA escena={escena} alSonidos={alSonidos} alNotas={() => setHerramienta({ tipo: 'melodia' })} />
       ) : (
         <MusicaMU
           escena={escena}

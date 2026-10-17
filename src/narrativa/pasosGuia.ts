@@ -308,7 +308,7 @@ export function pasosDe(pantalla: Pantalla, track: Track | null): PasoTour[] {
                 seccion: 'LAB IA · LOS SONIDOS',
                 titulo: 'La lista de sonidos',
                 texto:
-                  'Cada fila es un sonido de la pieza. <b>Toquen su nombre</b> para cambiarlo por otro. <b>Suena / Callada</b> lo enciende o lo calla solo en esta escena. Si un dato lo mueve, aparece al lado con ↯.',
+                  'Cada fila es un sonido de la pieza. <b>Toquen su nombre</b> para cambiarlo por otro. <b>Suena / Callada</b> lo enciende o lo calla solo en esta escena. Si un dato lo mueve, aparece al lado con ↯. La <b>melodía</b> además se puede escribir a mano con <b>✎ Notas</b>.',
               },
               {
                 id: 'm.pad',
@@ -604,6 +604,13 @@ export function pasosDe(pantalla: Pantalla, track: Track | null): PasoTour[] {
             'Aquí no dibujan golpe por golpe: <b>ponen una regla</b> y la máquina reparte los golpes según esa regla. Eso es la música <b>procedural</b>: se genera, no se escribe nota por nota.',
           detalle:
             'Es la misma idea con la que generan muchas IA: no guardan la canción, guardan reglas y un poco de azar, y con eso producen algo nuevo cada vez. Por eso su música no es un loop fijo.',
+        },
+        {
+          id: 'p.casillas',
+          objetivo: '.pad__casillas',
+          titulo: 'Las casillas: lo que sale',
+          texto:
+            'Así reparte el pad los golpes en una vuelta. <b>Llena</b>: suena siempre. <b>Con borde punteado</b>: suena <b>a veces</b> (el azar decide en cada vuelta). Vacía: silencio. Cambian solas cuando mueven el punto.',
         },
         {
           id: 'p.x',
