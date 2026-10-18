@@ -12,8 +12,9 @@
 import type { Bandas } from '../analizador';
 import type { CampoImagen } from '../imagenDatos';
 import type { Pico } from '../datosVisual';
+import type { GolpeVisual } from '../../estado/tipos';
 
-export type NombreAlgoritmo = 'flujo' | 'ondas' | 'glifos' | 'nebulosa';
+export type NombreAlgoritmo = 'flujo' | 'ondas' | 'glifos' | 'nebulosa' | 'marejada' | 'caleidoscopio';
 
 /** Un mando: lo que el estudiante mueve a la derecha de la pantalla. */
 export interface Mando {
@@ -48,6 +49,17 @@ export interface Entorno {
   parametros: Record<string, number>;
   paleta: string[];
   semilla: number;
+  /**
+   * Dónde toca el dedo el cuadro de tocar en vivo (o dónde lo tocó el gesto
+   * grabado), en 0..1 de pantalla con la y hacia abajo. null si nadie toca.
+   * Los algoritmos que lo usan hacen que el dedo SEA el ratón.
+   */
+  toque: { x: number; y: number } | null;
+  /**
+   * Segundos desde el último golpe visual de cada tipo (los botones de tocar
+   * en vivo, los grabados y los de las cajitas). Grande si todavía no hubo.
+   */
+  edadGolpe: Record<GolpeVisual, number>;
 }
 
 export interface Instancia {

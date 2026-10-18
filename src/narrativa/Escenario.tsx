@@ -63,6 +63,7 @@ export function Escenario({ escenaFija, texto = true }: Props) {
     const m = marco.current;
     const d = destello.current;
     if (!m || !d) return;
+    enVivo.marcar(golpe);
     const clase = `nv-golpe--${golpe}`;
     if (golpe === 'destello' || golpe === 'corte') {
       d.classList.remove('nv-destello--blanco', 'nv-destello--negro');
@@ -82,6 +83,7 @@ export function Escenario({ escenaFija, texto = true }: Props) {
     if (!nodo) return;
     motorVisual.iniciar(nodo, () => undefined);
     let cuadro = 0;
+    let toque: { x: number; y: number } | null = null;
     let fraccionPrevia = 0;
     let seccionPrevia = -2;
     let reveladasPrevias = 0;
@@ -113,6 +115,7 @@ export function Escenario({ escenaFija, texto = true }: Props) {
       let paleta = v.paletaPropia ?? paletaDe(v.paleta).colores;
       let reaccion = v.reaccion;
       let brillo = 1;
+      toque = null;
       const fraccion = sonando ? motorAudio.fraccionSeccion : 0;
 
       if (escena) {
@@ -147,6 +150,8 @@ export function Escenario({ escenaFija, texto = true }: Props) {
           reaccion = VALOR_REACCION[escena.reaccion ?? 'bombo'];
           const gesto = enVivo.gesto ?? (sonando ? gestoEn(escena.gestoVisual, fraccion) : null);
           if (gesto) {
+            // El cuadro mide la y hacia arriba; la pantalla, hacia abajo.
+            toque = { x: gesto.x, y: 1 - gesto.y };
             if ('velocidad' in parametros) parametros.velocidad *= 0.3 + 2.2 * gesto.x;
             reaccion = Math.min(1, reaccion * (0.5 + gesto.x));
             brillo = 0.55 + 0.9 * gesto.y;
@@ -174,6 +179,7 @@ export function Escenario({ escenaFija, texto = true }: Props) {
         influenciaDatos: 0,
         movimientoDatos: 0,
         semilla: p.semilla,
+        toque,
       });
       if (marco.current) marco.current.style.filter = brillo === 1 ? '' : `brightness(${brillo.toFixed(2)})`;
 

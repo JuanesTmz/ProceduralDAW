@@ -50,6 +50,8 @@ class Glifos implements Instancia {
   private anchoCelda = 10;
   private altoCelda = 16;
   private cuerpo = 14;
+  /** El tiempo de la constelación: se suma, no se multiplica. */
+  private fase = 0;
   /** Alfabeto en uso. Lo fija la pantalla, no un mando numérico. */
   alfabeto = 'sonora';
 
@@ -85,7 +87,10 @@ class Glifos implements Instancia {
 
     const chars = ALFABETOS[this.alfabeto] ?? ALFABETOS.clasico;
     const escala = 0.004 + (1 - p.tamano) * 0.02;
-    const t = e.tiempo * p.velocidad * 0.5;
+    this.fase += e.delta * p.velocidad * 0.5;
+    const t = this.fase;
+    const cx = this.ancho / 2;
+    const cy = this.alto / 2;
     const proporcion = this.ancho / Math.max(1, this.alto);
     const imgAmt = e.imagen ? e.influenciaImagen : 0;
 
@@ -107,7 +112,10 @@ class Glifos implements Instancia {
 
       for (let fx = 0; fx < this.cols; fx++) {
         const px = fx * this.anchoCelda;
-        let valor = ruidoFractal(px * escala, py * escala, t, 3);
+        // La ondulación mece cada fila de lado a lado, como una bandera de letras.
+        const mece = p.ondulacion * 60 * Math.sin(py * 0.035 + t * 3);
+        // La escala se mide desde el centro: cambiar el tamaño no desliza el dibujo.
+        let valor = ruidoFractal((px + mece - cx) * escala, (py - cy) * escala, t, 3);
 
         if (imgAmt > 0 && e.imagen) {
           const luz = e.imagen.luz(px / this.ancho, py / this.alto, proporcion);
@@ -160,6 +168,7 @@ export const glifos: Algoritmo = {
     { id: 'tamano', etiqueta: 'Tamaño de las formas', min: 0, max: 1, paso: 0.02, valor: 0.6, lectura: porcentaje },
     { id: 'velocidad', etiqueta: 'Velocidad', min: 0, max: 3, paso: 0.05, valor: 0.8, lectura: (v) => `${v.toFixed(2)}×` },
     { id: 'umbral', etiqueta: 'Cuánto se tapa', min: 0, max: 0.9, paso: 0.02, valor: 0.42, lectura: porcentaje },
+    { id: 'ondulacion', etiqueta: 'Ondulación', min: 0, max: 1, paso: 0.02, valor: 0, lectura: porcentaje },
   ],
   crear: (lienzo) => new Glifos(lienzo),
 };

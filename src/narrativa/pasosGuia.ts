@@ -381,7 +381,9 @@ export function pasosDe(pantalla: Pantalla, track: Track | null): PasoTour[] {
           objetivo: '.nv-estilos',
           titulo: 'El estilo',
           texto:
-            'Cuatro estilos, los mismos de GenArt: <b>Campo de flujo</b>, <b>Nebulosa líquida</b>, <b>Ondas topográficas</b> y <b>Constelación de glifos</b>. El estilo vale para toda la pieza.',
+            'Seis estilos. Los de GenArt: <b>Campo de flujo</b>, <b>Nebulosa líquida</b>, <b>Ondas topográficas</b> y <b>Constelación de glifos</b>. Y dos nuevos: <b>Marejada de puntos</b> (una rejilla que oscila alrededor de lo que la toca) y <b>Caleidoscopio</b> (un fractal en espejo). El estilo vale para toda la pieza.',
+          detalle:
+            'Todos escuchan la música: los graves, los agudos y el bombo mueven cosas distintas en cada uno. Y en Música Urbana, <b>tu dedo sobre el cuadro de tocar</b> también cuenta: agita la nebulosa, dibuja la ola de la marejada o corre el centro del caleidoscopio.',
         },
         {
           id: 'i.paletas',
@@ -427,7 +429,7 @@ export function pasosDe(pantalla: Pantalla, track: Track | null): PasoTour[] {
                 objetivo: '.nv-jugar .nv-xy',
                 titulo: 'Tocar el visual',
                 texto:
-                  'Muevan el dedo <b>mientras suena</b>: <b>arriba</b> más luminosa, <b>abajo</b> más oscura, <b>a la derecha</b> más caótica.',
+                  'Muevan el dedo <b>mientras suena</b>: <b>arriba</b> más luminosa, <b>abajo</b> más oscura, <b>a la derecha</b> más caótica. Además el dibujo <b>sigue a su dedo</b>: ahí nace la ola, el remolino o el centro del espejo.',
               },
               {
                 id: 'i.pads',

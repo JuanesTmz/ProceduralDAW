@@ -21,6 +21,7 @@ import { algoritmoDe, fijarAlfabeto } from './algoritmos';
 import type { Algoritmo, Entorno, Instancia, NombreAlgoritmo } from './algoritmos/tipos';
 import type { CampoImagen } from './imagenDatos';
 import type { Pico } from './datosVisual';
+import { enVivo } from './enVivo';
 
 /** Lado mayor de la resolución interna. */
 const LADO_TACTIL = 720;
@@ -40,6 +41,8 @@ export interface Ajustes {
   influenciaDatos: number;
   movimientoDatos: number;
   semilla: number;
+  /** El dedo sobre el cuadro de tocar en vivo, con la y hacia abajo. */
+  toque: { x: number; y: number } | null;
 }
 
 class MotorVisual {
@@ -71,6 +74,7 @@ class MotorVisual {
     influenciaDatos: 0.7,
     movimientoDatos: 0,
     semilla: 2310,
+    toque: null,
   };
 
   iniciar(contenedor: HTMLElement, alFallar: (mensaje: string | null) => void): void {
@@ -189,6 +193,13 @@ class MotorVisual {
     const bandas = analizador.conectado ? analizador.medir() : BANDAS_QUIETAS;
     const a = this.ajustes;
 
+    // El dedo es un pico más: un remolino en la nebulosa y el flujo, una montaña
+    // en las ondas, un racimo en los glifos. Así todos los algoritmos le hacen
+    // caso sin saber que existe el cuadro de tocar.
+    const dedo: Pico[] = a.toque
+      ? [{ x: a.toque.x, y: a.toque.y, fuerza: 1, radio: 0.3, giro: 1, nombre: 'dedo' }]
+      : [];
+
     const entorno: Entorno = {
       ancho: this.ancho,
       alto: this.alto,
@@ -198,12 +209,14 @@ class MotorVisual {
       reaccion: a.reaccion,
       imagen: a.imagen,
       influenciaImagen: a.influenciaImagen,
-      picos: a.picos,
-      influenciaDatos: a.influenciaDatos,
+      picos: [...a.picos, ...dedo],
+      influenciaDatos: a.toque ? Math.max(a.influenciaDatos, 0.9) : a.influenciaDatos,
       movimientoDatos: a.movimientoDatos,
       parametros: a.parametros,
       paleta: a.paleta,
       semilla: a.semilla,
+      toque: a.toque,
+      edadGolpe: enVivo.edades(),
     };
 
     try {

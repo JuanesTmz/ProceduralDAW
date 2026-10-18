@@ -42,6 +42,8 @@ class Flujo implements Instancia {
   private particulas: Particula[] = [];
   private ancho = 1;
   private alto = 1;
+  /** El tiempo de la corriente: se suma, no se multiplica, para que mover la velocidad no haga saltar el campo. */
+  private fase = 0;
 
   constructor(lienzo: HTMLCanvasElement) {
     const ctx = lienzo.getContext('2d', { alpha: false });
@@ -97,7 +99,10 @@ class Flujo implements Instancia {
     // Los agudos despeinan: más vueltas por unidad de recorrido.
     const giro = p.giro * (1 + reaccion * bandas.agudos * 1.6);
     const imgAmt = e.imagen ? e.influenciaImagen : 0;
-    const t = e.tiempo * 0.12 * p.velocidad;
+    this.fase += e.delta * 0.12 * p.velocidad;
+    const t = this.fase;
+    const cx = this.ancho / 2;
+    const cy = this.alto / 2;
 
     ctx.lineCap = 'round';
 
@@ -106,7 +111,8 @@ class Flujo implements Instancia {
       const v = q.y / this.alto;
 
       // El ángulo base lo pone el ruido: esa es la corriente invisible.
-      let angulo = ruido(q.x * escala, q.y * escala, t) * Math.PI * 4 * giro;
+      // (La escala se mide desde el centro: cambiar el tamaño no desliza el campo.)
+      let angulo = ruido((q.x - cx) * escala, (q.y - cy) * escala, t) * Math.PI * 4 * giro;
 
       // La imagen tuerce la corriente: las partículas resbalan por el borde
       // de la silueta en vez de atravesarlo.

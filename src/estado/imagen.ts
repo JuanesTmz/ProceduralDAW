@@ -23,15 +23,17 @@ export function destinosVisuales(algoritmo: NombreAlgoritmo): DestinoVisual[] {
   ];
 }
 
-/** Los cuatro estilos, con los nombres que los chicos ya conocen de GenArt. */
+/** Los estilos, con los nombres que los chicos ya conocen de GenArt (y los nuevos). */
 export const NOMBRE_ESTILO: Record<NombreAlgoritmo, string> = {
   flujo: 'Campo de flujo',
   ondas: 'Ondas topográficas',
   glifos: 'Constelación de glifos',
   nebulosa: 'Nebulosa líquida',
+  marejada: 'Marejada de puntos',
+  caleidoscopio: 'Caleidoscopio',
 };
 
-export const ORDEN_ESTILOS: NombreAlgoritmo[] = ['flujo', 'nebulosa', 'ondas', 'glifos'];
+export const ORDEN_ESTILOS: NombreAlgoritmo[] = ['flujo', 'nebulosa', 'ondas', 'glifos', 'marejada', 'caleidoscopio'];
 
 /** Las conexiones con las que arranca el lab de IA en la imagen. */
 export function conexionesVisualIniciales(algoritmo: NombreAlgoritmo): Conexion[] {

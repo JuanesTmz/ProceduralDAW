@@ -30,6 +30,8 @@ class Ondas implements Instancia {
   private cols = 0;
   private filas = 0;
   private campo = new Float32Array(0);
+  /** El tiempo del relieve: se va sumando, no se multiplica, para que mover la velocidad no lo haga saltar. */
+  private fase = 0;
 
   constructor(lienzo: HTMLCanvasElement) {
     const ctx = lienzo.getContext('2d', { alpha: false });
@@ -66,7 +68,10 @@ class Ondas implements Instancia {
     const proporcion = this.ancho / Math.max(1, this.alto);
     const imgAmt = e.imagen ? e.influenciaImagen : 0;
     const mayor = Math.max(this.ancho, this.alto);
-    const t = e.tiempo * p.velocidad * 0.35;
+    this.fase += e.delta * p.velocidad * 0.35;
+    const t = this.fase;
+    const cx = this.ancho / 2;
+    const cy = this.alto / 2;
 
     // La música levanta el relieve entero: con el bombo sube la marea y las
     // curvas se apiñan, que es lo que se ve como un latido.
@@ -76,7 +81,19 @@ class Ondas implements Instancia {
       const py = gy * this.celda;
       for (let gx = 0; gx < this.cols; gx++) {
         const px = gx * this.celda;
-        let valor = ruidoFractal(px * escala, py * escala, t, this.capas);
+        // El remolino tuerce el relieve más en el centro que en los bordes.
+        let ux = px - cx;
+        let uy = py - cy;
+        if (p.remolino !== 0) {
+          const giro = p.remolino * 2.4 * (1.2 - Math.min(1, Math.hypot(ux, uy) / mayor));
+          const c = Math.cos(giro);
+          const s = Math.sin(giro);
+          [ux, uy] = [ux * c - uy * s, ux * s + uy * c];
+        }
+        // La escala se mide desde el centro: cambiar el tamaño no desliza el dibujo.
+        let valor = ruidoFractal(ux * escala, uy * escala, t, this.capas);
+        // Las crestas pliegan el ruido por la mitad: de dunas suaves a cordilleras.
+        if (p.crestas > 0) valor = valor * (1 - p.crestas) + (1 - Math.abs(valor * 2 - 1)) * p.crestas;
 
         if (imgAmt > 0 && e.imagen) {
           const luz = e.imagen.luz(px / this.ancho, py / this.alto, proporcion);
@@ -200,6 +217,8 @@ export const ondas: Algoritmo = {
     { id: 'tamano', etiqueta: 'Tamaño del relieve', min: 0, max: 1, paso: 0.02, valor: 0.5, lectura: porcentaje },
     { id: 'velocidad', etiqueta: 'Velocidad', min: 0, max: 3, paso: 0.05, valor: 0.7, lectura: (v) => `${v.toFixed(2)}×` },
     { id: 'grosor', etiqueta: 'Grosor', min: 0.3, max: 3, paso: 0.1, valor: 1.2, lectura: (v) => `${v.toFixed(1)} px` },
+    { id: 'crestas', etiqueta: 'Crestas (dunas ↔ cordillera)', min: 0, max: 1, paso: 0.02, valor: 0, lectura: porcentaje },
+    { id: 'remolino', etiqueta: 'Remolino', min: -1, max: 1, paso: 0.02, valor: 0, lectura: (v) => `${v > 0 ? '+' : ''}${Math.round(v * 100)}%` },
   ],
   crear: (lienzo) => new Ondas(lienzo),
 };

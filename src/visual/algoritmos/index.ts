@@ -7,9 +7,11 @@ import { flujo } from './flujo';
 import { ondas } from './ondas';
 import { glifos } from './glifos';
 import { nebulosa } from './nebulosa';
+import { marejada } from './marejada';
+import { caleidoscopio } from './caleidoscopio';
 import type { Algoritmo, NombreAlgoritmo } from './tipos';
 
-export const ALGORITMOS: Algoritmo[] = [flujo, ondas, glifos, nebulosa];
+export const ALGORITMOS: Algoritmo[] = [flujo, ondas, glifos, nebulosa, marejada, caleidoscopio];
 
 export function algoritmoDe(id: NombreAlgoritmo): Algoritmo {
   return ALGORITMOS.find((a) => a.id === id) ?? ALGORITMOS[0];
