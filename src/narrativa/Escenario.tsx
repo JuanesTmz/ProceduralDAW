@@ -15,10 +15,10 @@ import { motorAudio } from '../audio/motorAudio';
 import { useProyecto } from '../estado/ProyectoContext';
 import { palabrasDe } from '../estado/proyecto';
 import { duracionVoz, intensidadDeEscena, recorrido } from '../estado/escenas';
-import { paletaDeEmocion, VALOR_REACCION } from '../estado/imagen';
-import { VALOR_EMOCION } from '../estado/musica';
+import { FUERZA_REACCION, paletaDeEmocion, VALOR_REACCION } from '../estado/imagen';
+import { valorDato } from '../estado/datos';
 import { algoritmoDe, valoresPorDefecto } from '../visual/algoritmos';
-import { CampoImagen } from '../visual/imagenDatos';
+import { campoDe } from '../visual/imagenDatos';
 import { motorVisual } from '../visual/motorVisual';
 import { paletaDe } from '../visual/paletas';
 import { enVivo } from '../visual/enVivo';
@@ -51,7 +51,6 @@ export function Escenario({ escenaFija, texto = true }: Props) {
   const lienzo = useRef<HTMLDivElement>(null);
   const marco = useRef<HTMLDivElement>(null);
   const destello = useRef<HTMLDivElement>(null);
-  const campos = useRef(new Map<string, CampoImagen | 'cargando'>());
   const [frase, setFrase] = useState<{ palabras: string[]; reveladas: number; id: string }>({
     palabras: [],
     reveladas: 0,
@@ -59,11 +58,14 @@ export function Escenario({ escenaFija, texto = true }: Props) {
   });
 
   // Golpes visuales: se ven como efectos del marco, no del algoritmo.
-  const golpear = (golpe: GolpeVisual) => {
+  const golpear = (golpe: GolpeVisual, fuerza = 1) => {
     const m = marco.current;
     const d = destello.current;
     if (!m || !d) return;
-    enVivo.marcar(golpe);
+    enVivo.marcar(golpe, fuerza);
+    // Crece, acelera y se retuerce no mueven el marco: empujan los mandos (más abajo).
+    if (golpe === 'crece' || golpe === 'acelera' || golpe === 'retuerce') return;
+    m.style.setProperty('--f', String(fuerza));
     const clase = `nv-golpe--${golpe}`;
     if (golpe === 'destello' || golpe === 'corte') {
       d.classList.remove('nv-destello--blanco', 'nv-destello--negro');
@@ -78,6 +80,20 @@ export function Escenario({ escenaFija, texto = true }: Props) {
 
   useEffect(() => enVivo.alDisparar(golpear), []);
 
+  // Música Urbana: cada golpe que se oye dispara los efectos que se le asignaron.
+  useEffect(
+    () =>
+      motorAudio.alGolpe((id) => {
+        const p = datos.current;
+        if (p.track !== 'musica') return;
+        const escena = recorrido(p)[motorAudio.seccionActual];
+        for (const r of escena?.reacciones ?? []) {
+          if (r.fuente === id || r.fuente === 'todo') golpear(r.efecto, FUERZA_REACCION[r.fuerza]);
+        }
+      }),
+    [],
+  );
+
   useEffect(() => {
     const nodo = lienzo.current;
     if (!nodo) return;
@@ -88,19 +104,7 @@ export function Escenario({ escenaFija, texto = true }: Props) {
     let seccionPrevia = -2;
     let reveladasPrevias = 0;
     let escenaPrevia = '';
-
-    const campoDe = (url: string | undefined): CampoImagen | null => {
-      if (!url) return null;
-      const guardado = campos.current.get(url);
-      if (guardado instanceof CampoImagen) return guardado;
-      if (!guardado) {
-        campos.current.set(url, 'cargando');
-        CampoImagen.desdeUrl(url)
-          .then((c) => campos.current.set(url, c))
-          .catch(() => campos.current.delete(url));
-      }
-      return null;
-    };
+    let vozArriba = false;
 
     const paso = () => {
       cuadro = requestAnimationFrame(paso);
@@ -124,20 +128,24 @@ export function Escenario({ escenaFija, texto = true }: Props) {
         if ('velocidad' in parametros) parametros.velocidad *= 0.55 + 0.9 * energia;
 
         if (p.track === 'ia') {
+          const contexto = {
+            proyecto: p,
+            escena,
+            sonando,
+            fraccion,
+            avance: sonando ? motorAudio.progresoPieza : 0,
+            vivo: motorAudio.vivo(),
+          };
           for (const c of p.conexionesVisual) {
             const w = c.cantidad / 3;
-            const valor = sonando
-              ? motorAudio.datoActual(c.fuente)
-              : c.fuente === 'emocion'
-                ? VALOR_EMOCION[escena.emocion]
-                : c.fuente === 'fuerza'
-                  ? (escena.fuerza - 1) / 2
-                  : 0.5;
+            const valor = valorDato(c.fuente, contexto);
             if (c.destino === 'paleta') {
               const archivo = c.fuente.startsWith('archivo:')
-                ? p.archivosDatos.find((a) => a.id === c.fuente.slice(8))
+                ? p.archivosDatos.find((a) => a.id === c.fuente.split(':')[1])
                 : undefined;
+              const deLaFoto = c.fuente.startsWith('foto:') ? campoDe(escena.imagenUrl ?? v.imagenUrl)?.colores() : undefined;
               if (archivo?.colores && archivo.colores.length >= 2) paleta = archivo.colores;
+              else if (deLaFoto && deLaFoto.length >= 2) paleta = deLaFoto;
               else if (c.fuente === 'emocion') paleta = paletaDeEmocion(escena.emocion);
               continue;
             }
@@ -166,6 +174,34 @@ export function Escenario({ escenaFija, texto = true }: Props) {
       }
       fraccionPrevia = fraccion;
       seccionPrevia = indice;
+
+      // La voz no da golpes sueltos: cuando arranca una frase (sube de golpe) dispara sus reacciones.
+      if (p.track === 'musica' && sonando) {
+        const nivelVoz = motorAudio.vivo().voz;
+        if (!vozArriba && nivelVoz > 0.3) {
+          vozArriba = true;
+          for (const r of escena?.reacciones ?? []) {
+            if (r.fuente === 'voz') golpear(r.efecto, FUERZA_REACCION[r.fuerza]);
+          }
+        } else if (vozArriba && nivelVoz < 0.12) vozArriba = false;
+      }
+
+      // Crece, acelera y se retuerce: un empujón que se apaga solo, sobre los mandos del estilo.
+      const edades = enVivo.edades();
+      const empujar = (efecto: GolpeVisual, ids: string[], parte: number, maximo = ids.length) => {
+        const k = Math.exp(-edades[efecto] * 4) * enVivo.fuerzaDe(efecto);
+        if (k < 0.01) return;
+        let hechos = 0;
+        for (const id of ids) {
+          const mando = alg.mandos.find((m) => m.id === id);
+          if (!mando || hechos >= maximo) continue;
+          hechos++;
+          parametros[id] = Math.max(mando.min, Math.min(mando.max, parametros[id] + k * parte * (mando.max - mando.min)));
+        }
+      };
+      empujar('crece', ['tamano'], 0.4);
+      empujar('acelera', ['velocidad'], 0.6);
+      empujar('retuerce', ['pliegue', 'ondulacion', 'turbulencia', 'remolino', 'complejidad', 'curvas', 'cambio'], 0.5, 2);
 
       motorVisual.actualizar({
         algoritmo: v.algoritmo,

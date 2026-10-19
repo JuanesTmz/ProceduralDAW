@@ -9,7 +9,9 @@
 import { algoritmoDe, valoresAlAzar, type NombreAlgoritmo } from '../visual/algoritmos';
 import { PALETAS } from '../visual/paletas';
 import { nuevaConexion } from './musica';
-import type { Conexion, Emocion, GolpeVisual, Proyecto, ReaccionVisual } from './tipos';
+import { GOLPES_VISUALES } from './tipos';
+import type { Conexion, Emocion, Escena, GolpeVisual, Proyecto, ReaccionVisual, ReglaReaccion } from './tipos';
+import { nuevoId } from './proyecto';
 import { EMOCIONES } from './escenas';
 
 export interface DestinoVisual {
@@ -98,6 +100,58 @@ export const NOMBRE_GOLPE: Record<GolpeVisual, string> = {
   zoom: 'Zoom',
   sacudon: 'Sacudón',
   corte: 'Corte',
+  invertir: 'Invertir colores',
+  tinte: 'Cambio de color',
+  giro: 'Giro',
+  borroso: 'Desenfoque',
+  crece: 'Crece',
+  acelera: 'Acelera',
+  retuerce: 'Se retuerce',
 };
 
-export const ORDEN_GOLPES: GolpeVisual[] = ['destello', 'zoom', 'sacudon', 'corte'];
+export const ORDEN_GOLPES: GolpeVisual[] = [...GOLPES_VISUALES];
+
+/** Una línea que cuenta qué hace cada efecto. */
+export const AYUDA_GOLPE: Record<GolpeVisual, string> = {
+  destello: 'Un fogonazo de luz blanca.',
+  zoom: 'La imagen se acerca de golpe y vuelve.',
+  sacudon: 'Un temblor corto.',
+  corte: 'Un parpadeo de negro, como un corte de video.',
+  invertir: 'Los colores se dan vuelta un instante.',
+  tinte: 'Todos los colores giran y regresan.',
+  giro: 'La imagen se tuerce y se endereza.',
+  borroso: 'Se desenfoca y vuelve a verse nítida.',
+  crece: 'Las formas del estilo se agrandan.',
+  acelera: 'El movimiento se dispara y se calma.',
+  retuerce: 'El dibujo se deforma y se suelta.',
+};
+
+/** Cuánto pesa cada «Poco, Algo, Mucho» en un efecto. */
+export const FUERZA_REACCION: Record<ReglaReaccion['fuerza'], number> = { 1: 0.6, 2: 1, 3: 1.6 };
+
+/** De qué sonido puede depender una reacción, con el nombre que se ve. */
+export function fuentesDeReaccion(p: Proyecto): { id: string; nombre: string }[] {
+  const lista = [
+    { id: 'todo', nombre: 'Cualquier golpe' },
+    ...p.patron.filas.map((f) => ({ id: f.id, nombre: f.nombre })),
+  ];
+  lista.push({ id: 'melodia', nombre: 'La melodía' });
+  lista.push({ id: 'voz', nombre: 'La voz' });
+  return lista;
+}
+
+export function nuevaReaccion(fuente: string, efecto: GolpeVisual = 'zoom'): ReglaReaccion {
+  return { id: nuevoId('reaccion'), fuente, efecto, fuerza: 2 };
+}
+
+/** «Sorprenderme» en las reacciones: cada sonido de la escena con un efecto distinto, al azar. */
+export function reaccionesAlAzar(p: Proyecto, escena: Escena): void {
+  const fuentes = fuentesDeReaccion(p).filter((f) => f.id !== 'todo');
+  const efectos = [...ORDEN_GOLPES].sort(() => Math.random() - 0.5);
+  escena.reacciones = fuentes.slice(0, 6).map((f, i) => ({
+    id: nuevoId('reaccion'),
+    fuente: f.id,
+    efecto: efectos[i % efectos.length],
+    fuerza: (1 + Math.floor(Math.random() * 3)) as ReglaReaccion['fuerza'],
+  }));
+}

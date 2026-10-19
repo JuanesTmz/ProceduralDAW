@@ -852,18 +852,27 @@
 .nv-obra__destello { position: absolute; inset: 0; pointer-events: none; opacity: 0; }
 .nv-destello--blanco { animation: nv-flash-blanco 0.45s ease-out; }
 .nv-destello--negro { animation: nv-flash-negro 0.35s steps(2, end); }
-@keyframes nv-flash-blanco { from { opacity: 0.85; background: #fff; } to { opacity: 0; background: #fff; } }
+@keyframes nv-flash-blanco { from { opacity: calc(0.55 * var(--f, 1)); background: #fff; } to { opacity: 0; background: #fff; } }
 @keyframes nv-flash-negro { from { opacity: 1; background: #000; } to { opacity: 0; background: #000; } }
+/* Los golpes del marco. --f es la fuerza (poco .6, algo 1, mucho 1.6). */
 .nv-golpe--zoom { animation: nv-zoom 0.5s cubic-bezier(.2,.8,.2,1); }
 .nv-golpe--sacudon { animation: nv-sacudon 0.4s linear; }
-@keyframes nv-zoom { 0% { transform: scale(1.12); } 100% { transform: scale(1); } }
+.nv-golpe--invertir { animation: nv-invertir 0.5s ease-out; }
+.nv-golpe--tinte { animation: nv-tinte 0.9s ease-out; }
+.nv-golpe--giro { animation: nv-giro 0.6s cubic-bezier(.2,.8,.2,1); }
+.nv-golpe--borroso { animation: nv-borroso 0.5s ease-out; }
+@keyframes nv-zoom { 0% { transform: scale(calc(1 + 0.12 * var(--f, 1))); } 100% { transform: scale(1); } }
 @keyframes nv-sacudon {
   0%, 100% { transform: translate(0, 0); }
-  20% { transform: translate(-10px, 4px); }
-  40% { transform: translate(9px, -6px); }
-  60% { transform: translate(-6px, 6px); }
-  80% { transform: translate(5px, -3px); }
+  20% { transform: translate(calc(-10px * var(--f, 1)), calc(4px * var(--f, 1))); }
+  40% { transform: translate(calc(9px * var(--f, 1)), calc(-6px * var(--f, 1))); }
+  60% { transform: translate(calc(-6px * var(--f, 1)), calc(6px * var(--f, 1))); }
+  80% { transform: translate(calc(5px * var(--f, 1)), calc(-3px * var(--f, 1))); }
 }
+@keyframes nv-invertir { 0% { filter: invert(1) hue-rotate(180deg); } 100% { filter: invert(0) hue-rotate(0deg); } }
+@keyframes nv-tinte { 0% { filter: hue-rotate(calc(120deg * var(--f, 1))) saturate(1.7); } 100% { filter: hue-rotate(0deg) saturate(1); } }
+@keyframes nv-giro { 0% { transform: rotate(calc(9deg * var(--f, 1))) scale(1.08); } 100% { transform: rotate(0deg) scale(1); } }
+@keyframes nv-borroso { 0% { filter: blur(calc(9px * var(--f, 1))); } 100% { filter: blur(0); } }
 .nv-obra__texto {
   position: absolute;
   left: 6%;
@@ -919,13 +928,15 @@
 .nv-selector__op--mu { background: #ff7ab830; color: var(--nv-mu); }
 .nv-jugar { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: stretch; }
 .nv-xy--chico { aspect-ratio: auto; min-height: 150px; }
-.nv-pads { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.nv-pads { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .nv-pad {
+  font-size: 12px;
+  padding: 6px;
   border-radius: 12px;
   background: var(--nv-s3);
   border: 1px solid var(--nv-linea);
   font-weight: 700;
-  min-height: 64px;
+  min-height: 44px;
   touch-action: manipulation;
   transition: transform 0.08s, background 0.1s;
 }
@@ -1972,3 +1983,18 @@
 .nv-ajuste input[type='range'] { width: 100%; }
 .nv-ajuste__lectura { text-align: right; font-size: 11px; }
 .nv-ajuste > .nv-opcion { grid-column: 2 / 4; }
+
+/* Elegir un dato: pestañas por familia y la lista de esa familia */
+.nv-datos-menu { width: min(340px, calc(100vw - 20px)); max-height: none !important; overflow: visible; }
+.nv-datos-menu__pestanas { display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 2px; border-top: 1px solid var(--nv-linea); border-bottom: 1px solid var(--nv-linea); margin: 2px 0; }
+.nv-lista-flotante .nv-datos-menu__pestanas button { padding: 6px 10px; font-size: 12px; font-weight: 600; border-radius: 999px; color: var(--nv-suave); background: var(--nv-s3); }
+.nv-lista-flotante .nv-datos-menu__pestanas button.nv-datos-menu__pestana--activa { background: #ffffff1c; }
+.nv-datos-menu__lista { display: flex; flex-direction: column; gap: 2px; height: min(262px, calc(100vh - 170px)); overflow: auto; }
+.nv-lista-flotante__texto { display: flex; flex-direction: column; gap: 1px; }
+.nv-lista-flotante__texto .nv-chico { font-size: 11px; line-height: 1.25; font-weight: 400; }
+
+/* Música Urbana: cuando suena esto, la imagen hace aquello */
+.nv-reaccion { display: flex; flex-direction: column; gap: 6px; padding: 10px; border-radius: 12px; background: var(--nv-s2); border-left: 3px solid var(--nv-mu); }
+.nv-reaccion__frase, .nv-reaccion__control { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.nv-reaccion__control { justify-content: space-between; }
+.nv-conectar--mu { border-color: #ff7ab888; color: var(--nv-mu); flex: 1; }

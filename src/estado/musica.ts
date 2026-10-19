@@ -6,60 +6,17 @@
  * mueve según este dato». Aquí está el catálogo de las dos puntas: las
  * fuentes (de dónde sale el dato) y los destinos (qué se mueve).
  */
+import { fuente } from './datos';
 import { colorDeSonido, crearFila, NOMBRES_SONIDO, nuevoId } from './proyecto';
+import { CampoImagen, type CanalesFoto } from '../visual/imagenDatos';
 import { SONOTECA } from '../audio/sonoteca';
 import { generarMelodia, generarPasos } from '../generativo/motorGenerativo';
-import type { ArchivoDatos, Conexion, Emocion, Proyecto, TipoSonido } from './tipos';
+import type { ArchivoDatos, Conexion, Proyecto, TipoSonido } from './tipos';
 import type { NombreEscala } from '../generativo/escalas';
 
-// ------------------------------------------------------------ Fuentes
-
-export type GrupoFuente = 'relato' | 'sonido' | 'archivo';
-
-export interface Fuente {
-  clave: string;
-  etiqueta: string;
-  grupo: GrupoFuente;
-}
-
-export const COLOR_GRUPO: Record<GrupoFuente, string> = {
-  relato: '#ffb020',
-  sonido: '#5ee0ff',
-  archivo: '#2ee6a8',
-};
-
-export const FUENTES_FIJAS: Fuente[] = [
-  { clave: 'emocion', etiqueta: 'La emoción', grupo: 'relato' },
-  { clave: 'fuerza', etiqueta: 'La fuerza de la escena', grupo: 'relato' },
-  { clave: 'avance', etiqueta: 'El avance de la historia', grupo: 'relato' },
-  { clave: 'voz', etiqueta: 'La voz', grupo: 'sonido' },
-  { clave: 'bombo', etiqueta: 'El bombo', grupo: 'sonido' },
-];
-
-export function fuentesDe(p: Proyecto): Fuente[] {
-  return [
-    ...FUENTES_FIJAS,
-    ...p.archivosDatos.map((a) => ({
-      clave: `archivo:${a.id}`,
-      etiqueta: `${a.nombre} · ${a.tipo === 'sonido' ? 'ritmo' : 'brillo'}`,
-      grupo: 'archivo' as const,
-    })),
-  ];
-}
-
-export function fuente(p: Proyecto, clave: string): Fuente | undefined {
-  return fuentesDe(p).find((f) => f.clave === clave);
-}
-
-/** Qué tan «arriba» está cada emoción, para usarla como dato de 0 a 1. */
-export const VALOR_EMOCION: Record<Emocion, number> = {
-  calma: 0.15,
-  nostalgia: 0.3,
-  misterio: 0.42,
-  alegria: 0.68,
-  tension: 0.82,
-  euforia: 1,
-};
+// Las fuentes (de dónde sale cada dato) viven en datos.ts.
+export { COLOR_GRUPO, fuente, fuentesDe, VALOR_EMOCION } from './datos';
+export type { Fuente, GrupoFuente } from './datos';
 
 // ------------------------------------------------------------ Destinos
 
@@ -98,7 +55,7 @@ export function fraseConexion(p: Proyecto, c: Conexion): string {
   const d = destino(p, c.destino);
   if (!f || !d) return '';
   const dato = f.etiqueta.charAt(0).toLowerCase() + f.etiqueta.slice(1);
-  return `Cuanto más sube ${dato}, ${d.efecto}.`;
+  return f.frase ? `${f.frase}, ${d.efecto}.` : `Cuanto más sube ${dato}, ${d.efecto}.`;
 }
 
 export function nuevaConexion(fuenteClave: string, destinoClave: string): Conexion {
@@ -270,41 +227,17 @@ async function envolvente(archivo: File): Promise<number[]> {
 }
 
 /**
- * Una imagen leída como partitura: el brillo de cada columna, de izquierda
- * a derecha, y sus cinco colores más presentes.
+ * Una imagen leída como datos: su luz columna por columna (como una
+ * partitura), sus cinco colores más presentes y todos los canales (rojo,
+ * verde, azul, tono, intensidad, detalle y bits).
  */
-async function leerImagen(archivo: File): Promise<{ valores: number[]; colores: string[] }> {
+async function leerImagen(archivo: File): Promise<{ valores: number[]; colores: string[]; canales: CanalesFoto }> {
   const url = URL.createObjectURL(archivo);
   try {
-    const img = new Image();
-    img.src = url;
-    await img.decode();
-    const ancho = 64;
-    const alto = 40;
-    const lienzo = document.createElement('canvas');
-    lienzo.width = ancho;
-    lienzo.height = alto;
-    const ctx = lienzo.getContext('2d')!;
-    ctx.drawImage(img, 0, 0, ancho, alto);
-    const px = ctx.getImageData(0, 0, ancho, alto).data;
-    const valores: number[] = [];
-    const cubos = new Map<string, number>();
-    for (let x = 0; x < ancho; x++) {
-      let suma = 0;
-      for (let y = 0; y < alto; y++) {
-        const i = (y * ancho + x) * 4;
-        const [r, g, b] = [px[i], px[i + 1], px[i + 2]];
-        suma += (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-        const clave = [r, g, b].map((c) => Math.round(c / 51) * 51).join(',');
-        cubos.set(clave, (cubos.get(clave) ?? 0) + 1);
-      }
-      valores.push(suma / alto);
-    }
-    const colores = [...cubos.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([k]) => `#${k.split(',').map((c) => Number(c).toString(16).padStart(2, '0')).join('')}`);
-    return { valores, colores };
+    const campo = await CampoImagen.desdeUrl(url);
+    const canales = campo.canales();
+    const colores = campo.colores();
+    return { valores: canales.luz, colores, canales };
   } finally {
     URL.revokeObjectURL(url);
   }
@@ -313,8 +246,8 @@ async function leerImagen(archivo: File): Promise<{ valores: number[]; colores: 
 export async function leerArchivoDatos(archivo: File): Promise<ArchivoDatos> {
   const nombre = archivo.name.length > 18 ? `${archivo.name.slice(0, 15)}…` : archivo.name;
   if (archivo.type.startsWith('image/')) {
-    const { valores, colores } = await leerImagen(archivo);
-    return { id: nuevoId('datos'), nombre, tipo: 'imagen', valores, colores };
+    const { valores, colores, canales } = await leerImagen(archivo);
+    return { id: nuevoId('datos'), nombre, tipo: 'imagen', valores, colores, canales };
   }
   return { id: nuevoId('datos'), nombre, tipo: 'sonido', valores: await envolvente(archivo) };
 }

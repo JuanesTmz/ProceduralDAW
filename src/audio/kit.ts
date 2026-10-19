@@ -162,27 +162,46 @@ function crearAro(): VozPercusion {
   };
 }
 
-/** Voz que reproduce un sample subido por el estudiante. */
+/**
+ * Voz que reproduce un sample subido por el estudiante.
+ *
+ * Cada golpe es su propia fuente con su propio volumen. Con un solo
+ * reproductor, el volumen era uno para todos: cambiarlo para el golpe nuevo
+ * cambiaba también la cola del anterior, que todavía sonaba, y golpes
+ * seguidos de la misma celda se oían unos más fuertes que otros.
+ */
 export function crearVozSample(url: string, alCargar?: () => void): VozPercusion {
   const salida = new Tone.Gain(1);
-  // Un fundido corto para que el recorte de un sonido largo no suene a clic.
-  const player = new Tone.Player({ url, onload: alCargar, fadeOut: 0.05 }).connect(salida);
+  const buffer = url ? new Tone.ToneAudioBuffer(url, alCargar) : new Tone.ToneAudioBuffer();
+  const activos = new Set<Tone.ToneBufferSource>();
 
   return {
     tipo: 'sample',
     salida,
     disparar: (tiempo, velocidad, maxDuracion) => {
-      if (!player.loaded) return;
-      player.volume.value = Tone.gainToDb(Math.max(velocidad, 0.001));
-      if (maxDuracion !== undefined && player.buffer.duration > maxDuracion) {
-        player.start(tiempo, 0, maxDuracion);
-      } else {
-        player.start(tiempo);
-      }
+      if (!buffer.loaded) return;
+      const ganancia = new Tone.Gain(Math.max(velocidad, 0.001)).connect(salida);
+      // Un fundido corto para que el recorte de un sonido largo no suene a clic.
+      const fuente = new Tone.ToneBufferSource({
+        url: buffer,
+        fadeOut: 0.05,
+        onended: () => {
+          activos.delete(fuente);
+          fuente.dispose();
+          ganancia.dispose();
+        },
+      }).connect(ganancia);
+      activos.add(fuente);
+      if (maxDuracion !== undefined && buffer.duration > maxDuracion) fuente.start(tiempo, 0, maxDuracion);
+      else fuente.start(tiempo);
     },
-    parar: () => player.stop(),
+    parar: () => {
+      for (const f of activos) f.stop();
+    },
     liberar: () => {
-      player.dispose();
+      for (const f of activos) f.dispose();
+      activos.clear();
+      buffer.dispose();
       salida.dispose();
     },
   };

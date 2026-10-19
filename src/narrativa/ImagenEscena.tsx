@@ -23,6 +23,7 @@ import { Escenario } from './Escenario';
 import { ParametrosDatos, type Parametro } from './ParametrosDatos';
 import { fondoEscena } from './PasoEscenas';
 import { AjustesEstilo } from './AjustesEstilo';
+import { ReaccionesMU } from './ReaccionesMU';
 import { sorprender } from '../estado/imagen';
 import { useReproduccion } from './useReproduccion';
 
@@ -264,7 +265,7 @@ function ImagenMU({ escena, indice }: { escena: Escena | null; indice: number })
       {escena ? (
         <>
           <div className="nv-campo">
-            <span className="nv-campo__titulo">Cómo reacciona al sonido</span>
+            <span className="nv-campo__titulo">Movimiento de fondo con el sonido</span>
             <div className="nv-selector nv-selector--lleno">
               {(['bombo', 'voz', 'quieta'] as ReaccionVisual[]).map((r) => (
                 <button
@@ -283,6 +284,8 @@ function ImagenMU({ escena, indice }: { escena: Escena | null; indice: number })
               ))}
             </div>
           </div>
+
+          <ReaccionesMU escena={escena} />
 
           <div className="nv-jugar">
             <div

@@ -6,6 +6,7 @@
 import type { NombreEscala } from '../generativo/escalas';
 import type { NombreAlgoritmo } from '../visual/algoritmos/tipos';
 import type { FuenteDatos } from '../visual/datosVisual';
+import type { CanalesFoto } from '../visual/imagenDatos';
 import type { Track } from '../guia/pasos';
 
 /** Filas de la matriz tonal: 16 notas de la escala, de grave a agudo. */
@@ -216,6 +217,8 @@ export interface ArchivoDatos {
   /** Valores 0..1 en el tiempo (sonido: 20 por segundo; imagen: por columna). */
   valores: number[];
   colores?: string[];
+  /** Solo en imágenes: luz, color, detalle y bits de la foto. Las guardadas antes no lo traen. */
+  canales?: CanalesFoto;
 }
 
 // ------------------------------------------------------------ El relato
@@ -272,6 +275,8 @@ export interface Escena {
   gestoVisual?: PuntoGesto[];
   /** Música Urbana: los golpes visuales tocados en vivo, con su momento (0..1). */
   golpesVisuales?: { t: number; tipo: GolpeVisual }[];
+  /** Música Urbana: qué efecto dispara cada sonido de esta escena. */
+  reacciones?: ReglaReaccion[];
 }
 
 export type ReaccionVisual = 'bombo' | 'voz' | 'quieta';
@@ -289,7 +294,37 @@ export interface Cajita {
   nombre?: string;
   golpe?: GolpeVisual;
 }
-export type GolpeVisual = 'destello' | 'zoom' | 'sacudon' | 'corte';
+/**
+ * Los efectos que se pueden disparar sobre la imagen. Los primeros son golpes
+ * del marco (flash, zoom, giro, color…); los tres últimos le dan un empujón a
+ * los mandos del estilo: crece, se acelera o se retuerce.
+ */
+export const GOLPES_VISUALES = [
+  'destello',
+  'zoom',
+  'sacudon',
+  'corte',
+  'invertir',
+  'tinte',
+  'giro',
+  'borroso',
+  'crece',
+  'acelera',
+  'retuerce',
+] as const;
+export type GolpeVisual = (typeof GOLPES_VISUALES)[number];
+
+/**
+ * Música Urbana: «cuando suena esto, la imagen hace aquello». La fuente es
+ * una capa (su id), 'melodia', 'voz' o 'todo' (cualquier golpe).
+ */
+export interface ReglaReaccion {
+  id: string;
+  fuente: string;
+  efecto: GolpeVisual;
+  /** 1 poco, 2 algo, 3 mucho. */
+  fuerza: 1 | 2 | 3;
+}
 
 /** La historia: el corazón del reto. Sin esto, lo demás no tiene para qué. */
 export interface Historia {

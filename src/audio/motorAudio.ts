@@ -28,8 +28,12 @@ import {
   volumenDeIntensidad,
 } from '../generativo/motorGenerativo';
 import type { NombreEscala } from '../generativo/escalas';
-import { ESCALAS_POR_LUZ, VALOR_EMOCION } from '../estado/musica';
+import { ESCALAS_POR_LUZ } from '../estado/musica';
+import { valorDato, VIVO_QUIETO, type ContextoDato, type Vivo } from '../estado/datos';
+import { duracionVoz, recorrido } from '../estado/escenas';
+import { palabrasDe } from '../estado/proyecto';
 import { analizador } from '../visual/analizador';
+import { FILAS_MATRIZ } from '../estado/tipos';
 import type {
   Efectos,
   Fila,
@@ -155,6 +159,14 @@ class MotorAudio {
   private medidorVoz: Tone.Meter | null = null;
   /** Se enciende con cada bombo y se apaga sola: el bombo como dato. */
   private envolventeBombo = 0;
+  /** Cada golpe de cada capa (y de la melodía), con el instante en que sonó: se apaga solo. */
+  private golpesVivos = new Map<string, { v: number; t: number }>();
+  /** La altura de la última nota de la melodía, de 0 a 1. */
+  private notaViva = 0.5;
+  /** Quien quiera enterarse de cada golpe en el instante en que se oye (las reacciones de la imagen). */
+  private oyentesGolpe = new Set<(id: string, fuerza: number) => void>();
+  /** El último paso que se oyó: qué paso era, en qué vuelta y cuándo. Mueve el pulso, el compás y los bits. */
+  private pasoOido = { paso: 0, vuelta: 0, t: 0, tiempo: 0 };
   /** Cuándo empezó la sección que suena y cuánto dura (segundos de audio). */
   private inicioSeccionT = 0;
   private duracionSeccionT = 1;
@@ -592,6 +604,7 @@ class MotorAudio {
     this.pedido += 1;
     this.pedida = null;
     this.soloPista = null;
+    this.golpesVivos.clear();
     if (!this.iniciado) return;
     const transporte = Tone.getTransport();
     transporte.stop();
@@ -701,6 +714,7 @@ class MotorAudio {
         if (this.filaSuena(fila, patron.filas) && (!seccion || this.nivelEn(seccion, fila.id) > 0)) {
           if (debeSonar(semillaActiva + 77, fila.id, paso, this.vuelta, golpes.extra)) {
             this.voces.get(fila.id)?.voz.disparar(cuando, 0.45 * (mod?.velocidad ?? 1), this.espacioDelGolpe(fila.pasos, paso, segundosPorPaso));
+            this.marcarGolpe(fila.id, 0.45, cuando);
             if (fila.tipo === 'bombo') this.envolventeBombo = 1;
           }
         }
@@ -720,16 +734,21 @@ class MotorAudio {
         : Math.min(1, base * (ajuste?.probabilidad ?? 1) * golpes.factor);
       if (!debeSonar(semillaActiva, fila.id, paso, this.vuelta, probabilidad)) continue;
 
-      const velocidad =
-        VELOCIDAD_NIVEL[nivel] *
-        acentoDePaso(paso, patron.cantidadPasos) *
-        humanizar(semillaActiva, fila.id, paso, this.vuelta) *
-        (ajuste?.velocidad ?? 1);
+      // Lo dibujado a mano suena igual de fuerte en todas sus celdas: el acento
+      // por tiempo y el empujoncito al azar son del lab de IA, donde la máquina
+      // decide cómo respira el ritmo.
+      const velocidad = aMano
+        ? VELOCIDAD_NIVEL[nivel]
+        : VELOCIDAD_NIVEL[nivel] *
+          acentoDePaso(paso, patron.cantidadPasos) *
+          humanizar(semillaActiva, fila.id, paso, this.vuelta) *
+          (ajuste?.velocidad ?? 1);
       this.voces.get(fila.id)?.voz.disparar(
         cuando,
         Math.min(1, velocidad * (mod?.velocidad ?? 1)),
         this.espacioDelGolpe(fila.pasos, paso, segundosPorPaso),
       );
+      this.marcarGolpe(fila.id, Math.min(1, velocidad), cuando);
       if (fila.tipo === 'bombo') this.envolventeBombo = 1;
     }
 
@@ -742,24 +761,38 @@ class MotorAudio {
       // Se disparan juntas: en la matriz varias notas en la misma columna son un acorde.
       const escala = mod?.escala ?? seccion?.escala ?? melodia.escala;
       const probMelodia = mod?.melodia ?? 1;
-      const acorde = (seccion?.notas ?? melodia.notas)
+      const tocadas = (seccion?.notas ?? melodia.notas)
         .filter((n) => n.paso === paso)
         .filter((n) =>
           probMelodia < 1
             ? debeSonar(semillaActiva + 13, 'melodia', n.paso * 31 + n.grado, this.vuelta, probMelodia)
             : true,
-        )
-        .map((n) => notaTone(semitonoDeGrado(n.grado, escala), melodia.octavaBase));
-      if (acorde.length > 0) this.dispararMatriz(acorde, cuando);
+        );
+      const acorde = tocadas.map((n) => notaTone(semitonoDeGrado(n.grado, escala), melodia.octavaBase));
+      if (acorde.length > 0) {
+        this.dispararMatriz(acorde, cuando);
+        const altura = tocadas.reduce((a, n) => a + n.grado, 0) / tocadas.length / (FILAS_MATRIZ - 1);
+        this.marcarGolpe('melodia', 0.9, cuando, altura);
+      }
     }
 
     // Tone.Draw sincroniza el dibujo con el audio: la cabeza lectora no se desfasa.
     const pasoDibujado = paso;
+    const vueltaDibujada = this.vuelta;
     // El aviso va por la cola de dibujo de Tone, que se vacía en el hilo de
     // la pantalla. Si entretanto se paró, ese paso ya no es verdad: por eso
     // se vuelve a mirar al llegar, y no solo al agendar.
     Tone.getDraw().schedule(() => {
-      if (this.estaSonando) this.avisarPaso(pasoDibujado);
+      if (!this.estaSonando) return;
+      const ahora = performance.now();
+      this.pasoOido = {
+        paso: pasoDibujado,
+        vuelta: vueltaDibujada,
+        t: ahora,
+        // Cada cuatro pasos hay un tiempo: de ahí cuelga el pulso.
+        tiempo: pasoDibujado % 4 === 0 ? ahora : this.pasoOido.tiempo,
+      };
+      this.avisarPaso(pasoDibujado);
     }, tiempo);
 
     this.paso = (this.paso + 1) % patron.cantidadPasos;
@@ -900,11 +933,77 @@ class MotorAudio {
     return this.posicionOida?.segundos ?? 0;
   }
 
-  /** El valor de un dato ahora mismo, en la sección que suena (para el visual). */
-  datoActual(clave: string): number {
-    const seccion = this.proyecto?.secciones[this.indiceSeccion];
-    if (!seccion || !this.estaSonando) return 0;
-    return this.valorFuente(clave, seccion, Tone.now());
+  /** Anota un golpe de una capa en el instante en que se oye (no cuando se agenda). */
+  private marcarGolpe(id: string, fuerza: number, cuando: number, altura?: number): void {
+    Tone.getDraw().schedule(() => {
+      if (!this.estaSonando) return;
+      const ahora = performance.now();
+      this.golpesVivos.set(id, { v: Math.max(0.35, fuerza), t: ahora });
+      this.golpesVivos.set('todos', { v: Math.max(0.35, fuerza), t: ahora });
+      if (altura !== undefined) this.notaViva = altura;
+      for (const oyente of this.oyentesGolpe) oyente(id, fuerza);
+    }, cuando);
+  }
+
+  /** Avisa de cada golpe (de una capa o de la melodía) justo cuando se oye. */
+  alGolpe(oyente: (id: string, fuerza: number) => void): () => void {
+    this.oyentesGolpe.add(oyente);
+    return () => this.oyentesGolpe.delete(oyente);
+  }
+
+  /**
+   * Lo que se está oyendo ahora, en números: la voz, el bombo, el golpe de
+   * cada instrumento, el pulso, la melodía, el volumen y las bandas. Es lo
+   * que leen las conexiones (en la música y en la imagen) en cada cuadro.
+   */
+  vivo(): Vivo {
+    if (!this.estaSonando) return VIVO_QUIETO;
+    const proyecto = this.proyecto;
+    const ahora = performance.now();
+    const golpes: Record<string, number> = {};
+    for (const [id, g] of this.golpesVivos) golpes[id] = g.v * Math.exp(-(ahora - g.t) / 170);
+
+    const bandas = analizador.valores;
+    const p = this.pasoOido;
+    const msPorPaso = 60000 / Tone.getTransport().bpm.value / 4;
+    const pasos = proyecto?.patron.cantidadPasos ?? 16;
+    const compas = Math.min(0.999, (p.paso + Math.min(1, (ahora - p.t) / msPorPaso)) / pasos);
+
+    let palabra = 0;
+    let capas = 0;
+    const pos = this.posicionOida;
+    const seccion = proyecto?.secciones[this.indiceSeccion];
+    const escena = proyecto ? recorrido(proyecto)[this.indiceSeccion] : undefined;
+    if (proyecto && pos && escena && !escena.respiro) {
+      const n = palabrasDe(escena.texto).length;
+      const x = (pos.segundos / Math.max(0.5, duracionVoz(escena))) * n;
+      if (n > 0 && x < n) palabra = Math.pow(1 - (x - Math.floor(x)), 2);
+    }
+    if (proyecto && seccion) {
+      const sonando = proyecto.patron.filas.filter(
+        (f) => this.filaSuena(f, proyecto.patron.filas) && this.nivelEn(seccion, f.id) > 0,
+      ).length;
+      const total = proyecto.patron.filas.length + 1;
+      capas = (sonando + (seccion.melodiaActiva && !proyecto.patron.melodia.silenciada ? 1 : 0)) / total;
+    }
+
+    return {
+      voz: Math.min(1, ((this.medidorVoz?.getValue() as number) || 0) * 3),
+      bombo: this.envolventeBombo,
+      pulso: Math.exp(-(ahora - p.tiempo) / 220),
+      compas,
+      golpes,
+      nota: this.notaViva,
+      capas,
+      palabra,
+      paso: p.paso,
+      vuelta: p.vuelta,
+      segundos: Math.max(0, Tone.now() - this.inicioPieza),
+      volumen: bandas.amplitud,
+      graves: bandas.graves,
+      medios: bandas.medios,
+      agudos: bandas.agudos,
+    };
   }
 
   /** El gesto que se está tocando en vivo (null al soltar). */
@@ -912,27 +1011,18 @@ class MotorAudio {
     this.gestoVivo = gesto;
   }
 
-  /** El valor de un dato (0..1) en este instante. */
-  private valorFuente(clave: string, seccion: Seccion, tiempo: number): number {
+  /** Todo lo que hace falta para leer un dato de la escena que suena. */
+  private contextoDeDatos(): ContextoDato | null {
     const proyecto = this.proyecto;
-    if (!proyecto) return 0;
-    if (clave === 'emocion') return seccion.emocion ? VALOR_EMOCION[seccion.emocion] : 0.5;
-    if (clave === 'fuerza') return ((seccion.fuerza ?? 2) - 1) / 2;
-    if (clave === 'avance') return this.progresoPieza;
-    if (clave === 'voz') return Math.min(1, ((this.medidorVoz?.getValue() as number) || 0) * 3);
-    if (clave === 'bombo') return this.envolventeBombo;
-    if (clave.startsWith('archivo:')) {
-      const archivo = proyecto.archivosDatos.find((a) => a.id === clave.slice(8));
-      if (!archivo || archivo.valores.length === 0) return 0;
-      const n = archivo.valores.length;
-      if (archivo.tipo === 'sonido') {
-        const i = Math.floor(Math.max(0, tiempo - this.inicioPieza) * 20) % n;
-        return archivo.valores[i];
-      }
-      const t = Math.max(0, Math.min(0.999, (tiempo - this.inicioSeccionT) / this.duracionSeccionT));
-      return archivo.valores[Math.floor(t * n)];
-    }
-    return 0;
+    if (!proyecto) return null;
+    return {
+      proyecto,
+      escena: recorrido(proyecto)[this.indiceSeccion],
+      sonando: true,
+      fraccion: this.fraccionSeccion,
+      avance: this.progresoPieza,
+      vivo: this.vivo(),
+    };
   }
 
   /** El gesto de la escena en este instante: el vivo manda sobre el grabado. */
@@ -959,8 +1049,10 @@ class MotorAudio {
     const proyecto = this.proyecto!;
     const porDestino = new Map<string, { v: number; w: number }>();
     const conexiones = proyecto.track === 'ia' ? proyecto.conexiones : [];
+    const datos = conexiones.length > 0 ? this.contextoDeDatos() : null;
     for (const c of conexiones) {
-      const v = this.valorFuente(c.fuente, seccion, tiempo);
+      if (!datos) break;
+      const v = valorDato(c.fuente, datos);
       const w = c.cantidad / 3;
       const previo = porDestino.get(c.destino);
       if (!previo) porDestino.set(c.destino, { v, w });

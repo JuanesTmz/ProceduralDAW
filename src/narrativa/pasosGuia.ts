@@ -409,7 +409,7 @@ export function pasosDe(pantalla: Pantalla, track: Track | null): PasoTour[] {
                 seccion: 'LAB IA',
                 titulo: 'Datos del visual',
                 texto:
-                  'Cada fila es un mando del estilo (con <b>✦ Sorprenderme</b> arriba para moverlos todos al azar). <b>Sin dato</b>: lo ponen ustedes con la barra. O toquen y elijan un <b>dato</b> (la voz, el bombo, la emoción…) para que se mueva solo mientras suena.',
+                  'Cada fila es un mando del estilo (con <b>✦ Sorprenderme</b> arriba para moverlos todos al azar). <b>Sin dato</b>: lo ponen ustedes con la barra. O toquen y elijan un <b>dato</b> (la voz, el volumen, los graves, un instrumento, la luz de la foto…) para que se mueva solo mientras suena.',
                 detalle:
                   'Ejemplo: «Velocidad · lo mueve La voz»: cuando hablan, el dibujo se acelera; en los silencios se calma. Poco, Algo y Mucho dicen cuánto manda el dato.',
                 final: 'A pintar',
@@ -427,9 +427,16 @@ export function pasosDe(pantalla: Pantalla, track: Track | null): PasoTour[] {
                 id: 'i.reaccion',
                 objetivo: '.nv-imagen__lado .nv-selector--lleno',
                 seccion: 'LAB MÚSICA URBANA',
-                titulo: 'Cómo reacciona',
+                titulo: 'Movimiento de fondo',
                 texto:
-                  '<b>Late con el bombo</b>: salta con cada golpe. <b>Respira con la voz</b>: se mueve cuando hablan. <b>Quieta</b>: casi no reacciona, para escenas calmadas.',
+                  '<b>Late con el bombo</b>: se mueve con cada golpe. <b>Respira con la voz</b>: se mueve cuando hablan. <b>Quieta</b>: casi no se mueve, para escenas calmadas.',
+              },
+              {
+                id: 'i.reacciones',
+                objetivo: '.nv-reaccion, .nv-conectar--mu',
+                titulo: 'Cuando suena… la imagen hace',
+                texto:
+                  'Aquí <b>ustedes deciden</b> qué efecto dispara cada sonido: «cuando suena el <b>bombo</b>, que haga <b>zoom</b>». Elijan el sonido (una capa, la melodía, la voz o cualquier golpe), el efecto y cuánto: <b>Poco, Algo o Mucho</b>. <b>▶ Probar</b> lo muestra al momento y <b>✦ Al azar</b> reparte uno distinto a cada sonido.',
               },
               {
                 id: 'i.xy',
@@ -443,7 +450,7 @@ export function pasosDe(pantalla: Pantalla, track: Track | null): PasoTour[] {
                 objetivo: '.nv-pads',
                 titulo: 'Los golpes',
                 texto:
-                  'Cuatro botones para dar golpes de imagen en vivo: <b>Destello</b>, <b>Zoom</b>, <b>Sacudón</b> y <b>Corte</b>. Tóquenlos al ritmo de la música.',
+                  'Los mismos efectos de arriba, para tocarlos en vivo: <b>Destello</b>, <b>Zoom</b>, <b>Sacudón</b>, <b>Giro</b>, <b>Crece</b>… Tóquenlos al ritmo de la música.',
               },
               {
                 id: 'i.grabar',
@@ -733,7 +740,7 @@ export function pasosDe(pantalla: Pantalla, track: Track | null): PasoTour[] {
           objetivo: '.nv-parametro .nv-desplegable',
           titulo: '¿Con qué dato?',
           texto:
-            'Toquen aquí y elijan. <b>Sin dato</b>: queda quieto. O un dato: <b>La emoción</b>, <b>La fuerza de la escena</b>, <b>El avance de la historia</b> (sube del principio al final), <b>La voz</b> (cuando hablan), <b>El bombo</b> (en cada golpe).',
+            'Toquen aquí y elijan. <b>Sin dato</b>: queda quieto. O un dato: <b>La emoción</b>, <b>La fuerza de la escena</b>, <b>El avance de la historia</b>, <b>La voz</b>, <b>El bombo</b>, <b>El pulso</b>, el golpe de <b>cada instrumento</b>, <b>cada nota de la melodía</b> y los datos de una <b>foto</b>. Las listas se pliegan: toquen un título para abrirlo.',
           detalle:
             'Ejemplos: «Golpes · Bombo ← La fuerza»: en escenas fuertes el bombo se llena. «La música se aparta ← La voz»: cuando hablan, la música baja. «Brillo ← El avance»: el sonido se abre a medida que avanza la historia.',
         },
@@ -755,7 +762,7 @@ export function pasosDe(pantalla: Pantalla, track: Track | null): PasoTour[] {
           objetivo: '.nv-subir',
           titulo: 'Datos de sus archivos',
           texto:
-            'Suban <b>un sonido o una imagen</b> para sacarle datos: de un sonido, su ritmo; de una imagen, su brillo de izquierda a derecha. Aparece como un dato más en la lista de cada fila.',
+            'Suban <b>un sonido o una imagen</b> para sacarle datos: de un sonido, su ritmo; de una imagen, su luz, sus colores, su detalle y sus <b>bits</b> (la foto en casillas encendidas o apagadas, una por paso). La foto de la escena ya está en la lista, sin subir nada. Aparece como un dato más en la lista de cada fila.',
           detalle:
             'No se usa el sonido ni la foto en sí: se convierten en números. Una foto de las lomas puede dibujar la forma de la melodía; el audio de un bus puede marcar el ritmo del brillo.',
           final: 'A conectar datos',

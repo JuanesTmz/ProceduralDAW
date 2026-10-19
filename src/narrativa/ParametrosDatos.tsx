@@ -11,6 +11,7 @@ import { useProyecto } from '../estado/ProyectoContext';
 import { COLOR_GRUPO, fuente, fuentesDe, leerArchivoDatos, NOMBRE_CANTIDAD, nuevaConexion } from '../estado/musica';
 import { Onda } from './VozEscena';
 import { SelectorOpciones } from './SelectorOpciones';
+import { SelectorDato } from './SelectorDato';
 
 export interface Parametro {
   clave: string;
@@ -30,8 +31,7 @@ interface Props {
 
 export function ParametrosDatos({ clave, grupos }: Props) {
   const { proyecto, actualizar } = useProyecto();
-  const [abierto, setAbierto] = useState<string | null>(null);
-  const fuentes = fuentesDe(proyecto);
+  const fuentes = fuentesDe(proyecto, clave === 'conexionesVisual' ? 'imagen' : 'musica');
   const conexionDe = (destino: string) => proyecto[clave].find((c) => c.destino === destino);
 
   const usar = (destino: string, fuenteClave: string | null) => {
@@ -44,55 +44,25 @@ export function ParametrosDatos({ clave, grupos }: Props) {
         p[clave].push(nueva);
       }
     });
-    setAbierto(null);
   };
 
   return (
-    <div className="nv-parametros" onClick={() => setAbierto(null)}>
+    <div className="nv-parametros">
       {grupos.map((g) => (
         <div key={g.titulo} className="nv-parametros__grupo">
           <span className="nv-etiqueta nv-tenue">{g.titulo.toUpperCase()}</span>
           {g.parametros.map((par) => {
             const c = conexionDe(par.clave);
             const f = c ? fuente(proyecto, c.fuente) : undefined;
-            const col = f ? COLOR_GRUPO[f.grupo] : undefined;
             return (
               <div key={par.clave} className={`nv-parametro ${c ? 'nv-parametro--dato' : ''}`}>
                 <span className="nv-parametro__nombre">{par.etiqueta}</span>
-                <div className="nv-desplegable">
-                  <button
-                    type="button"
-                    className="nv-ficha nv-ficha--chica"
-                    style={col ? { color: col, background: `${col}22`, borderColor: `${col}88` } : undefined}
-                    onClick={(ev) => {
-                      ev.stopPropagation();
-                      setAbierto(abierto === par.clave ? null : par.clave);
-                    }}
-                  >
-                    {f ? (
-                      <>
-                        <span className="nv-punto" style={{ background: col }} />
-                        {f.etiqueta}
-                      </>
-                    ) : (
-                      'Sin dato'
-                    )}{' '}
-                    ▾
-                  </button>
-                  {abierto === par.clave && (
-                    <div className="nv-lista-flotante" onClick={(ev) => ev.stopPropagation()}>
-                      <button type="button" onClick={() => usar(par.clave, null)}>
-                        Sin dato
-                      </button>
-                      {fuentes.map((x) => (
-                        <button key={x.clave} type="button" onClick={() => usar(par.clave, x.clave)}>
-                          <span className="nv-punto" style={{ background: COLOR_GRUPO[x.grupo] }} />
-                          {x.etiqueta}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <SelectorDato
+                  fuentes={fuentes}
+                  actual={c?.fuente}
+                  elegida={f}
+                  alElegir={(k) => usar(par.clave, k)}
+                />
                 {c ? (
                   <div className="nv-selector nv-selector--ia nv-selector--chico">
                     {([1, 2, 3] as const).map((n) => (
@@ -178,7 +148,7 @@ function ArchivosDatos() {
             </span>
             <span className="nv-archivo__texto">
               <strong>{a.nombre}</strong>
-              <span className="nv-tenue">{a.tipo === 'sonido' ? 'da su ritmo' : 'da su brillo y colores'}</span>
+              <span className="nv-tenue">{a.tipo === 'sonido' ? 'da su ritmo' : 'da su luz, sus colores y sus bits'}</span>
             </span>
             <button
               type="button"
@@ -203,7 +173,7 @@ function ArchivosDatos() {
         </label>
       </div>
       <span className="nv-tenue nv-chico nv-italica">
-        Del archivo no se usa el sonido ni la foto: se le sacan datos, y aparecen en la lista de cada parámetro.
+        Del archivo no se usa el sonido ni la foto: se le sacan datos (luz, rojo, verde, azul, color, detalle y bits) y aparecen en la lista de cada parámetro. La foto de la escena ya está en la lista.
       </span>
     </div>
   );
