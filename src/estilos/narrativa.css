@@ -15,6 +15,7 @@
   --nv-mu: #ff7ab8;
   --nv-rojo: #ff4d6d;
   height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   background: var(--nv-fondo);
@@ -47,7 +48,7 @@
 .nv-chico { font-size: 12px; }
 .nv-etiqueta {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.08em;
   font-weight: 600;
 }
@@ -239,6 +240,8 @@
 .nv-pagina--fija { height: 100%; min-height: 0; }
 .nv-cabeza { display: flex; align-items: center; gap: 12px; }
 .nv-pie { display: flex; align-items: center; gap: 12px; }
+/* Los botones de seguir no se quedan escondidos bajo el pliegue en una pantalla baja. */
+.nv-pagina > .nv-pie { position: sticky; bottom: 0; padding: 12px 0 4px; margin-top: auto; background: linear-gradient(to bottom, transparent, var(--nv-fondo) 35%); }
 .nv-vacio { align-items: flex-start; }
 
 /* ---------- historia ---------- */
@@ -265,7 +268,7 @@
   border-radius: 50%;
   background: var(--color);
   color: #0f1117;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   vertical-align: 2px;
 }
@@ -475,7 +478,7 @@
 .nv-pieza__carril--imagen { height: 56px; }
 .nv-pieza__nombre {
   border-radius: 5px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   text-align: left;
   padding: 0 8px;
@@ -495,11 +498,11 @@
   border: 1px dashed var(--nv-linea);
   border-radius: 6px;
   color: var(--nv-tenue);
-  font-size: 11px;
+  font-size: 12px;
 }
 .nv-pieza__energia { width: 100%; border-radius: 4px; opacity: 0.55; }
 .nv-pieza__foto { width: 100%; height: 100%; border-radius: 6px; }
-.nv-pieza__tiempos { display: flex; justify-content: space-between; color: var(--nv-tenue); font-size: 11px; }
+.nv-pieza__tiempos { display: flex; justify-content: space-between; color: var(--nv-tenue); font-size: 12px; }
 .nv-pieza__cabezal {
   position: absolute;
   top: 0;
@@ -627,7 +630,7 @@
 .nv-boton--ia { color: var(--nv-ia); border-color: #5ee0ff88; }
 .nv-boton--ia-activo { background: #5ee0ff26; border-color: var(--nv-ia); }
 .nv-boton--grabar { color: #ff6b81; background: #ff4d6d26; border-color: #ff4d6d55; }
-.nv-chip--chico { font-size: 11px; padding: 3px 8px; background: var(--nv-s3); }
+.nv-chip--chico { font-size: 12px; padding: 3px 8px; background: var(--nv-s3); }
 .nv-chip--borde { border: 1px solid var(--nv-acento); color: var(--nv-acento); font-size: 12px; }
 .nv-latiendo { animation: nv-latido 1.4s ease-in-out infinite; }
 
@@ -643,7 +646,7 @@
   border: 1px solid var(--nv-linea);
   max-width: 190px;
 }
-.nv-preset span { font-size: 11px; color: var(--nv-suave); line-height: 1.3; }
+.nv-preset span { font-size: 12px; color: var(--nv-suave); line-height: 1.3; }
 .nv-preset--activo { border-color: var(--nv-acento); background: #ffb0201c; }
 .nv-preset--activo strong { color: var(--nv-acento); }
 
@@ -771,7 +774,7 @@
   background: var(--nv-s2);
 }
 .nv-capa > :last-child { justify-self: center; }
-.nv-capa--cabeza { background: none; padding: 0 10px; font-size: 11px; color: var(--nv-tenue); }
+.nv-capa--cabeza { background: none; padding: 0 10px; font-size: 12px; color: var(--nv-tenue); }
 .nv-capa__nombre { display: flex; align-items: center; gap: 8px; font-weight: 600; }
 .nv-capa input[type='range'] { width: 100%; }
 .nv-select {
@@ -819,7 +822,7 @@
   user-select: none;
   cursor: crosshair;
 }
-.nv-xy__eje { position: absolute; font-size: 11px; color: var(--nv-suave); }
+.nv-xy__eje { position: absolute; font-size: 12px; color: var(--nv-suave); }
 .nv-xy__eje--arriba { top: 8px; left: 10px; }
 .nv-xy__eje--abajo { bottom: 8px; left: 10px; }
 .nv-xy__eje--derecha { bottom: 8px; right: 10px; }
@@ -904,7 +907,7 @@
   border-radius: 10px;
   background: var(--nv-s1);
   border: 1px solid transparent;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--nv-suave);
   text-align: left;
 }
@@ -999,7 +1002,7 @@
   overflow: hidden;
   transition: background 0.15s;
 }
-.nv-reparto__tramo span { font-size: 11px; font-weight: 700; color: var(--color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nv-reparto__tramo span { font-size: 12px; font-weight: 700; color: var(--color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .nv-reparto__tramo--sonando { background: color-mix(in srgb, var(--color) 38%, transparent); }
 .nv-reparto__limite { position: absolute; top: 0; bottom: 0; height: auto; margin: 0 0 0 -11px; z-index: 2; }
 
@@ -1263,13 +1266,13 @@
   padding: 8px 10px;
   border-right: 1px solid #ffffff14;
   color: var(--nv-suave);
-  font-size: 11px;
+  font-size: 12px;
 }
 .nv-sonido__oir:hover { background: #ffffff14; color: var(--nv-texto); }
 .nv-sonido__elegir { padding: 8px 12px; text-align: left; }
 .nv-sonido--activo .nv-sonido__oir { color: var(--nv-acento); border-color: #ffb02055; }
 .nv-instrumento__par { display: inline-flex; gap: 2px; }
-.nv-instrumento__fichas .nv-instrumento__oir { padding: 8px 10px; background: transparent; border-color: #ffffff22; color: #8b91a5; font-size: 11px; }
+.nv-instrumento__fichas .nv-instrumento__oir { padding: 8px 10px; background: transparent; border-color: #ffffff22; color: #8b91a5; font-size: 12px; }
 .nv-instrumento__fichas .nv-instrumento__oir:hover { color: #eceef4; background: #ffffff14; }
 
 /* ---------- guía (product tour) ---------- */
@@ -1870,8 +1873,8 @@
 .nv-ayuda__item:hover { background: #ffffff10; }
 .nv-ayuda__item--principal { font-weight: 600; }
 .nv-ayuda__item--todos { color: var(--nv-suave); font-size: 13px; border-top: 1px solid var(--nv-linea); border-radius: 0 0 8px 8px; margin-top: 4px; }
-.nv-ayuda__icono { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: #b9a6ff26; color: #b9a6ff; font-size: 11px; flex: none; }
-.nv-ayuda__titulo { display: block; padding: 8px 12px 2px; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--nv-tenue); }
+.nv-ayuda__icono { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: #b9a6ff26; color: #b9a6ff; font-size: 12px; flex: none; }
+.nv-ayuda__titulo { display: block; padding: 8px 12px 2px; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--nv-tenue); }
 .nv-musica--sola { grid-template-columns: 1fr; }
 .ventana:has(.pad) { width: min(540px, calc(100vw - 32px)); }
 /* Escenas: el respiro ya no se corta, y la línea de la pieza usa el alto que tiene. */
@@ -1953,7 +1956,7 @@
   border-radius: 50%;
   background: var(--nv-s3);
   color: var(--nv-suave);
-  font-size: 11px;
+  font-size: 12px;
   transition: background 0.15s, color 0.15s;
 }
 .nv-solo:hover { color: var(--nv-texto); background: var(--nv-linea); }
@@ -1981,7 +1984,7 @@
 .nv-ajuste { display: grid; grid-template-columns: 1fr minmax(90px, 120px) 54px; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 8px; background: #ffffff08; }
 .nv-ajuste__nombre { font-size: 12px; color: var(--nv-texto); }
 .nv-ajuste input[type='range'] { width: 100%; }
-.nv-ajuste__lectura { text-align: right; font-size: 11px; }
+.nv-ajuste__lectura { text-align: right; font-size: 12px; }
 .nv-ajuste > .nv-opcion { grid-column: 2 / 4; }
 
 /* Elegir un dato: pestañas por familia y la lista de esa familia */
@@ -1991,10 +1994,27 @@
 .nv-lista-flotante .nv-datos-menu__pestanas button.nv-datos-menu__pestana--activa { background: #ffffff1c; }
 .nv-datos-menu__lista { display: flex; flex-direction: column; gap: 2px; height: min(262px, calc(100vh - 170px)); overflow: auto; }
 .nv-lista-flotante__texto { display: flex; flex-direction: column; gap: 1px; }
-.nv-lista-flotante__texto .nv-chico { font-size: 11px; line-height: 1.25; font-weight: 400; }
+.nv-lista-flotante__texto .nv-chico { font-size: 12px; line-height: 1.25; font-weight: 400; }
 
 /* Música Urbana: cuando suena esto, la imagen hace aquello */
-.nv-reaccion { display: flex; flex-direction: column; gap: 6px; padding: 10px; border-radius: 12px; background: var(--nv-s2); border-left: 3px solid var(--nv-mu); }
+.nv-reaccion { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; border-radius: 12px; background: var(--nv-s2); border-left: 3px solid var(--nv-mu); }
 .nv-reaccion__frase, .nv-reaccion__control { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .nv-reaccion__control { justify-content: space-between; }
 .nv-conectar--mu { border-color: #ff7ab888; color: var(--nv-mu); flex: 1; }
+
+/* ---------- tablet ---------- */
+/* Nada de «tirar para refrescar», de seleccionar texto al dejar el dedo ni de destello azul al tocar. */
+html, body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
+.nv { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.nv :where(input, textarea, [contenteditable='true']) { -webkit-user-select: text; user-select: text; }
+
+/* Con la tablet de pie no cabe: se avisa que solo se usa acostada. */
+.nv-girar { display: none; }
+@media (pointer: coarse) and (orientation: portrait) {
+  .nv-girar {
+    position: fixed; inset: 0; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 14px; padding: 32px; text-align: center; background: #0f1117; color: #eceef4; font-size: 22px; font-weight: 700;
+  }
+  .nv-girar span { font-size: 60px; }
+  .nv-girar small { font-size: 15px; font-weight: 400; color: #8b91a5; max-width: 420px; }
+}

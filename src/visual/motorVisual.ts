@@ -58,6 +58,12 @@ class MotorVisual {
   private ultimo = 0;
   private ancho = 1;
   private alto = 1;
+  /**
+   * Cuánto de la resolución se usa, de 0.4 a 1. Baja sola si la pantalla va a
+   * tirones (una tablet con poca GPU) y vuelve a subir si le sobra.
+   */
+  private calidad = 1;
+  private muestraRendimiento = { desde: 0, cuadros: 0, buenas: 0 };
   private pausado = false;
 
   /** Si un algoritmo no arranca —WebGL ausente, por ejemplo—, se dice. */
@@ -173,7 +179,7 @@ class MotorVisual {
     const altoCss = Math.max(1, caja.height);
     const tactil = matchMedia('(pointer: coarse)').matches;
     const tope = tactil ? LADO_TACTIL : LADO_ESCRITORIO;
-    const escala = Math.min(1, tope / Math.max(anchoCss, altoCss));
+    const escala = Math.min(1, tope / Math.max(anchoCss, altoCss)) * this.calidad;
 
     this.ancho = Math.max(1, Math.round(anchoCss * escala));
     this.alto = Math.max(1, Math.round(altoCss * escala));
@@ -182,14 +188,49 @@ class MotorVisual {
     this.instancia?.redimensionar(this.ancho, this.alto);
   }
 
+  /**
+   * Cada dos segundos mira el promedio de cuadros. Por debajo de ~26 por
+   * segundo baja la resolución un escalón; con holgura sostenida, la sube.
+   * Es lo que permite que el mismo visual corra en el computador y en una
+   * tablet modesta sin que nadie toque nada.
+   */
+  private vigilarRendimiento(ahora: number, real: number): void {
+    const m = this.muestraRendimiento;
+    // Una pausa, otra pestaña o un cambio de algoritmo no cuentan.
+    if (real > 250 || m.desde === 0) {
+      m.desde = ahora;
+      m.cuadros = 0;
+      return;
+    }
+    m.cuadros++;
+    if (ahora - m.desde < 2000) return;
+    const mediaMs = (ahora - m.desde) / m.cuadros;
+    m.desde = ahora;
+    m.cuadros = 0;
+    if (mediaMs > 38 && this.calidad > 0.45) {
+      this.calidad = Math.max(0.45, this.calidad * 0.8);
+      m.buenas = 0;
+      this.medir();
+    } else if (mediaMs < 20 && this.calidad < 1) {
+      // Hace falta holgura sostenida para subir: si no, oscila.
+      if (++m.buenas >= 4) {
+        this.calidad = Math.min(1, this.calidad * 1.2);
+        m.buenas = 0;
+        this.medir();
+      }
+    } else if (mediaMs >= 20) m.buenas = 0;
+  }
+
   private paso = (): void => {
     this.cuadro = requestAnimationFrame(this.paso);
     const instancia = this.instancia;
     if (!instancia || this.pausado) return;
 
     const ahora = performance.now();
-    const delta = Math.min(0.05, (ahora - this.ultimo) / 1000);
+    const real = ahora - this.ultimo;
+    const delta = Math.min(0.05, real / 1000);
     this.ultimo = ahora;
+    this.vigilarRendimiento(ahora, real);
 
     const bandas = analizador.conectado ? analizador.medir() : BANDAS_QUIETAS;
     const a = this.ajustes;

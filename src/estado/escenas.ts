@@ -286,6 +286,12 @@ export function escenasASecciones(p: Proyecto): Seccion[] {
       // una sola para toda la escena, no por capa.
       capasActivas = ids.filter((id) => (escena.niveles?.[id] ?? 0) > 0);
       for (const id of capasActivas) niveles[id] = escena.fuerza;
+    } else if (p.track === 'musica') {
+      // Música Urbana suena tal cual se dibujó: si nadie callo una capa en esta
+      // escena, suenan todas. Adelgazar por intensidad es de la máquina (IA) y
+      // dejaba mudas capas con golpes puestos.
+      capasActivas = ids;
+      for (const id of ids) niveles[id] = escena.fuerza;
     } else {
       const cuantasCapas = Math.max(1, Math.round(ids.length * (0.25 + 0.75 * intensidad)));
       capasActivas = ids.slice(0, cuantasCapas);
@@ -301,7 +307,7 @@ export function escenasASecciones(p: Proyecto): Seccion[] {
       intensidad,
       capasActivas,
       niveles,
-      melodiaActiva: escena.niveles ? (escena.niveles.melodia ?? 2) > 0 : intensidad > 0.2,
+      melodiaActiva: escena.niveles ? (escena.niveles.melodia ?? 2) > 0 : p.track === 'musica' || intensidad > 0.2,
       factorTempo,
       intencion: '',
       // La última parte se apaga sola, como un cierre.

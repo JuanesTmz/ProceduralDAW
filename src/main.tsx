@@ -11,6 +11,9 @@ import './estilos/taller.css';
 import './estilos/pantalla.css';
 import './estilos/narrativa.css';
 import App from './App';
+import { ajustarVista } from './vista';
+
+ajustarVista();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

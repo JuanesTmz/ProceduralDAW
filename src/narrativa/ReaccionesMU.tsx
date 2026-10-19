@@ -80,7 +80,7 @@ export function ReaccionesMU({ escena }: { escena: Escena }) {
       )}
 
       {reglas.map((r) => (
-        <div key={r.id} className="nv-reaccion">
+        <div key={r.id} className="nv-reaccion" title={AYUDA_GOLPE[r.efecto]}>
           <div className="nv-reaccion__frase">
             <span className="nv-tenue nv-chico">Cuando suena</span>
             <SelectorOpciones
@@ -122,7 +122,6 @@ export function ReaccionesMU({ escena }: { escena: Escena }) {
               ×
             </button>
           </div>
-          <span className="nv-tenue nv-chico">{AYUDA_GOLPE[r.efecto]}</span>
         </div>
       ))}
 
