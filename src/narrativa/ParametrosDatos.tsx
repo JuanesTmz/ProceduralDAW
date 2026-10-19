@@ -10,6 +10,7 @@ import { useState } from 'react';
 import { useProyecto } from '../estado/ProyectoContext';
 import { COLOR_GRUPO, fuente, fuentesDe, leerArchivoDatos, NOMBRE_CANTIDAD, nuevaConexion } from '../estado/musica';
 import { Onda } from './VozEscena';
+import { SelectorOpciones } from './SelectorOpciones';
 
 export interface Parametro {
   clave: string;
@@ -18,6 +19,8 @@ export interface Parametro {
   mano?: { valor: number; poner: (v: number) => void };
   /** Qué significa «a mano» cuando no hay deslizador. */
   notaMano?: string;
+  /** Si es una elección (figura, alfabeto…), sus opciones: en vez de deslizador, un selector. */
+  opciones?: string[];
 }
 
 interface Props {
@@ -108,6 +111,15 @@ export function ParametrosDatos({ clave, grupos }: Props) {
                       </button>
                     ))}
                   </div>
+                ) : par.mano && par.opciones ? (
+                  <span className="nv-parametro__mano">
+                    <SelectorOpciones
+                      opciones={par.opciones}
+                      valor={par.mano.valor * (par.opciones.length - 1)}
+                      etiqueta={par.etiqueta}
+                      alCambiar={(i) => par.mano?.poner(i / Math.max(1, par.opciones!.length - 1))}
+                    />
+                  </span>
                 ) : par.mano ? (
                   <input
                     type="range"

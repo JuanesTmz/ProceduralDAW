@@ -22,6 +22,8 @@ import { enVivo } from '../visual/enVivo';
 import { Escenario } from './Escenario';
 import { ParametrosDatos, type Parametro } from './ParametrosDatos';
 import { fondoEscena } from './PasoEscenas';
+import { AjustesEstilo } from './AjustesEstilo';
+import { sorprender } from '../estado/imagen';
 import { useReproduccion } from './useReproduccion';
 
 interface Props {
@@ -153,6 +155,7 @@ function ImagenIA() {
     ...alg.mandos.map((m) => ({
       clave: m.id,
       etiqueta: m.etiqueta,
+      opciones: m.opciones,
       mano: {
         valor: (valores[m.id] - m.min) / (m.max - m.min),
         poner: (v: number) =>
@@ -166,7 +169,13 @@ function ImagenIA() {
   ];
   return (
     <>
-      <strong className="nv-subtitulo">Datos</strong>
+      <div className="nv-campo__fila">
+        <strong className="nv-subtitulo">Datos</strong>
+        <span className="nv-espacio" />
+        <button type="button" className="nv-boton nv-boton--chico nv-boton--sorpresa" onClick={() => actualizar(sorprender)}>
+          ✦ Sorprenderme
+        </button>
+      </div>
       <span className="nv-tenue nv-chico">Elige qué se mueve solo con un dato. Lo demás lo pones tú.</span>
       <ParametrosDatos clave="conexionesVisual" grupos={[{ titulo: NOMBRE_ESTILO[alg.id], parametros }]} />
     </>
@@ -341,6 +350,7 @@ function ImagenMU({ escena, indice }: { escena: Escena | null; indice: number })
           </span>
         </>
       )}
+      <AjustesEstilo />
     </>
   );
 }

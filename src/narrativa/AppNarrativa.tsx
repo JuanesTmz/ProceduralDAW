@@ -12,7 +12,7 @@ import { useSincronizarAudio } from '../hooks/useSincronizarAudio';
 import type { Track } from '../guia/pasos';
 import { Barra, type Paso } from './Barra';
 import { EditorEscena, type Pestana } from './EditorEscena';
-import { conexionesVisualIniciales } from '../estado/imagen';
+import { conexionesVisualIniciales, visualInicial } from '../estado/imagen';
 import { aplicarPreset, conexionesIniciales, sincronizarReglas } from '../estado/musica';
 import { recorrido } from '../estado/escenas';
 import { PasoEscenas } from './PasoEscenas';
@@ -27,6 +27,8 @@ function ElegirLab() {
   const elegir = (track: Track) =>
     actualizar((p) => {
       p.track = track;
+      // Cada proyecto nuevo arranca con un estilo, una paleta y unos mandos distintos.
+      if (Object.keys(p.visual.parametros).length === 0 && !p.visual.imagenUrl) visualInicial(p);
       // La primera vez se arranca desde el preset: ya suena con golpes y melodía.
       if (p.patron.melodia.notas.length === 0) aplicarPreset(p, p.preset);
       // En IA el cuadro de cada pista arranca donde está su patrón.

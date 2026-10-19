@@ -381,9 +381,9 @@ export function pasosDe(pantalla: Pantalla, track: Track | null): PasoTour[] {
           objetivo: '.nv-estilos',
           titulo: 'El estilo',
           texto:
-            'Seis estilos. Los de GenArt: <b>Campo de flujo</b>, <b>Nebulosa líquida</b>, <b>Ondas topográficas</b> y <b>Constelación de glifos</b>. Y dos nuevos: <b>Marejada de puntos</b> (una rejilla que oscila alrededor de lo que la toca) y <b>Caleidoscopio</b> (un fractal en espejo). El estilo vale para toda la pieza.',
+            'Siete estilos. Los de GenArt: <b>Campo de flujo</b>, <b>Nebulosa líquida</b>, <b>Ondas topográficas</b> y <b>Constelación de glifos</b> (su foto convertida en letras). Y tres más: <b>Marejada de formas</b> (una rejilla de figuras que oscila alrededor de lo que la toca), <b>Caleidoscopio</b> (un fractal en espejo) y <b>Pegajoso</b> (figuras que se funden como gotas). El estilo vale para toda la pieza.',
           detalle:
-            'Todos escuchan la música: los graves, los agudos y el bombo mueven cosas distintas en cada uno. Y en Música Urbana, <b>tu dedo sobre el cuadro de tocar</b> también cuenta: agita la nebulosa, dibuja la ola de la marejada o corre el centro del caleidoscopio.',
+            'Cada estilo tiene muchos mandos, y con ellos sale una obra distinta: la <b>figura</b> de la marejada, el <b>alfabeto</b> de los glifos, los <b>espejos</b> de la nebulosa. El botón <b>✦ Sorprenderme</b> los mueve todos al azar. Todos escuchan la música: los graves, los agudos y el bombo mueven cosas distintas en cada uno. Y en Música Urbana, <b>tu dedo sobre el cuadro de tocar</b> también cuenta: agita la nebulosa, dibuja la ola de la marejada o corre el centro del caleidoscopio.',
         },
         {
           id: 'i.paletas',
@@ -409,13 +409,20 @@ export function pasosDe(pantalla: Pantalla, track: Track | null): PasoTour[] {
                 seccion: 'LAB IA',
                 titulo: 'Datos del visual',
                 texto:
-                  'Cada fila es un mando del estilo. <b>Sin dato</b>: lo ponen ustedes con la barra. O toquen y elijan un <b>dato</b> (la voz, el bombo, la emoción…) para que se mueva solo mientras suena.',
+                  'Cada fila es un mando del estilo (con <b>✦ Sorprenderme</b> arriba para moverlos todos al azar). <b>Sin dato</b>: lo ponen ustedes con la barra. O toquen y elijan un <b>dato</b> (la voz, el bombo, la emoción…) para que se mueva solo mientras suena.',
                 detalle:
                   'Ejemplo: «Velocidad · lo mueve La voz»: cuando hablan, el dibujo se acelera; en los silencios se calma. Poco, Algo y Mucho dicen cuánto manda el dato.',
                 final: 'A pintar',
               },
             ]
           : [
+              {
+                id: 'i.ajustes',
+                objetivo: '.nv-ajustes',
+                titulo: 'Ajustar el estilo',
+                texto:
+                  'Aquí están todos los <b>mandos</b> del estilo elegido: figura, tamaño, velocidad, remolino… Muévanlos hasta que la obra sea <b>solo suya</b>. <b>✦ Sorprenderme</b> los mueve al azar y <b>Restablecer</b> los devuelve a como venían.',
+              },
               {
                 id: 'i.reaccion',
                 objetivo: '.nv-imagen__lado .nv-selector--lleno',

@@ -36,6 +36,18 @@ interface Particula {
 
 /** Tope de partículas. Por encima, una tablet del evento empieza a sufrir. */
 const MAXIMO = 2600;
+/** Tope de masas: cada una se atrae con todas las demás, así que cuesta al cuadrado. */
+const MAXIMO_MASAS = 24;
+
+/** Un cuerpo pesado: se atrae con los demás por un muelle y arrastra a las partículas. */
+interface Masa {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  /** 0.003 a 0.03: pesa más, atrae más y se dibuja más grande. */
+  m: number;
+}
 
 class Flujo implements Instancia {
   private ctx: CanvasRenderingContext2D;
@@ -44,6 +56,8 @@ class Flujo implements Instancia {
   private alto = 1;
   /** El tiempo de la corriente: se suma, no se multiplica, para que mover la velocidad no haga saltar el campo. */
   private fase = 0;
+  private masas: Masa[] = [];
+  private golpePrevio = 0;
 
   constructor(lienzo: HTMLCanvasElement) {
     const ctx = lienzo.getContext('2d', { alpha: false });
@@ -79,9 +93,89 @@ class Flujo implements Instancia {
     }));
   }
 
+  /** Reparte las masas la primera vez (o cuando cambia cuántas hay), desde la semilla. */
+  private sembrarMasas(cuantas: number, semilla: number): void {
+    let estado = (semilla + 77) >>> 0;
+    const siguiente = () => {
+      estado = (estado + 0x6d2b79f5) >>> 0;
+      let t = estado;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    this.masas = Array.from({ length: cuantas }, () => ({
+      x: this.ancho * (0.25 + siguiente() * 0.5),
+      y: this.alto * (0.25 + siguiente() * 0.5),
+      vx: 0,
+      vy: 0,
+      m: 0.003 + siguiente() * 0.027,
+    }));
+  }
+
+  /**
+   * La física de la referencia de gravedad: cada masa siente un muelle hacia
+   * cada otra, con largo de reposo `reposo`: lejos de ese largo se atraen y
+   * más cerca se repelen, así que se agrupan y orbitan sin chocar. El dedo y
+   * los datos son masas fijas que también las atraen.
+   */
+  private moverMasas(e: Entorno, reposo: number): void {
+    const paso = Math.min(3, e.delta * 60);
+    const fijas: { x: number; y: number; m: number }[] = [];
+    if (e.toque) fijas.push({ x: e.toque.x * this.ancho, y: e.toque.y * this.alto, m: 0.03 });
+    if (e.influenciaDatos > 0) {
+      for (const pico of e.picos) {
+        if (pico.nombre === 'dedo') continue;
+        fijas.push({ x: pico.x * this.ancho, y: pico.y * this.alto, m: 0.004 + pico.fuerza * 0.02 });
+      }
+    }
+    // El bombo da un empujón hacia afuera: las masas respiran con la música.
+    const golpe = e.reaccion > 0.05 && e.bandas.golpe > 0.55 && this.golpePrevio <= 0.55;
+    this.golpePrevio = e.bandas.golpe;
+    const escala = Math.max(this.ancho, this.alto) / 1000;
+
+    for (const a of this.masas) {
+      let ax = 0;
+      let ay = 0;
+      const atraer = (bx: number, by: number, mb: number) => {
+        const dx = bx - a.x;
+        const dy = by - a.y;
+        const d = Math.max(1, Math.hypot(dx, dy));
+        const fuerza = ((d - reposo) * mb) / d;
+        ax += fuerza * dx;
+        ay += fuerza * dy;
+      };
+      for (const b of this.masas) if (b !== a) atraer(b.x, b.y, b.m / escala);
+      for (const f of fijas) atraer(f.x, f.y, f.m / escala);
+      a.vx = (a.vx * 0.99 ** paso) + ax * a.m * paso * 0.9;
+      a.vy = (a.vy * 0.99 ** paso) + ay * a.m * paso * 0.9;
+      if (golpe) {
+        const dx = a.x - this.ancho / 2;
+        const dy = a.y - this.alto / 2;
+        const d = Math.max(1, Math.hypot(dx, dy));
+        a.vx += (dx / d) * 6 * e.bandas.golpe;
+        a.vy += (dy / d) * 6 * e.bandas.golpe;
+      }
+    }
+    for (const a of this.masas) {
+      a.x += a.vx * paso;
+      a.y += a.vy * paso;
+      // Si una se escapa de la pantalla, vuelve rebotando.
+      if (a.x < 0 || a.x > this.ancho) a.vx *= -0.6;
+      if (a.y < 0 || a.y > this.alto) a.vy *= -0.6;
+      a.x = Math.max(0, Math.min(this.ancho, a.x));
+      a.y = Math.max(0, Math.min(this.alto, a.y));
+    }
+  }
+
   dibujar(e: Entorno): void {
     const ctx = this.ctx;
     const { bandas, reaccion, parametros: p } = e;
+
+    // Las masas: 0 las apaga y queda el campo de siempre.
+    const nMasas = Math.min(MAXIMO_MASAS, Math.round(p.masas));
+    if (this.masas.length !== nMasas) this.sembrarMasas(nMasas, e.semilla);
+    const mayorLado = Math.max(this.ancho, this.alto);
+    if (nMasas > 0) this.moverMasas(e, (0.1 + p.distancia * 0.4) * mayorLado);
 
     const cuantas = Math.round(p.cantidad);
     if (this.particulas.length !== cuantas) this.sembrar(cuantas, e.semilla);
@@ -148,8 +242,20 @@ class Flujo implements Instancia {
         ry *= e.influenciaDatos * 1.4;
       }
 
-      const ax = Math.cos(angulo) + rx;
-      const ay = Math.sin(angulo) + ry;
+      let ax = Math.cos(angulo) + rx;
+      let ay = Math.sin(angulo) + ry;
+
+      // Las masas atraen a las partículas: se enroscan a su alrededor como un enjambre.
+      if (nMasas > 0 && p.gravedad > 0) {
+        for (const mm of this.masas) {
+          const gx = mm.x - q.x;
+          const gy = mm.y - q.y;
+          const d = Math.hypot(gx, gy) + 8;
+          const tiro = (p.gravedad * mm.m * 110) / (1 + d / (0.12 * mayorLado));
+          ax += (gx / d) * tiro;
+          ay += (gy / d) * tiro;
+        }
+      }
 
       // Inercia: sin esto las partículas cambian de rumbo a tirones.
       q.vx = q.vx * 0.86 + ax * velocidad * 0.5;
@@ -181,6 +287,22 @@ class Flujo implements Instancia {
       ctx.lineTo(q.x, q.y);
       ctx.stroke();
     }
+
+    // Las masas se dibujan encima como círculos translúcidos. Como el cuadro no
+    // se borra del todo (deja estela), su opacidad se saca de lo que se borra:
+    // así se quedan en un tono estable en vez de sumarse hasta el blanco.
+    if (nMasas > 0) {
+      const borrada = Math.max(0.012, (1 - p.estela) * 0.5);
+      const opacidad = Math.min(0.5, borrada * (0.5 + p.brillo * 0.6));
+      const escalaMasa = mayorLado / 1000;
+      for (const mm of this.masas) {
+        const [r, g, b] = rampa(e.paleta, 0.35 + ((mm.m - 0.003) / 0.027) * 0.6);
+        ctx.fillStyle = `rgba(${r},${g},${b},${opacidad.toFixed(3)})`;
+        ctx.beginPath();
+        ctx.arc(mm.x, mm.y, mm.m * 1000 * escalaMasa * (1 + bandas.golpe * reaccion * 0.25), 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
   }
 }
 
@@ -200,6 +322,9 @@ export const flujo: Algoritmo = {
     { id: 'estela', etiqueta: 'Estela', min: 0, max: 0.98, paso: 0.02, valor: 0.9, lectura: porcentaje },
     { id: 'grosor', etiqueta: 'Grosor del trazo', min: 0.3, max: 3, paso: 0.1, valor: 1, lectura: (v) => `${v.toFixed(1)} px` },
     { id: 'brillo', etiqueta: 'Brillo', min: 0, max: 1, paso: 0.02, valor: 0.3, lectura: porcentaje },
+    { id: 'masas', etiqueta: 'Masas (gravedad)', min: 0, max: MAXIMO_MASAS, paso: 1, valor: 0, lectura: (v) => (v < 1 ? 'sin masas' : `${Math.round(v)}`) },
+    { id: 'distancia', etiqueta: 'Distancia entre masas', min: 0, max: 1, paso: 0.02, valor: 0.5, lectura: porcentaje },
+    { id: 'gravedad', etiqueta: 'Cuánto atraen a las partículas', min: 0, max: 1, paso: 0.02, valor: 0.4, lectura: porcentaje },
   ],
   crear: (lienzo) => new Flujo(lienzo),
 };

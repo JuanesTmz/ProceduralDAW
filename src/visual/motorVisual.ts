@@ -17,7 +17,7 @@
  *    nota.
  */
 import { analizador, type Bandas } from './analizador';
-import { algoritmoDe, fijarAlfabeto } from './algoritmos';
+import { algoritmoDe } from './algoritmos';
 import type { Algoritmo, Entorno, Instancia, NombreAlgoritmo } from './algoritmos/tipos';
 import type { CampoImagen } from './imagenDatos';
 import type { Pico } from './datosVisual';
@@ -43,6 +43,8 @@ export interface Ajustes {
   semilla: number;
   /** El dedo sobre el cuadro de tocar en vivo, con la y hacia abajo. */
   toque: { x: number; y: number } | null;
+  /** El texto de la escena que suena. */
+  texto: string;
 }
 
 class MotorVisual {
@@ -75,6 +77,7 @@ class MotorVisual {
     movimientoDatos: 0,
     semilla: 2310,
     toque: null,
+    texto: '',
   };
 
   iniciar(contenedor: HTMLElement, alFallar: (mensaje: string | null) => void): void {
@@ -125,7 +128,6 @@ class MotorVisual {
       cambios.algoritmo !== undefined && cambios.algoritmo !== this.ajustes.algoritmo;
     this.ajustes = { ...this.ajustes, ...cambios };
     if (cambiaAlgoritmo) this.montar();
-    else if (cambios.alfabeto && this.instancia) fijarAlfabeto(this.instancia, cambios.alfabeto);
   }
 
   /** El PNG de lo que se está viendo, para llevárselo. */
@@ -158,7 +160,6 @@ class MotorVisual {
     }
     this.avisarFallo?.(this.fallo);
 
-    fijarAlfabeto(this.instancia ?? ({} as Instancia), this.ajustes.alfabeto);
     this.medir();
   }
 
@@ -216,6 +217,7 @@ class MotorVisual {
       paleta: a.paleta,
       semilla: a.semilla,
       toque: a.toque,
+      texto: a.texto,
       edadGolpe: enVivo.edades(),
     };
 

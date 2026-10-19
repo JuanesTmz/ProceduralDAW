@@ -886,7 +886,7 @@
 .nv-imagen { flex: 1; min-height: 0; display: grid; grid-template-columns: 1.05fr 1fr; gap: 16px; }
 .nv-imagen__vista { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
 .nv-imagen__lado { display: flex; flex-direction: column; gap: 14px; overflow: auto; }
-.nv-estilos { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.nv-estilos { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
 .nv-estilo {
   display: flex;
   flex-direction: column;
@@ -906,6 +906,7 @@
 .nv-estilo--glifos .nv-estilo__muestra { background: radial-gradient(circle, #b7e4c7 1px, transparent 1.5px) 0 0 / 6px 6px, #081c15; }
 .nv-estilo--marejada .nv-estilo__muestra { background: radial-gradient(circle, #ffd166 2px, transparent 2.6px) 0 0 / 8px 8px, radial-gradient(circle, #ef476f 1.4px, transparent 2px) 4px 4px / 8px 8px, #1b1b3a; }
 .nv-estilo--caleidoscopio .nv-estilo__muestra { background: conic-gradient(from 0deg, #ff006e, #8338ff, #3a86ff, #06d6a0, #ffbe0b, #ff006e); }
+.nv-estilo--pegajoso .nv-estilo__muestra { background: radial-gradient(circle at 30% 50%, #ffd166 0 9px, transparent 10px), radial-gradient(circle at 62% 45%, #ef476f 0 11px, transparent 12px), radial-gradient(circle at 48% 52%, #c77dff 0 8px, transparent 9px), #10002b; }
 .nv-estilo--activo { border-color: var(--nv-acento); color: var(--nv-texto); font-weight: 600; }
 .nv-paletas { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .nv-paleta { display: inline-flex; border-radius: 6px; overflow: hidden; border: 2px solid transparent; }
@@ -1950,3 +1951,24 @@
 .nv-celdas__sonido { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 4px 6px; border-radius: 8px; text-align: left; }
 .nv-celdas__sonido:hover { background: #ffffff0d; }
 .nv-celdas { grid-template-columns: 210px 1fr auto; }
+
+/* Elegir entre opciones con nombre (figura, trama, alfabeto) */
+.nv-opcion { min-width: 120px; justify-content: space-between; }
+.nv-lista-flotante button.nv-opcion--actual { color: var(--nv-acento); font-weight: 600; }
+
+/* Ajustar el estilo a mano (lab de Música Urbana) y «Sorprenderme» */
+.nv-boton--sorpresa { border-color: #b9a6ff; color: #cdbfff; }
+.nv-boton--sorpresa:hover { background: #b9a6ff1f; }
+.nv-ajustes { border-top: 1px solid var(--nv-linea); padding-top: 10px; }
+.nv-ajustes > summary { display: flex; align-items: center; justify-content: space-between; cursor: pointer; font-weight: 600; list-style: none; padding: 4px 0; }
+.nv-ajustes > summary::-webkit-details-marker { display: none; }
+.nv-ajustes > summary::before { content: '▸'; margin-right: 8px; color: var(--nv-suave); }
+.nv-ajustes[open] > summary::before { content: '▾'; }
+.nv-ajustes > summary > span:first-child { flex: 1; }
+.nv-ajustes__acciones { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 8px 0; }
+.nv-ajustes__lista { display: flex; flex-direction: column; gap: 6px; }
+.nv-ajuste { display: grid; grid-template-columns: 1fr minmax(90px, 120px) 54px; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 8px; background: #ffffff08; }
+.nv-ajuste__nombre { font-size: 12px; color: var(--nv-texto); }
+.nv-ajuste input[type='range'] { width: 100%; }
+.nv-ajuste__lectura { text-align: right; font-size: 11px; }
+.nv-ajuste > .nv-opcion { grid-column: 2 / 4; }

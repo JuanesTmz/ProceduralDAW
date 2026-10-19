@@ -6,9 +6,10 @@
  * conexión «este parámetro se mueve según este dato». Los destinos son los
  * mandos del algoritmo elegido (los mismos de GenArt) y, además, la paleta.
  */
-import { algoritmoDe, type NombreAlgoritmo } from '../visual/algoritmos';
+import { algoritmoDe, valoresAlAzar, type NombreAlgoritmo } from '../visual/algoritmos';
+import { PALETAS } from '../visual/paletas';
 import { nuevaConexion } from './musica';
-import type { Conexion, Emocion, GolpeVisual, ReaccionVisual } from './tipos';
+import type { Conexion, Emocion, GolpeVisual, Proyecto, ReaccionVisual } from './tipos';
 import { EMOCIONES } from './escenas';
 
 export interface DestinoVisual {
@@ -29,11 +30,12 @@ export const NOMBRE_ESTILO: Record<NombreAlgoritmo, string> = {
   ondas: 'Ondas topográficas',
   glifos: 'Constelación de glifos',
   nebulosa: 'Nebulosa líquida',
-  marejada: 'Marejada de puntos',
+  marejada: 'Marejada de formas',
   caleidoscopio: 'Caleidoscopio',
+  pegajoso: 'Pegajoso',
 };
 
-export const ORDEN_ESTILOS: NombreAlgoritmo[] = ['flujo', 'nebulosa', 'ondas', 'glifos', 'marejada', 'caleidoscopio'];
+export const ORDEN_ESTILOS: NombreAlgoritmo[] = ['flujo', 'nebulosa', 'ondas', 'glifos', 'marejada', 'caleidoscopio', 'pegajoso'];
 
 /** Las conexiones con las que arranca el lab de IA en la imagen. */
 export function conexionesVisualIniciales(algoritmo: NombreAlgoritmo): Conexion[] {
@@ -42,6 +44,29 @@ export function conexionesVisualIniciales(algoritmo: NombreAlgoritmo): Conexion[
   if (ids.has('velocidad')) lista.push(nuevaConexion('voz', 'velocidad'));
   if (ids.has('tamano')) lista.push(nuevaConexion('bombo', 'tamano'));
   return lista;
+}
+
+function alAzar<T>(lista: T[]): T {
+  return lista[Math.floor(Math.random() * lista.length)];
+}
+
+/** «Sorprenderme»: mandos y paleta al azar, dentro del estilo que ya está elegido. */
+export function sorprender(p: Proyecto): void {
+  const alg = algoritmoDe(p.visual.algoritmo);
+  p.visual.parametros[alg.id] = valoresAlAzar(alg, Math.random, 0.6);
+  p.visual.paleta = alAzar(PALETAS).id;
+  p.visual.paletaPropia = undefined;
+}
+
+/**
+ * Cada proyecto nuevo arranca con un estilo, una paleta y unos mandos
+ * distintos: así dos grupos que abren la app no ven la misma obra.
+ */
+export function visualInicial(p: Proyecto): void {
+  p.visual.algoritmo = alAzar(ORDEN_ESTILOS);
+  p.visual.parametros[p.visual.algoritmo] = valoresAlAzar(algoritmoDe(p.visual.algoritmo), Math.random, 0.35);
+  p.visual.paleta = alAzar(PALETAS).id;
+  p.visual.paletaPropia = undefined;
 }
 
 /** Aclara u oscurece un color: k<0 hacia negro, k>0 hacia blanco. */

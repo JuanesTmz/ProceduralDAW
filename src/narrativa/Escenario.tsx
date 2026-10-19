@@ -180,6 +180,7 @@ export function Escenario({ escenaFija, texto = true }: Props) {
         movimientoDatos: 0,
         semilla: p.semilla,
         toque,
+        texto: escena && !escena.respiro ? escena.texto : '',
       });
       if (marco.current) marco.current.style.filter = brillo === 1 ? '' : `brightness(${brillo.toFixed(2)})`;
 
