@@ -4,8 +4,8 @@
  * Aquí vive el director del visual. En cada cuadro mira qué escena suena
  * y decide el algoritmo, la paleta, la foto que hace de material y el
  * valor de cada mando. La emoción y la fuerza de la escena lo mueven en
- * los dos labs; además, en IA mandan las conexiones y en Música Urbana la
- * reacción elegida, el gesto y los golpes tocados en vivo.
+ * dos caminos a la vez: las conexiones con datos (qué mando se mueve según
+ * qué dato) y lo que se toca (la reacción elegida, el gesto y los golpes en vivo).
  *
  * La foto no se pega encima: se lee como datos (CampoImagen) y el
  * algoritmo la usa como relieve, corriente o densidad.
@@ -80,12 +80,11 @@ export function Escenario({ escenaFija, texto = true }: Props) {
 
   useEffect(() => enVivo.alDisparar(golpear), []);
 
-  // Música Urbana: cada golpe que se oye dispara los efectos que se le asignaron.
+  // Cada golpe que se oye dispara los efectos que se le asignaron a ese sonido.
   useEffect(
     () =>
       motorAudio.alGolpe((id) => {
         const p = datos.current;
-        if (p.track !== 'musica') return;
         const escena = recorrido(p)[motorAudio.seccionActual];
         for (const r of escena?.reacciones ?? []) {
           if (r.fuente === id || r.fuente === 'todo') golpear(r.efecto, FUERZA_REACCION[r.fuerza]);
@@ -123,11 +122,11 @@ export function Escenario({ escenaFija, texto = true }: Props) {
       const fraccion = sonando ? motorAudio.fraccionSeccion : 0;
 
       if (escena) {
-        // La energía de la escena acelera o calma la obra en los dos labs.
+        // La energía de la escena acelera o calma la obra.
         const energia = intensidadDeEscena(escena);
         if ('velocidad' in parametros) parametros.velocidad *= 0.55 + 0.9 * energia;
 
-        if (p.track === 'ia') {
+        {
           const contexto = {
             proyecto: p,
             escena,
@@ -154,7 +153,8 @@ export function Escenario({ escenaFija, texto = true }: Props) {
             const objetivo = mando.min + valor * (mando.max - mando.min);
             parametros[mando.id] = parametros[mando.id] + (objetivo - parametros[mando.id]) * w;
           }
-        } else {
+        }
+        {
           reaccion = VALOR_REACCION[escena.reaccion ?? 'bombo'];
           const gesto = enVivo.gesto ?? (sonando ? gestoEn(escena.gestoVisual, fraccion) : null);
           if (gesto) {
@@ -176,7 +176,7 @@ export function Escenario({ escenaFija, texto = true }: Props) {
       seccionPrevia = indice;
 
       // La voz no da golpes sueltos: cuando arranca una frase (sube de golpe) dispara sus reacciones.
-      if (p.track === 'musica' && sonando) {
+      if (sonando) {
         const nivelVoz = motorAudio.vivo().voz;
         if (!vozArriba && nivelVoz > 0.3) {
           vozArriba = true;

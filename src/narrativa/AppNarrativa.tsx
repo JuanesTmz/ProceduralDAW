@@ -6,10 +6,11 @@
  * se abre directo en sus dos pestañas: Música y Visuales.
  */
 import { useEffect, useState } from 'react';
+import { vistaPrevia } from '../audio/vistaPrevia';
 import { motorAudio } from '../audio/motorAudio';
 import { useProyecto } from '../estado/ProyectoContext';
 import { useSincronizarAudio } from '../hooks/useSincronizarAudio';
-import type { Track } from '../guia/pasos';
+import type { Proyecto } from '../estado/tipos';
 import { Barra, type Paso } from './Barra';
 import { EditorEscena, type Pestana } from './EditorEscena';
 import { conexionesVisualIniciales, visualInicial } from '../estado/imagen';
@@ -22,44 +23,18 @@ import { PasoVoz } from './PasoVoz';
 import { Guia } from './Guia';
 import type { Pantalla } from './pasosGuia';
 
-function ElegirLab() {
-  const { actualizar } = useProyecto();
-  const elegir = (track: Track) =>
-    actualizar((p) => {
-      p.track = track;
-      // Cada proyecto nuevo arranca con un estilo, una paleta y unos mandos distintos.
-      if (Object.keys(p.visual.parametros).length === 0 && !p.visual.imagenUrl) visualInicial(p);
-      // La primera vez se arranca desde el preset: ya suena con golpes y melodía.
-      if (p.patron.melodia.notas.length === 0) aplicarPreset(p, p.preset);
-      // En IA el cuadro de cada pista arranca donde está su patrón.
-      if (track === 'ia') sincronizarReglas(p);
-      // El lab de IA arranca con un ejemplo de conexiones que ya funciona.
-      if (track === 'ia' && p.conexiones.length === 0) p.conexiones = conexionesIniciales(p);
-      if (track === 'ia' && p.conexionesVisual.length === 0) {
-        p.conexionesVisual = conexionesVisualIniciales(p.visual.algoritmo);
-      }
-    });
-  return (
-    <div className="nv nv-lab-pantalla">
-      <span className="nv-logo nv-logo--grande">SONORA</span>
-      <h1 className="nv-titulo nv-titulo--grande">¿De qué Urban Lab eres?</h1>
-      <p className="nv-sub">
-        Los dos cuentan una historia de Medellín. Lo que cambia es cómo le dan sonido e imagen.
-      </p>
-      <div className="nv-lab-opciones">
-        <button type="button" className="nv-lab-opcion nv-lab-opcion--ia" onClick={() => elegir('ia')}>
-          <span className="nv-etiqueta">LAB IA</span>
-          <strong>Dirigir con datos</strong>
-          <span className="nv-tenue">Decides de qué depende la música y la imagen: la voz, la emoción, un archivo.</span>
-        </button>
-        <button type="button" className="nv-lab-opcion nv-lab-opcion--mu" onClick={() => elegir('musica')}>
-          <span className="nv-etiqueta">LAB MÚSICA URBANA</span>
-          <strong>Samplear y tocar</strong>
-          <span className="nv-tenue">Cambias sonidos por tus grabaciones, editas a mano y tocas en vivo.</span>
-        </button>
-      </div>
-    </div>
-  );
+/** Lo que lleva un proyecto nuevo para sonar y verse bien desde el primer momento. */
+function iniciarProyecto(p: Proyecto) {
+  // Se marca como iniciado: lo demás (música, datos, reacciones) es igual para todos.
+  p.track = 'ia';
+  // Cada proyecto nuevo arranca con un estilo, una paleta y unos mandos distintos.
+  if (Object.keys(p.visual.parametros).length === 0 && !p.visual.imagenUrl) visualInicial(p);
+  // La primera vez se arranca desde el preset: ya suena con golpes y melodía.
+  if (p.patron.melodia.notas.length === 0) aplicarPreset(p, p.preset);
+  sincronizarReglas(p);
+  // Y con un ejemplo de datos conectados que ya funciona.
+  if (p.conexiones.length === 0) p.conexiones = conexionesIniciales(p);
+  if (p.conexionesVisual.length === 0) p.conexionesVisual = conexionesVisualIniciales(p.visual.algoritmo);
 }
 
 export function AppNarrativa() {
@@ -68,6 +43,12 @@ export function AppNarrativa() {
   const [abierta, setAbierta] = useState<string | null>(null);
   const [pestana, setPestana] = useState<Pestana>('musica');
   useSincronizarAudio();
+  const { actualizar } = useProyecto();
+
+  // Ya no se elige lab: un proyecto sin iniciar se prepara solo.
+  useEffect(() => {
+    if (!cargando && !proyecto.track) actualizar(iniciarProyecto);
+  }, [cargando, proyecto.track, actualizar]);
 
   // Barra espaciadora: escuchar o parar, salvo mientras se escribe.
   // Dentro de una escena suena solo esa escena; afuera, la pieza.
@@ -77,7 +58,10 @@ export function AppNarrativa() {
       const t = ev.target as HTMLElement;
       if (ev.code !== 'Space' || t.closest('input, textarea, [contenteditable]')) return;
       ev.preventDefault();
-      if (motorAudio.claveActiva) motorAudio.detener();
+      // Si algo suena (la pieza, una escena o una vista previa), la barra lo para.
+      if (motorAudio.claveActiva || vistaPrevia.activa) vistaPrevia.pararTodo();
+      // Con una ventana abierta no arranca nada: la ventana manda.
+      else if (document.querySelector('[role="dialog"]')) return;
       else if (indiceAbierta >= 0) void motorAudio.reproducirEscena(indiceAbierta);
       else if (proyecto.escenas.length > 0) void motorAudio.reproducirPieza();
     };
@@ -85,8 +69,7 @@ export function AppNarrativa() {
     return () => window.removeEventListener('keydown', tecla);
   }, [proyecto.escenas.length, indiceAbierta]);
 
-  if (cargando) return <div className="nv" />;
-  if (!proyecto.track) return <ElegirLab />;
+  if (cargando || !proyecto.track) return <div className="nv" />;
 
   const pantalla: Pantalla =
     paso === 'escenas' && abierta ? (pestana === 'musica' ? 'escena-musica' : 'escena-visual') : paso;

@@ -8,6 +8,9 @@ import type { ReactNode } from 'react';
 import type { Proyecto } from './tipos';
 import { crearProyectoInicial } from './proyecto';
 import { escenasASecciones } from './escenas';
+import { aplicarPad } from './patronEscena';
+import { conexionesIniciales } from './musica';
+import { conexionesVisualIniciales } from './imagen';
 import { borrarTodo, cargar, guardar } from './guardado';
 
 interface ContextoProyecto {
@@ -35,6 +38,20 @@ export function ProveedorProyecto({ children }: { children: ReactNode }) {
         if (!vigente || !guardado) return;
         const base = crearProyectoInicial();
         const completo = { ...base, ...guardado, visual: { ...base.visual, ...guardado.visual } };
+        // Ya no hay dos labs: un proyecto de antes abre como cualquiera, con los datos de ejemplo si no tenía.
+        if (completo.track) {
+          completo.track = 'ia';
+          if (completo.conexiones.length === 0) completo.conexiones = conexionesIniciales(completo);
+          if (completo.conexionesVisual.length === 0) completo.conexionesVisual = conexionesVisualIniciales(completo.visual.algoritmo);
+        }
+        // Proyectos de antes: el cuadro del Pad ahora escribe celdas, así que
+        // lo que el cuadro de cada escena generaba se pasa a celdas propias.
+        for (const e of [...completo.escenas, ...completo.respiros]) {
+          for (const [id, r] of Object.entries(e.reglas ?? {})) {
+            const yaTiene = id === 'melodia' ? Boolean(e.notas) : Boolean(e.golpes?.[id]);
+            if (!yaTiene) aplicarPad(completo, e.id, id, r.golpes, r.azar);
+          }
+        }
         if (completo.escenas.length > 0) completo.secciones = escenasASecciones(completo);
         setProyecto(completo);
       })

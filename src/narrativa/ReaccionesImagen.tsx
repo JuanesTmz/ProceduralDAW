@@ -1,5 +1,5 @@
 /**
- * Música Urbana: «cuando suena esto, la imagen hace aquello».
+ * Reacciones: «cuando suena esto, la imagen hace aquello».
  *
  * Una fila por reacción: de qué sonido depende (una capa, la melodía, la voz
  * o cualquier golpe), qué hace la imagen y con cuánta fuerza. Todo a mano:
@@ -22,7 +22,7 @@ import { SelectorOpciones } from './SelectorOpciones';
 
 const NOMBRE_FUERZA: Record<ReglaReaccion['fuerza'], string> = { 1: 'Poco', 2: 'Algo', 3: 'Mucho' };
 
-export function ReaccionesMU({ escena }: { escena: Escena }) {
+export function ReaccionesImagen({ escena }: { escena: Escena }) {
   const { proyecto, actualizar } = useProyecto();
   const fuentes = fuentesDeReaccion(proyecto);
   const reglas = (escena.reacciones ?? []).filter((r) => fuentes.some((f) => f.id === r.fuente));
@@ -103,7 +103,7 @@ export function ReaccionesMU({ escena }: { escena: Escena }) {
                 <button
                   key={n}
                   type="button"
-                  className={`nv-selector__op ${r.fuerza === n ? 'nv-selector__op--activa nv-selector__op--mu' : ''}`}
+                  className={`nv-selector__op ${r.fuerza === n ? 'nv-selector__op--activa' : ''}`}
                   onClick={() => cambiar(r.id, { fuerza: n })}
                 >
                   {NOMBRE_FUERZA[n]}
@@ -126,7 +126,7 @@ export function ReaccionesMU({ escena }: { escena: Escena }) {
       ))}
 
       <div className="nv-campo__fila">
-        <button type="button" className="nv-conectar nv-conectar--mu" onClick={agregar}>
+        <button type="button" className="nv-conectar nv-conectar--acento" onClick={agregar}>
           + Agregar una reacción
         </button>
         {reglas.length > 0 && (

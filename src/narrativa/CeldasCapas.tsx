@@ -1,7 +1,7 @@
 /**
  * Las capas vistas como celdas, al estilo de la línea de tiempo original:
  * una fila de casillas por sonido, que se encienden tocando o arrastrando
- * el dedo. Es la otra forma de ver la misma lista de Música Urbana.
+ * el dedo. Es la otra forma de ver la misma lista de capas.
  *
  * Los golpes son del patrón (valen para toda la pieza, como en la ventana
  * Golpes); lo que es de la escena es si cada capa suena o se calla aquí.
@@ -14,6 +14,7 @@ import { motorAudio } from '../audio/motorAudio';
 import { useProyecto } from '../estado/ProyectoContext';
 import { useCabezaLectora } from '../hooks/useCabezaLectora';
 import { usePintarArrastrando } from '../hooks/usePintarArrastrando';
+import { golpesDe, notasDe, ponerGolpe } from '../estado/patronEscena';
 import { ID_MELODIA } from './VentanaSonidosPistas';
 import { BotonSolo, Suena } from './FilaSonido';
 
@@ -26,6 +27,8 @@ export interface CapaCeldas {
 
 interface Props {
   capas: CapaCeldas[];
+  /** La escena cuyas celdas se ven, o null en General. */
+  escenaId: string | null;
   /** Solo dentro de una escena: si cada capa suena aquí. */
   suena?: (id: string) => boolean;
   alSuena?: (id: string) => void;
@@ -36,7 +39,9 @@ interface Props {
   alSolo: (id: string) => void;
 }
 
-export function CeldasCapas({ capas, suena, alSuena, alSonidos, alNotas, suenaSolo, alSolo }: Props) {
+const esMelodiaId = (id: string) => id === ID_MELODIA;
+
+export function CeldasCapas({ capas, escenaId, suena, alSuena, alSonidos, alNotas, suenaSolo, alSolo }: Props) {
   const { proyecto, actualizar } = useProyecto();
   const { patron } = proyecto;
   const n = patron.cantidadPasos;
@@ -45,15 +50,15 @@ export function CeldasCapas({ capas, suena, alSuena, alSonidos, alNotas, suenaSo
   useCabezaLectora(cabeza, n);
 
   const pasosDe = (id: string): boolean[] => {
-    if (id === ID_MELODIA) return Array.from({ length: n }, (_, i) => patron.melodia.notas.some((x) => x.paso === i));
-    return patron.filas.find((f) => f.id === id)?.pasos ?? [];
+    if (id === ID_MELODIA) {
+      const notas = notasDe(proyecto, escenaId);
+      return Array.from({ length: n }, (_, i) => notas.some((x) => x.paso === i));
+    }
+    return golpesDe(proyecto, escenaId, id).pasos;
   };
 
   const marcar = (id: string, paso: number, encender: boolean) =>
-    actualizar((p) => {
-      const f = p.patron.filas.find((x) => x.id === id);
-      if (f) f.pasos[paso] = encender;
-    });
+    actualizar((p) => ponerGolpe(p, escenaId, id, paso, encender));
 
   const pintar = usePintarArrastrando((clave) => {
     if (pintando.current === null) return;
@@ -80,6 +85,7 @@ export function CeldasCapas({ capas, suena, alSuena, alSonidos, alNotas, suenaSo
       {capas.map((c, k) => {
         const fila = k + 1;
         const pasos = pasosDe(c.id);
+        const probs = esMelodiaId(c.id) ? [] : golpesDe(proyecto, escenaId, c.id).probabilidad;
         const callada = suena ? !suena(c.id) : false;
         const esMelodia = c.id === ID_MELODIA;
         return (
@@ -104,7 +110,7 @@ export function CeldasCapas({ capas, suena, alSuena, alSonidos, alNotas, suenaSo
                 <button
                   key={i}
                   type="button"
-                  className={`nv-celda ${on ? 'nv-celda--on' : ''} ${i % 4 === 0 ? 'nv-celda--tiempo' : ''}`}
+                  className={`nv-celda ${on ? 'nv-celda--on' : ''} ${on && (probs[i] ?? 1) < 0.92 ? 'nv-celda--aveces' : ''} ${i % 4 === 0 ? 'nv-celda--tiempo' : ''}`}
                   aria-label={`${c.nombre}, paso ${i + 1}`}
                   aria-pressed={on}
                   data-pintar={esMelodia ? undefined : `${c.id}|${i}`}

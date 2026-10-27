@@ -95,7 +95,7 @@ export function AppShell() {
       <header className="cabecera">
         <div className="marca">
           <span className="marca__logo">SONORA</span>
-          <span className="marca__lema">narrativa musical · Medellín</span>
+          <span className="marca__lema">narrativa sonora · Medellín</span>
         </div>
 
         <BarraFases

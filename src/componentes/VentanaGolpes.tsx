@@ -18,6 +18,8 @@ import { colorDeSonido, NOMBRES_SONIDO, redimensionarPatron } from '../estado/pr
 import { useCabezaLectora } from '../hooks/useCabezaLectora';
 import { usePintarArrastrando } from '../hooks/usePintarArrastrando';
 import type { TipoSonido } from '../estado/tipos';
+import { recorrido } from '../estado/escenas';
+import { golpesDe, ponerGolpe, redimensionarEscenas } from '../estado/patronEscena';
 import { ListaPistas } from './ListaPistas';
 import { Ventana } from './Ventana';
 
@@ -46,7 +48,9 @@ export function VentanaGolpes({ inicial, escena = -1, alCerrar }: Props) {
   useCabezaLectora(cabeza, patron.cantidadPasos);
 
   const fila = patron.filas.find((f) => f.id === elegida) ?? patron.filas[0] ?? null;
-  const pasos = fila?.pasos ?? [];
+  // Dentro de una escena las celdas son las suyas; si no tiene propias, las de General.
+  const escenaId = escena >= 0 ? recorrido(proyecto)[escena]?.id ?? null : null;
+  const pasos = fila ? golpesDe(proyecto, escenaId, fila.id).pasos : [];
   const color = fila?.color ?? 'var(--acento)';
   const nombre = fila?.nombre ?? '';
   const sampleUrl = fila?.sampleUrl;
@@ -56,10 +60,7 @@ export function VentanaGolpes({ inicial, escena = -1, alCerrar }: Props) {
 
   const marcar = (paso: number, encender: boolean) => {
     if (!fila) return;
-    actualizar((p) => {
-      const f = p.patron.filas.find((x) => x.id === fila.id);
-      if (f) f.pasos[paso] = encender;
-    });
+    actualizar((p) => ponerGolpe(p, escenaId, fila.id, paso, encender));
   };
 
   const empezarAPintar = (paso: number) => {
@@ -130,7 +131,7 @@ export function VentanaGolpes({ inicial, escena = -1, alCerrar }: Props) {
     id: f.id,
     nombre: f.nombre,
     color: f.color,
-    nota: `${f.pasos.filter(Boolean).length} golpes`,
+    nota: `${golpesDe(proyecto, escenaId, f.id).pasos.filter(Boolean).length} golpes`,
   }));
 
   const propios = proyecto.sonidos;
@@ -204,6 +205,7 @@ export function VentanaGolpes({ inicial, escena = -1, alCerrar }: Props) {
                   onClick={() =>
                     actualizar((p) => {
                       p.patron = redimensionarPatron(p.patron, n);
+                      redimensionarEscenas(p, n);
                     })
                   }
                 >

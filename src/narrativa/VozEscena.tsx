@@ -2,7 +2,8 @@
  * La voz de una escena: grabar, escuchar y repetir.
  * Se usa en el paso Voz y dentro de cada escena.
  */
-import { useRef, useState } from 'react';
+import { useEffect } from 'react';
+import { useVistaPrevia, vistaPrevia } from '../audio/vistaPrevia';
 import { useProyecto } from '../estado/ProyectoContext';
 import { formatearReloj } from '../estado/proyecto';
 import { EMOCIONES } from '../estado/escenas';
@@ -29,9 +30,18 @@ export function Onda({ semilla, color, barras = 70 }: { semilla: string; color: 
 
 export function VozEscena({ escena, grande = false }: { escena: Escena; grande?: boolean }) {
   const { actualizar } = useProyecto();
-  const audio = useRef<HTMLAudioElement | null>(null);
-  const [oyendo, setOyendo] = useState(false);
+  const { suena, oir } = useVistaPrevia();
+  const claveVoz = `voz:${escena.id}`;
+  const oyendo = suena(claveVoz);
   const color = EMOCIONES[escena.emocion].color;
+
+  // Al salir (o cambiar de escena) se corta su voz, y solo la suya.
+  useEffect(
+    () => () => {
+      if (vistaPrevia.activa === claveVoz) vistaPrevia.parar();
+    },
+    [claveVoz],
+  );
 
   const { estado, segundos, error, empezar, parar } = useGrabadora((g) => {
     actualizar((p) => {
@@ -46,24 +56,8 @@ export function VozEscena({ escena, grande = false }: { escena: Escena; grande?:
 
   const escuchar = () => {
     if (!escena.vozUrl) return;
-    if (oyendo) {
-      audio.current?.pause();
-      setOyendo(false);
-      return;
-    }
-    const a = new Audio(escena.vozUrl);
-    audio.current = a;
-    a.onended = () => setOyendo(false);
-    // Un tramo de la grabación de corrido: suena solo su parte.
-    if (escena.vozDesde !== undefined) {
-      a.currentTime = escena.vozDesde;
-      window.setTimeout(() => {
-        a.pause();
-        setOyendo(false);
-      }, escena.vozDuracion * 1000);
-    }
-    void a.play();
-    setOyendo(true);
+    // Un tramo de la grabación de corrido suena solo su parte.
+    oir(claveVoz, escena.vozUrl, escena.vozDesde !== undefined ? { desde: escena.vozDesde, duracion: escena.vozDuracion } : {});
   };
 
   if (grabando) {
@@ -99,8 +93,8 @@ export function VozEscena({ escena, grande = false }: { escena: Escena; grande?:
 
   return (
     <div className={`nv-voz ${grande ? 'nv-voz--grande' : ''}`}>
-      <button type="button" className="nv-redondo" onClick={escuchar} aria-label="Escuchar">
-        {oyendo ? '■' : '▶'}
+      <button type="button" className="nv-redondo" onClick={escuchar} aria-label={oyendo ? 'Pausar' : 'Escuchar'}>
+        {oyendo ? '❚❚' : '▶'}
       </button>
       <Onda semilla={escena.vozUrl} color={color} />
       <span className="nv-mono">{formatearReloj(escena.vozDuracion)}</span>

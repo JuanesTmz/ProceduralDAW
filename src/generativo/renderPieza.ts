@@ -142,7 +142,7 @@ export function renderizarPieza(proyecto: Proyecto): PiezaRenderizada {
         if (!fila.pasos[paso] && !esRedoble) continue;
 
         const inicial = aMano
-          ? PROBABILIDAD_NIVEL[nivel]
+          ? (fila.probabilidad[paso] ?? 1)
           : (fila.probabilidad[paso] ?? 1) * factorDensidad * PROBABILIDAD_NIVEL[nivel];
         const probabilidad = esRedoble
           ? 1

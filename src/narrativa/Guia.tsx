@@ -12,7 +12,6 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { useProyecto } from '../estado/ProyectoContext';
-import type { Track } from '../guia/pasos';
 import { MenuFlotante } from './MenuFlotante';
 import { pasosDe, type Pantalla, type PasoTour } from './pasosGuia';
 import { Tour } from './Tour';
@@ -22,7 +21,7 @@ const CLAVE = 'sonora-guia-vista';
 
 /** Los videos, con su nombre corto para el menú (el catálogo se carga solo al abrir uno). */
 const NOMBRES: Record<string, string> = {
-  narrativa: '¿Qué es narrativa musical?',
+  narrativa: '¿Qué es narrativa sonora?',
   vozcorrida: 'Grabar la voz de corrido',
   respiros: 'Los respiros',
   emocion: 'La emoción cambia la música',
@@ -36,8 +35,7 @@ const NOMBRES: Record<string, string> = {
 };
 
 /** Qué videos tocan en cada pantalla. */
-function videosDe(pantalla: Pantalla, track: Track | null): string[] {
-  const ia = track === 'ia';
+function videosDe(pantalla: Pantalla): string[] {
   switch (pantalla) {
     case 'historia':
       return ['narrativa'];
@@ -46,7 +44,7 @@ function videosDe(pantalla: Pantalla, track: Track | null): string[] {
     case 'escenas':
       return ['respiros', 'emocion'];
     case 'escena-musica':
-      return ia ? ['emocion', 'pad', 'datos', 'cajitas'] : ['emocion', 'golpes', 'matriz', 'cajitas'];
+      return ['emocion', 'pad', 'golpes', 'datos', 'cajitas'];
     case 'escena-visual':
       return ['visual', 'cajitas'];
     case 'ventana-golpes':
@@ -96,11 +94,11 @@ export function Guia({ pantalla }: { pantalla: Pantalla }) {
   /** El video abierto: un id, 'todos' para la galería, o nada. */
   const [video, setVideo] = useState<string | null>(null);
   const boton = useRef<HTMLButtonElement>(null);
-  const videos = videosDe(pantalla, proyecto.track);
+  const videos = videosDe(pantalla);
 
   const recorrido = () => {
     setMenu(false);
-    setPasos(visibles(pasosDe(pantalla, proyecto.track)));
+    setPasos(visibles(pasosDe(pantalla)));
   };
 
   // Al entrar a una pantalla nueva, el recorrido arranca solo si nunca se vio.
@@ -110,7 +108,7 @@ export function Guia({ pantalla }: { pantalla: Pantalla }) {
     setVista(yaVista);
     if (yaVista) return;
     // Espera a que la pantalla termine de armarse para medir bien.
-    const t = window.setTimeout(() => setPasos(visibles(pasosDe(pantalla, proyecto.track))), 700);
+    const t = window.setTimeout(() => setPasos(visibles(pasosDe(pantalla))), 700);
     return () => window.clearTimeout(t);
   }, [clave, pantalla, proyecto.track]);
 

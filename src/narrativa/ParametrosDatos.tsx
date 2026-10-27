@@ -1,10 +1,10 @@
 /**
- * Lab de IA: qué parámetros se vuelven datos.
+ * Qué parámetros se mueven solos con un dato.
  *
- * Una fila por parámetro. Cada uno está «a mano» (lo pones tú) o lo mueve
- * un dato: la emoción, la fuerza, la voz, un archivo… Elegir es un solo
- * toque y se lee como una frase: «Brillo · lo mueve La emoción · Mucho».
- * Lo usan la música y la imagen; por debajo siguen siendo conexiones.
+ * Una fila por parámetro, siempre con las mismas tres columnas: lo que se
+ * mueve, el dato que lo mueve y cuánto. Elegir el dato es un solo toque; con
+ * «Ver» se comprueba cómo se movería a lo largo de la pieza. Lo que no tiene
+ * dato se pone a mano. Lo usan la música y la imagen; por debajo son conexiones.
  */
 import { useState } from 'react';
 import { useProyecto } from '../estado/ProyectoContext';
@@ -12,6 +12,7 @@ import { COLOR_GRUPO, fuente, fuentesDe, leerArchivoDatos, NOMBRE_CANTIDAD, nuev
 import { Onda } from './VozEscena';
 import { SelectorOpciones } from './SelectorOpciones';
 import { SelectorDato } from './SelectorDato';
+import { LineaDato } from './LineaDato';
 
 export interface Parametro {
   clave: string;
@@ -33,6 +34,14 @@ export function ParametrosDatos({ clave, grupos }: Props) {
   const { proyecto, actualizar } = useProyecto();
   const fuentes = fuentesDe(proyecto, clave === 'conexionesVisual' ? 'imagen' : 'musica');
   const conexionDe = (destino: string) => proyecto[clave].find((c) => c.destino === destino);
+  // La vista previa pesa en pantalla: solo se ve en las filas donde se pide.
+  const [vistas, setVistas] = useState<Set<string>>(new Set());
+  const alternarVista = (destino: string) =>
+    setVistas((antes) => {
+      const ahora = new Set(antes);
+      if (!ahora.delete(destino)) ahora.add(destino);
+      return ahora;
+    });
 
   const usar = (destino: string, fuenteClave: string | null) => {
     actualizar((p) => {
@@ -48,61 +57,86 @@ export function ParametrosDatos({ clave, grupos }: Props) {
 
   return (
     <div className="nv-parametros">
+      <p className="nv-tenue nv-chico nv-datos-intro">
+        Cada fila es algo que se puede mover. Elige un <b>dato</b> (la emoción, la voz, un golpe, una foto…) y esa fila se
+        mueve sola <b>según</b> él. Con <b>◔ Ver</b> compruebas cómo se movería a lo largo de tu pieza.
+      </p>
+      <div className="nv-parametros__cabeza" aria-hidden="true">
+        <span>SE MUEVE</span>
+        <span>SEGÚN ESTE DATO</span>
+        <span>CUÁNTO</span>
+      </div>
       {grupos.map((g) => (
         <div key={g.titulo} className="nv-parametros__grupo">
           <span className="nv-etiqueta nv-tenue">{g.titulo.toUpperCase()}</span>
           {g.parametros.map((par) => {
             const c = conexionDe(par.clave);
             const f = c ? fuente(proyecto, c.fuente) : undefined;
+            const col = f ? COLOR_GRUPO[f.grupo] : '#5ee0ff';
             return (
-              <div key={par.clave} className={`nv-parametro ${c ? 'nv-parametro--dato' : ''}`}>
-                <span className="nv-parametro__nombre">{par.etiqueta}</span>
-                <SelectorDato
-                  fuentes={fuentes}
-                  actual={c?.fuente}
-                  elegida={f}
-                  alElegir={(k) => usar(par.clave, k)}
-                />
-                {c ? (
-                  <div className="nv-selector nv-selector--ia nv-selector--chico">
-                    {([1, 2, 3] as const).map((n) => (
-                      <button
-                        key={n}
-                        type="button"
-                        className={`nv-selector__op ${c.cantidad === n ? 'nv-selector__op--activa' : ''}`}
-                        onClick={() =>
-                          actualizar((p) => {
-                            const x = p[clave].find((k) => k.id === c.id);
-                            if (x) x.cantidad = n;
-                          })
-                        }
-                      >
-                        {NOMBRE_CANTIDAD[n]}
-                      </button>
-                    ))}
-                  </div>
-                ) : par.mano && par.opciones ? (
-                  <span className="nv-parametro__mano">
-                    <SelectorOpciones
-                      opciones={par.opciones}
-                      valor={par.mano.valor * (par.opciones.length - 1)}
-                      etiqueta={par.etiqueta}
-                      alCambiar={(i) => par.mano?.poner(i / Math.max(1, par.opciones!.length - 1))}
-                    />
-                  </span>
-                ) : par.mano ? (
-                  <input
-                    type="range"
-                    min={0}
-                    max={1}
-                    step={0.01}
-                    className="nv-parametro__mano"
-                    value={Math.max(0, Math.min(1, par.mano.valor))}
-                    onChange={(ev) => par.mano?.poner(Number(ev.target.value))}
+              <div key={par.clave} className="nv-parametro-bloque">
+                <div className={`nv-parametro ${c ? 'nv-parametro--dato' : ''}`} style={{ ['--c' as string]: col }}>
+                  <span className="nv-parametro__nombre">{par.etiqueta}</span>
+                  <SelectorDato
+                    fuentes={fuentes}
+                    actual={c?.fuente}
+                    elegida={f}
+                    alElegir={(k) => usar(par.clave, k)}
                   />
-                ) : (
-                  <span className="nv-tenue nv-chico">{par.notaMano ?? 'queda fijo'}</span>
-                )}
+                  {c ? (
+                    <div className="nv-parametro__cuanto">
+                      <div className="nv-selector nv-selector--ia nv-selector--chico">
+                        {([1, 2, 3] as const).map((n) => (
+                          <button
+                            key={n}
+                            type="button"
+                            className={`nv-selector__op ${c.cantidad === n ? 'nv-selector__op--activa' : ''}`}
+                            onClick={() =>
+                              actualizar((p) => {
+                                const x = p[clave].find((k) => k.id === c.id);
+                                if (x) x.cantidad = n;
+                              })
+                            }
+                          >
+                            {NOMBRE_CANTIDAD[n]}
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        className={`nv-boton nv-boton--chico ${vistas.has(par.clave) ? 'nv-boton--activo' : ''}`}
+                        aria-pressed={vistas.has(par.clave)}
+                        title="Ver cómo se movería a lo largo de la pieza"
+                        onClick={() => alternarVista(par.clave)}
+                      >
+                        ◔ Ver
+                      </button>
+                    </div>
+                  ) : par.mano && par.opciones ? (
+                    <span className="nv-parametro__mano">
+                      <SelectorOpciones
+                        opciones={par.opciones}
+                        valor={par.mano.valor * (par.opciones.length - 1)}
+                        etiqueta={par.etiqueta}
+                        alCambiar={(i) => par.mano?.poner(i / Math.max(1, par.opciones!.length - 1))}
+                      />
+                    </span>
+                  ) : par.mano ? (
+                    <input
+                      type="range"
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      className="nv-parametro__mano"
+                      aria-label={`${par.etiqueta}, a mano`}
+                      value={Math.max(0, Math.min(1, par.mano.valor))}
+                      onChange={(ev) => par.mano?.poner(Number(ev.target.value))}
+                    />
+                  ) : (
+                    <span className="nv-tenue nv-chico">{par.notaMano ?? 'queda fijo'}</span>
+                  )}
+                </div>
+                {c && vistas.has(par.clave) && <LineaDato fuente={c.fuente} cantidad={c.cantidad} color={col} />}
               </div>
             );
           })}

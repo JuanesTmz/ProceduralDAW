@@ -6,7 +6,8 @@
  * sobre la onda. Tocar un tramo lo hace sonar, para encontrar el corte de
  * oído.
  */
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useVistaPrevia, vistaPrevia } from '../audio/vistaPrevia';
 import type { PointerEvent as EventoPuntero } from 'react';
 import { useProyecto } from '../estado/ProyectoContext';
 import { formatearReloj } from '../estado/proyecto';
@@ -19,9 +20,17 @@ export function VozCorrida({ alSeguir }: { alSeguir: () => void }) {
   const { escenas, vozCorrida } = proyecto;
   const barra = useRef<HTMLDivElement>(null);
   const [agarrado, setAgarrado] = useState<number | null>(null);
-  const audio = useRef<HTMLAudioElement | null>(null);
-  const reloj = useRef<number | null>(null);
-  const [sonando, setSonando] = useState<number | null>(null);
+  const { activa, oir } = useVistaPrevia();
+  const indiceSonando = activa?.startsWith('tramo:') ? Number(activa.slice(6)) : -1;
+  const sonando = indiceSonando >= 0 ? indiceSonando : null;
+
+  // Al salir se corta el tramo que estuviera sonando.
+  useEffect(
+    () => () => {
+      if (vistaPrevia.activa?.startsWith('tramo:')) vistaPrevia.parar();
+    },
+    [],
+  );
 
   const { estado, segundos, error, empezar, parar } = useGrabadora((g) =>
     actualizar((p) => {
@@ -31,22 +40,10 @@ export function VozCorrida({ alSeguir }: { alSeguir: () => void }) {
   );
   const grabando = estado === 'grabando';
 
-  const callar = () => {
-    audio.current?.pause();
-    if (reloj.current !== null) window.clearTimeout(reloj.current);
-    setSonando(null);
-  };
-
   const oirTramo = (i: number) => {
     const e = escenas[i];
     if (!vozCorrida || e?.vozDesde === undefined) return;
-    if (sonando === i) return callar();
-    callar();
-    audio.current = new Audio(vozCorrida.url);
-    audio.current.currentTime = e.vozDesde;
-    void audio.current.play();
-    setSonando(i);
-    reloj.current = window.setTimeout(callar, e.vozDuracion * 1000);
+    oir(`tramo:${i}`, vozCorrida.url, { desde: e.vozDesde, duracion: e.vozDuracion });
   };
 
   const mover = (ev: EventoPuntero<HTMLSpanElement>) => {

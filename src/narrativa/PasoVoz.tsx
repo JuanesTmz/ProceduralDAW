@@ -6,7 +6,8 @@
  * su estado (grabada o no). Al terminar una, se sigue a la próxima.
  * Los respiros no aparecen: no tienen voz.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useVistaPrevia, vistaPrevia } from '../audio/vistaPrevia';
 import { useProyecto } from '../estado/ProyectoContext';
 import { formatearReloj } from '../estado/proyecto';
 import { EMOCIONES } from '../estado/escenas';
@@ -22,8 +23,9 @@ export function PasoVoz({ alSeguir }: { alSeguir: () => void }) {
     return primera < 0 ? 0 : primera;
   });
   const escena = escenas[Math.min(indice, escenas.length - 1)];
-  const audio = useRef<HTMLAudioElement | null>(null);
-  const [oyendo, setOyendo] = useState(false);
+  const { suena, oir } = useVistaPrevia();
+  const claveVoz = `voz:${escena?.id}`;
+  const oyendo = suena(claveVoz);
 
   const { estado, segundos, error, empezar, parar } = useGrabadora((g) => {
     const id = escena?.id;
@@ -37,10 +39,12 @@ export function PasoVoz({ alSeguir }: { alSeguir: () => void }) {
   });
 
   // Al cambiar de escena se corta lo que estuviera sonando.
-  useEffect(() => {
-    audio.current?.pause();
-    setOyendo(false);
-  }, [indice]);
+  useEffect(
+    () => () => {
+      if (vistaPrevia.activa === claveVoz) vistaPrevia.parar();
+    },
+    [claveVoz],
+  );
 
   if (!escena) {
     return (
@@ -58,15 +62,7 @@ export function PasoVoz({ alSeguir }: { alSeguir: () => void }) {
 
   const escuchar = () => {
     if (!escena.vozUrl) return;
-    if (oyendo) {
-      audio.current?.pause();
-      setOyendo(false);
-      return;
-    }
-    audio.current = new Audio(escena.vozUrl);
-    audio.current.onended = () => setOyendo(false);
-    void audio.current.play();
-    setOyendo(true);
+    oir(claveVoz, escena.vozUrl);
   };
 
   return (
@@ -147,7 +143,7 @@ export function PasoVoz({ alSeguir }: { alSeguir: () => void }) {
           ) : escena.vozUrl ? (
             <>
               <button type="button" className="nv-redondo nv-redondo--grande" onClick={escuchar} aria-label="Escuchar">
-                {oyendo ? '■' : '▶'}
+                {oyendo ? '❚❚' : '▶'}
               </button>
               <div className="nv-apuntador__onda">
                 <Onda semilla={escena.vozUrl} color={color} barras={90} />

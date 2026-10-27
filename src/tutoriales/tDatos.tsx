@@ -1,5 +1,5 @@
 /**
- * Tutorial: Datos (lab de IA). Que la música se mueva sola.
+ * Tutorial: Datos. Que la música se mueva sola.
  *
  * Una línea dibuja la fuerza de cada escena; la Maquinita la conecta con
  * un cable a los golpes del bombo, y al recorrer las escenas el bombo se
@@ -56,7 +56,7 @@ function Dibujo() {
     <>
       <Fondo tono={C.verde} acento={C.cian} />
       <Pos x={150} y={60} escala={resorte(f, 0)}>
-        <Etiqueta color={C.verde}>DATOS · LAB IA</Etiqueta>
+        <Etiqueta color={C.verde}>DATOS</Etiqueta>
       </Pos>
 
       {!fase2 && (

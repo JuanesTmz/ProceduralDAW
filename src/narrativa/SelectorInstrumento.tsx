@@ -7,20 +7,22 @@
 import { useState } from 'react';
 import { useProyecto } from '../estado/ProyectoContext';
 import { SONOTECA } from '../audio/sonoteca';
+import { useVistaPrevia } from '../audio/vistaPrevia';
 import { detectarNota, nombreNota, NOTAS_ELEGIBLES } from '../audio/afinador';
 
-/** Oye un sonido sin elegirlo. Si ya sonaba otro, lo corta. */
-let muestra: HTMLAudioElement | null = null;
-function oir(url: string) {
-  muestra?.pause();
-  muestra = new Audio(url);
-  void muestra.play();
-}
-
+/** ▶ de un sonido: lo oye sin elegirlo, cambia a ❚❚ mientras suena y lo pausa al tocarlo. */
 function Oir({ url }: { url: string }) {
+  const { suena, oir } = useVistaPrevia();
+  const sonando = suena(`url:${url}`);
   return (
-    <button type="button" className="nv-instrumento__oir" aria-label="Escuchar" title="Escuchar sin elegir" onClick={() => oir(url)}>
-      ▶
+    <button
+      type="button"
+      className="nv-instrumento__oir"
+      aria-label={sonando ? 'Pausar' : 'Escuchar'}
+      title={sonando ? 'Pausar' : 'Escuchar sin elegir'}
+      onClick={() => oir(`url:${url}`, url)}
+    >
+      {sonando ? '❚❚' : '▶'}
     </button>
   );
 }

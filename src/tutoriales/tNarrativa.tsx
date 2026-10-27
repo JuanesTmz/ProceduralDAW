@@ -1,5 +1,5 @@
 /**
- * Tutorial: ¿qué es narrativa musical?
+ * Tutorial: ¿qué es narrativa sonora?
  *
  * El Gato cuenta; su texto se parte en escenas de colores; debajo,
  * la voz, la música y el visual siguen el arco (la música crece en la
@@ -51,7 +51,7 @@ function Dibujo() {
     <>
       <Fondo tono={C.rosa} acento={C.lila} />
       <Pos x={190} y={60} escala={resorte(f, 0)}>
-        <Etiqueta color={C.rosa}>NARRATIVA MUSICAL</Etiqueta>
+        <Etiqueta color={C.rosa}>NARRATIVA SONORA</Etiqueta>
       </Pos>
 
       <Pos x={narradoraX} y={narradoraY} escala={resorte(f, 4) * narradoraS}>
@@ -148,7 +148,7 @@ function Dibujo() {
           [260, 370, 'La *música y el *visual siguen ese arco'],
           [370, 470, 'Cuando la historia se *tensa, la música *crece'],
           [470, 560, 'La *voz manda: la música se aparta para dejarla oír'],
-          [560, 600, 'Eso es *narrativa *musical'],
+          [560, 600, 'Eso es *narrativa *sonora'],
         ]}
       />
       <Fundido duracion={DURA} />
@@ -158,7 +158,7 @@ function Dibujo() {
 
 export const tutorialNarrativa: Composicion = {
   id: 'narrativa',
-  titulo: '¿Qué es narrativa musical?',
+  titulo: '¿Qué es narrativa sonora?',
   descripcion: 'La historia manda; la música y el visual la siguen.',
   duracion: DURA,
   Dibujo,

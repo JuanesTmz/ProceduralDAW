@@ -28,12 +28,11 @@ interface Props {
 }
 
 export function Barra({ paso, alCambiar, enEscena, guia }: Props) {
-  const { proyecto, actualizar } = useProyecto();
+  const { proyecto } = useProyecto();
   const { sonandoPieza: sonando } = useReproduccion();
   const hayEscenas = proyecto.escenas.length > 0;
   const total = hayEscenas ? duracionPieza(proyecto) : 0;
   const pasado = total > DURACION_MAXIMA;
-  const esIA = proyecto.track === 'ia';
 
   return (
     <header className="nv-barra">
@@ -77,19 +76,6 @@ export function Barra({ paso, alCambiar, enEscena, guia }: Props) {
         </button>
       )}
       {guia}
-      <button
-        type="button"
-        className={`nv-lab ${esIA ? 'nv-lab--ia' : 'nv-lab--mu'}`}
-        title="Cambiar de Urban Lab. No pierdes nada."
-        onClick={() =>
-          actualizar((p) => {
-            p.track = null;
-          })
-        }
-      >
-        <span className="nv-punto" />
-        {esIA ? 'Lab IA' : 'Lab Música Urbana'}
-      </button>
     </header>
   );
 }

@@ -10,7 +10,6 @@
  * todavía no está grabada, lo que tardaría en decirse). La música se estira
  * en vueltas enteras del patrón hasta cubrirla.
  */
-import { generarMelodia, generarPasos } from '../generativo/motorGenerativo';
 import type { NombreEscala } from '../generativo/escalas';
 import { nuevoId, palabrasDe, segundosPorVuelta } from './proyecto';
 import type { Emocion, Escena, Fuerza, Proyecto, Seccion } from './tipos';
@@ -250,26 +249,6 @@ export function intensidadDeEscena(escena: Escena): number {
  * y el empujón de tempo; la emoción y la fuerza juntas, cuánta energía hay,
  * cuántas capas suenan y con qué golpe.
  */
-/** Lo que deja el cuadro de cada pista cuando se movió dentro de la escena (lab de IA). */
-function reglasDeEscena(p: Proyecto, escena: Escena, i: number): Pick<Seccion, 'pasosFilas' | 'notas'> {
-  if (!escena.reglas) return {};
-  const pasosFilas: NonNullable<Seccion['pasosFilas']> = {};
-  let notas: Seccion['notas'];
-  const n = p.patron.cantidadPasos;
-  for (const [id, r] of Object.entries(escena.reglas)) {
-    if (id === 'melodia') {
-      const m = p.patron.melodia;
-      notas = generarMelodia({ ...m, regla: { ...m.regla, ...r, activa: true } }, n, p.semilla + i * 31) ?? undefined;
-      continue;
-    }
-    const fila = p.patron.filas.find((f) => f.id === id);
-    if (!fila) continue;
-    const g = generarPasos({ ...fila.regla, ...r, activa: true }, n, p.semilla, id);
-    if (g) pasosFilas[id] = g;
-  }
-  return { pasosFilas, notas };
-}
-
 export function escenasASecciones(p: Proyecto): Seccion[] {
   const ids = p.patron.filas.map((f) => f.id);
   const lista = recorrido(p);
@@ -286,28 +265,24 @@ export function escenasASecciones(p: Proyecto): Seccion[] {
       // una sola para toda la escena, no por capa.
       capasActivas = ids.filter((id) => (escena.niveles?.[id] ?? 0) > 0);
       for (const id of capasActivas) niveles[id] = escena.fuerza;
-    } else if (p.track === 'musica') {
-      // Música Urbana suena tal cual se dibujó: si nadie callo una capa en esta
-      // escena, suenan todas. Adelgazar por intensidad es de la máquina (IA) y
-      // dejaba mudas capas con golpes puestos.
+    } else {
+      // Suena todo lo que hay en las celdas, tal cual: nadie adelgaza la
+      // escena por intensidad. Si una capa se calla, es porque se calló.
       capasActivas = ids;
       for (const id of ids) niveles[id] = escena.fuerza;
-    } else {
-      const cuantasCapas = Math.max(1, Math.round(ids.length * (0.25 + 0.75 * intensidad)));
-      capasActivas = ids.slice(0, cuantasCapas);
-      for (const id of capasActivas) niveles[id] = escena.fuerza;
     }
     return {
       id: escena.id,
       etiqueta: escena.nombre,
-      // Música Urbana suena tal cual se dibujó; IA, por reglas.
-      modo: p.track === 'musica' ? 'manual' : 'procedural',
+      // Lo que suena es lo que está en las celdas (el Pad las escribe).
+      modo: 'manual',
       compases,
       semilla: (p.semilla + i * 37 + escena.version * 1009) % 10000,
       intensidad,
       capasActivas,
       niveles,
-      melodiaActiva: escena.niveles ? (escena.niveles.melodia ?? 2) > 0 : p.track === 'musica' || intensidad > 0.2,
+      // La melodía suena siempre, salvo que la escena la haya callado a mano.
+      melodiaActiva: escena.niveles ? (escena.niveles.melodia ?? 2) > 0 : true,
       factorTempo,
       intencion: '',
       // La última parte se apaga sola, como un cierre.
@@ -319,8 +294,8 @@ export function escenasASecciones(p: Proyecto): Seccion[] {
         ...c,
         t: (c.palabra / Math.max(1, palabrasDe(escena.texto).length)) * duracionVoz(escena),
       })),
-      // El pad por escena es del lab de IA; en Música Urbana suena lo dibujado.
-      ...(p.track === 'ia' ? reglasDeEscena(p, escena, i) : {}),
+      pasosFilas: escena.golpes,
+      notas: escena.notas,
       voz:
         escena.vozUrl && !escena.respiro
           ? { url: escena.vozUrl, duracion: escena.vozDuracion, desde: escena.vozDesde }

@@ -1,5 +1,5 @@
 /**
- * Tutorial: el Pad (lab de IA). Una regla en vez de golpes.
+ * Tutorial: el Pad. Una regla en vez de golpes.
  *
  * La Maquinita aplica la regla del cuadro: la mano lleva el punto a la
  * derecha y los golpes caen repartidos parejo; lo sube y entra el azar
@@ -74,7 +74,7 @@ function Dibujo() {
     <>
       <Fondo tono={C.cian} acento={C.amarillo} />
       <Pos x={150} y={60} escala={resorte(f, 0)}>
-        <Etiqueta color={C.cian}>EL PAD · LAB IA</Etiqueta>
+        <Etiqueta color={C.cian}>EL PAD</Etiqueta>
       </Pos>
 
       {/* La Maquinita, que reparte los golpes */}

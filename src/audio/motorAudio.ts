@@ -12,6 +12,7 @@
  */
 import * as Tone from 'tone';
 import { crearVoz, type VozPercusion } from './kit';
+import { vistaPrevia } from './vistaPrevia';
 import { renderizarPieza } from '../generativo/renderPieza';
 import { notaTone, semitonoDeGrado } from '../generativo/escalas';
 import {
@@ -416,6 +417,8 @@ class MotorAudio {
    * stop), este se deja caer sin sonar.
    */
   async reproducirCon(r: Reproduccion): Promise<void> {
+    // Solo suena una cosa: una vista previa (voz, efecto…) cede ante la pieza.
+    vistaPrevia.parar();
     this.detener();
     const mio = ++this.pedido;
     this.pedida = r;
@@ -672,8 +675,8 @@ class MotorAudio {
     }
     const semillaActiva = seccion ? seccion.semilla : proyecto.semilla;
     // Sección a mano: suena exactamente lo dibujado, sin azar ni adelgazado.
-    // (Y en Música Urbana el patrón en bucle también: lo dibujado, sin azar.)
-    const aMano = seccion ? seccion.modo === 'manual' : proyecto.track === 'musica';
+    // (Y el patrón en bucle también: lo dibujado, sin azar.)
+    const aMano = seccion ? seccion.modo === 'manual' : true;
     const factorDensidad = seccion && !aMano ? densidadDeIntensidad(seccion.intensidad) : 1;
 
     // El remate: los últimos pasos antes de cambiar de parte suenan seguros
@@ -725,9 +728,10 @@ class MotorAudio {
       // Sin sección (modo bucle) todo suena a tope; con sección manda su escalón.
       const nivel = seccion ? this.nivelEn(seccion, fila.id) : 3;
       if (nivel === 0) continue;
-      // A mano (Música Urbana) suena todo lo dibujado; la fuerza solo cambia el golpe.
+      // Las celdas «a veces» (las que deja el Pad) suenan con su probabilidad;
+      // lo dibujado a mano suena siempre.
       const base = aMano
-        ? 1
+        ? (fila.probabilidad[paso] ?? 1)
         : (fila.probabilidad[paso] ?? 1) * factorDensidad * PROBABILIDAD_NIVEL[nivel];
       const probabilidad = esRedoble
         ? 1
@@ -1048,7 +1052,7 @@ class MotorAudio {
   private modular(seccion: Seccion, tiempo: number) {
     const proyecto = this.proyecto!;
     const porDestino = new Map<string, { v: number; w: number }>();
-    const conexiones = proyecto.track === 'ia' ? proyecto.conexiones : [];
+    const conexiones = proyecto.conexiones;
     const datos = conexiones.length > 0 ? this.contextoDeDatos() : null;
     for (const c of conexiones) {
       if (!datos) break;
@@ -1434,6 +1438,7 @@ class MotorAudio {
 }
 
 export const motorAudio = new MotorAudio();
+vistaPrevia.pararMotor = () => motorAudio.detener();
 
 // Solo en desarrollo: acceso desde la consola para diagnosticar el audio.
 // Va también renderizarPieza porque la promesa de la pantalla de La canción

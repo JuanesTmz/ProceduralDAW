@@ -1,11 +1,11 @@
 /**
  * La pestaña Visuales de una escena, o de toda la pieza (General).
  *
- * A la izquierda, el visual en vivo con la foto de la escena como
- * material. Debajo, el estilo y la paleta, que valen para toda la pieza.
- * A la derecha, la foto y la mecánica del lab: en IA, qué mandos se mueven
- * solos con un dato (lo mismo que en la música); en Música Urbana, cómo
- * reacciona, el cuadro X/Y y los golpes visuales tocados en vivo.
+ * A la izquierda, el visual en vivo con el estilo y la paleta (valen para
+ * toda la pieza). A la derecha, la foto de la escena y tres formas de mover
+ * la imagen, con la misma idea que la música: Datos (qué mando se mueve solo
+ * según un dato), Reacciones («cuando suena esto, la imagen hace aquello») y
+ * Tocar en vivo (el cuadro y los golpes de imagen, que se pueden grabar).
  */
 import { useEffect, useRef, useState } from 'react';
 import type { PointerEvent as EventoPuntero } from 'react';
@@ -22,8 +22,7 @@ import { enVivo } from '../visual/enVivo';
 import { Escenario } from './Escenario';
 import { ParametrosDatos, type Parametro } from './ParametrosDatos';
 import { fondoEscena } from './PasoEscenas';
-import { AjustesEstilo } from './AjustesEstilo';
-import { ReaccionesMU } from './ReaccionesMU';
+import { ReaccionesImagen } from './ReaccionesImagen';
 import { sorprender } from '../estado/imagen';
 import { useReproduccion } from './useReproduccion';
 
@@ -34,7 +33,6 @@ interface Props {
 
 export function ImagenEscena({ escena, indice }: Props) {
   const { proyecto, actualizar } = useProyecto();
-  const esIA = proyecto.track === 'ia';
   const v = proyecto.visual;
 
   return (
@@ -87,7 +85,7 @@ export function ImagenEscena({ escena, indice }: Props) {
 
         <aside className="nv-tarjeta nv-imagen__lado">
           <FotoEscena escena={escena} />
-          {esIA ? <ImagenIA /> : <ImagenMU escena={escena} indice={indice} />}
+          <LadoImagen escena={escena} indice={indice} />
         </aside>
       </div>
     </div>
@@ -98,7 +96,6 @@ export function ImagenEscena({ escena, indice }: Props) {
 function FotoEscena({ escena }: { escena: Escena | null }) {
   const { proyecto, actualizar } = useProyecto();
   const [leyendo, setLeyendo] = useState(false);
-  const esIA = proyecto.track === 'ia';
 
   const elegirFoto = (archivo: File | undefined) => {
     if (!archivo) return;
@@ -131,24 +128,22 @@ function FotoEscena({ escena }: { escena: Escena | null }) {
       <span className="nv-foto__texto">
         <strong>{escena ? 'Tu foto es el material' : 'Foto para toda la pieza'}</strong>
         <span className="nv-campo__fila">
-          <label className={`${esIA ? 'nv-ia' : 'nv-mu'} nv-enlace-label`}>
+          <label className="nv-acento nv-enlace-label">
             {fotoUrl ? 'Cambiar foto' : 'Elegir foto'}
             <input type="file" accept="image/*" hidden onChange={(ev) => elegirFoto(ev.target.files?.[0])} />
           </label>
-          {!esIA && (
-            <label className="nv-mu nv-enlace-label">
-              {leyendo ? 'Leyendo…' : 'Usar colores de otra imagen'}
-              <input type="file" accept="image/*" hidden onChange={(ev) => void coloresDeImagen(ev.target.files?.[0])} />
-            </label>
-          )}
+          <label className="nv-acento nv-enlace-label">
+            {leyendo ? 'Leyendo…' : 'Usar colores de otra imagen'}
+            <input type="file" accept="image/*" hidden onChange={(ev) => void coloresDeImagen(ev.target.files?.[0])} />
+          </label>
         </span>
       </span>
     </div>
   );
 }
 
-/** Lab de IA: qué mandos del visual se mueven solos con un dato. */
-function ImagenIA() {
+/** Datos: qué mandos del visual se mueven solos según un dato. */
+function SeccionDatos() {
   const { proyecto, actualizar } = useProyecto();
   const alg = algoritmoDe(proyecto.visual.algoritmo);
   const valores = { ...valoresPorDefecto(alg), ...(proyecto.visual.parametros[alg.id] ?? {}) };
@@ -171,13 +166,11 @@ function ImagenIA() {
   return (
     <>
       <div className="nv-campo__fila">
-        <strong className="nv-subtitulo">Datos</strong>
         <span className="nv-espacio" />
         <button type="button" className="nv-boton nv-boton--chico nv-boton--sorpresa" onClick={() => actualizar(sorprender)}>
           ✦ Sorprenderme
         </button>
       </div>
-      <span className="nv-tenue nv-chico">Elige qué se mueve solo con un dato. Lo demás lo pones tú.</span>
       <ParametrosDatos clave="conexionesVisual" grupos={[{ titulo: NOMBRE_ESTILO[alg.id], parametros }]} />
     </>
   );
@@ -232,14 +225,89 @@ function useGrabarEnEscena(escena: Escena | null, indice: number, alGuardar: (ge
   return { grabando, empezar, parar: () => motorAudio.detener() };
 }
 
-function ImagenMU({ escena, indice }: { escena: Escena | null; indice: number }) {
+/** Cuál de las tres formas de mover la imagen se ve. */
+type Mover = 'datos' | 'reacciones' | 'vivo';
+
+const FORMAS: { id: Mover; nombre: string; ayuda: string }[] = [
+  { id: 'datos', nombre: 'Datos', ayuda: 'Un mando se mueve solo según un dato' },
+  { id: 'reacciones', nombre: 'Reacciones', ayuda: 'Cuando suena algo, la imagen hace un efecto' },
+  { id: 'vivo', nombre: 'Tocar en vivo', ayuda: 'Tú mueves la imagen con el dedo mientras suena' },
+];
+
+/** Las tres formas de mover la imagen. Las dos últimas son de cada escena. */
+function LadoImagen({ escena, indice }: { escena: Escena | null; indice: number }) {
+  const [forma, setForma] = useState<Mover>('datos');
+  const visibles = escena ? FORMAS : FORMAS.slice(0, 1);
+  const actual = visibles.some((f) => f.id === forma) ? forma : 'datos';
+  return (
+    <>
+      <div className="nv-selector nv-selector--lleno" role="tablist" aria-label="Cómo mover la imagen" data-tour="mover-imagen">
+        {visibles.map((f) => (
+          <button
+            key={f.id}
+            type="button"
+            role="tab"
+            aria-selected={actual === f.id}
+            title={f.ayuda}
+            className={`nv-selector__op ${actual === f.id ? 'nv-selector__op--activa' : ''}`}
+            onClick={() => setForma(f.id)}
+          >
+            {f.nombre}
+          </button>
+        ))}
+      </div>
+      {actual !== 'datos' && <span className="nv-tenue nv-chico">{FORMAS.find((f) => f.id === actual)?.ayuda}.</span>}
+      {actual === 'datos' && <SeccionDatos />}
+      {actual === 'reacciones' && escena && <SeccionReacciones escena={escena} />}
+      {actual === 'vivo' && escena && <SeccionVivo escena={escena} indice={indice} />}
+      {!escena && (
+        <span className="nv-tenue nv-chico nv-italica">
+          Dentro de cada escena también eliges sus reacciones y tocas la imagen en vivo.
+        </span>
+      )}
+    </>
+  );
+}
+
+/** Reacciones: el movimiento de fondo y «cuando suena… la imagen hace…». */
+function SeccionReacciones({ escena }: { escena: Escena }) {
+  const { actualizar } = useProyecto();
+  return (
+    <>
+      <div className="nv-campo">
+        <span className="nv-campo__titulo">Movimiento de fondo con el sonido</span>
+        <div className="nv-selector nv-selector--lleno">
+          {(['bombo', 'voz', 'quieta'] as ReaccionVisual[]).map((r) => (
+            <button
+              key={r}
+              type="button"
+              className={`nv-selector__op ${(escena.reaccion ?? 'bombo') === r ? 'nv-selector__op--activa' : ''}`}
+              onClick={() =>
+                actualizar((p) => {
+                  const e = buscarEscena(p, escena.id);
+                  if (e) e.reaccion = r;
+                })
+              }
+            >
+              {NOMBRE_REACCION[r]}
+            </button>
+          ))}
+        </div>
+      </div>
+      <ReaccionesImagen escena={escena} />
+    </>
+  );
+}
+
+/** Tocar en vivo: el cuadro, los golpes de imagen y grabarlos mientras suena. */
+function SeccionVivo({ escena, indice }: { escena: Escena; indice: number }) {
   const { actualizar } = useProyecto();
   const cuadro = useRef<HTMLDivElement>(null);
   const [punto, setPunto] = useState<{ x: number; y: number } | null>(null);
 
   const { grabando, empezar, parar } = useGrabarEnEscena(escena, indice, (gesto, golpes) =>
     actualizar((p) => {
-      const e = escena && buscarEscena(p, escena.id);
+      const e = buscarEscena(p, escena.id);
       if (!e) return;
       if (gesto.length > 1) e.gestoVisual = gesto;
       if (golpes.length > 0) e.golpesVisuales = golpes;
@@ -262,98 +330,63 @@ function ImagenMU({ escena, indice }: { escena: Escena | null; indice: number })
 
   return (
     <>
-      {escena ? (
-        <>
-          <div className="nv-campo">
-            <span className="nv-campo__titulo">Movimiento de fondo con el sonido</span>
-            <div className="nv-selector nv-selector--lleno">
-              {(['bombo', 'voz', 'quieta'] as ReaccionVisual[]).map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  className={`nv-selector__op ${(escena.reaccion ?? 'bombo') === r ? 'nv-selector__op--activa nv-selector__op--mu' : ''}`}
-                  onClick={() =>
-                    actualizar((p) => {
-                      const e = buscarEscena(p, escena.id);
-                      if (e) e.reaccion = r;
-                    })
-                  }
-                >
-                  {NOMBRE_REACCION[r]}
-                </button>
-              ))}
-            </div>
-          </div>
+      <div className="nv-jugar">
+        <div
+          ref={cuadro}
+          className="nv-xy nv-xy--chico"
+          onPointerDown={(ev) => {
+            ev.currentTarget.setPointerCapture(ev.pointerId);
+            leer(ev);
+          }}
+          onPointerMove={(ev) => punto && leer(ev)}
+          onPointerUp={soltar}
+          onPointerCancel={soltar}
+        >
+          <span className="nv-xy__eje nv-xy__eje--arriba">luminosa</span>
+          <span className="nv-xy__eje nv-xy__eje--abajo">oscura</span>
+          <span className="nv-xy__eje nv-xy__eje--derecha">caótica →</span>
+          {punto && <span className="nv-xy__punto" style={{ left: `${punto.x * 100}%`, top: `${(1 - punto.y) * 100}%` }} />}
+        </div>
+        <div className="nv-pads">
+          {ORDEN_GOLPES.map((g) => (
+            <button key={g} type="button" className="nv-pad" onPointerDown={() => enVivo.disparar(g)}>
+              {NOMBRE_GOLPE[g]}
+            </button>
+          ))}
+        </div>
+      </div>
 
-          <ReaccionesMU escena={escena} />
-
-          <div className="nv-jugar">
-            <div
-              ref={cuadro}
-              className="nv-xy nv-xy--chico"
-              onPointerDown={(ev) => {
-                ev.currentTarget.setPointerCapture(ev.pointerId);
-                leer(ev);
-              }}
-              onPointerMove={(ev) => punto && leer(ev)}
-              onPointerUp={soltar}
-              onPointerCancel={soltar}
-            >
-              <span className="nv-xy__eje nv-xy__eje--arriba">luminosa</span>
-              <span className="nv-xy__eje nv-xy__eje--abajo">oscura</span>
-              <span className="nv-xy__eje nv-xy__eje--derecha">caótica →</span>
-              {punto && <span className="nv-xy__punto" style={{ left: `${punto.x * 100}%`, top: `${(1 - punto.y) * 100}%` }} />}
-            </div>
-            <div className="nv-pads">
-              {ORDEN_GOLPES.map((g) => (
-                <button key={g} type="button" className="nv-pad" onPointerDown={() => enVivo.disparar(g)}>
-                  {NOMBRE_GOLPE[g]}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <span className="nv-espacio-v" />
-          <div className="nv-campo__fila">
-            <span className="nv-tenue nv-chico">
-              {marcas > 0 ? 'Esta escena ya tiene lo que tocaste grabado.' : 'Toca el cuadro y los botones mientras suena.'}
-            </span>
-            <span className="nv-espacio" />
-            {marcas > 0 && (
-              <button
-                type="button"
-                className="nv-enlace nv-chico"
-                onClick={() =>
-                  actualizar((p) => {
-                    const e = buscarEscena(p, escena.id);
-                    if (!e) return;
-                    e.gestoVisual = undefined;
-                    e.golpesVisuales = undefined;
-                  })
-                }
-              >
-                borrar
-              </button>
-            )}
-          </div>
+      <span className="nv-espacio-v" />
+      <div className="nv-campo__fila">
+        <span className="nv-tenue nv-chico">
+          {marcas > 0 ? 'Esta escena ya tiene lo que tocaste grabado.' : 'Toca el cuadro y los botones mientras suena.'}
+        </span>
+        <span className="nv-espacio" />
+        {marcas > 0 && (
           <button
             type="button"
-            className={`nv-boton nv-boton--rojo nv-lleno ${grabando ? 'nv-latiendo' : ''}`}
-            onClick={() => (grabando ? parar() : empezar())}
+            className="nv-enlace nv-chico"
+            onClick={() =>
+              actualizar((p) => {
+                const e = buscarEscena(p, escena.id);
+                if (!e) return;
+                e.gestoVisual = undefined;
+                e.golpesVisuales = undefined;
+              })
+            }
           >
-            <span className="nv-punto nv-punto--blanco" />
-            {grabando ? 'Grabando… toca para parar' : 'Grabar mientras suena'}
+            borrar
           </button>
-        </>
-      ) : (
-        <>
-          <span className="nv-espacio-v" />
-          <span className="nv-tenue nv-chico nv-italica">
-            Dentro de cada escena eliges cómo reacciona y tocas el visual en vivo.
-          </span>
-        </>
-      )}
-      <AjustesEstilo />
+        )}
+      </div>
+      <button
+        type="button"
+        className={`nv-boton nv-boton--rojo nv-lleno ${grabando ? 'nv-latiendo' : ''}`}
+        onClick={() => (grabando ? parar() : empezar())}
+      >
+        <span className="nv-punto nv-punto--blanco" />
+        {grabando ? 'Grabando… toca para parar' : 'Grabar mientras suena'}
+      </button>
     </>
   );
 }

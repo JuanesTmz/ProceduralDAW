@@ -65,7 +65,7 @@ export function SelectorDato({ fuentes, actual, elegida, alElegir }: Props) {
             {elegida.etiqueta}
           </>
         ) : (
-          'Sin dato'
+          'Elegir un dato'
         )}{' '}
         ▾
       </button>
@@ -79,7 +79,7 @@ export function SelectorDato({ fuentes, actual, elegida, alElegir }: Props) {
               setAbierto(false);
             }}
           >
-            Sin dato · lo pongo yo
+            Ninguno · lo pongo yo
           </button>
           <div className="nv-datos-menu__pestanas" role="tablist">
             {familias.map((fam) => (

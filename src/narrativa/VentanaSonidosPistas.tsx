@@ -11,6 +11,7 @@
 import { useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { motorAudio } from '../audio/motorAudio';
+import { useVistaPrevia, vistaPrevia } from '../audio/vistaPrevia';
 import { useProyecto } from '../estado/ProyectoContext';
 import { crearUrl } from '../estado/guardado';
 import { NOMBRES_SONIDO, nuevoId } from '../estado/proyecto';
@@ -51,6 +52,7 @@ export function VentanaSonidosPistas({ pista, alCerrar }: Props) {
       actualizar((p) => ponerSonido(p, elegida, valor));
     }
     // Suena al elegirlo. La batería la toca el motor cuando ya tiene el sonido nuevo.
+    vistaPrevia.parar();
     if (url) oirUrl(url);
     else window.setTimeout(() => void motorAudio.escucharFila(id), 150);
   };
@@ -60,6 +62,17 @@ export function VentanaSonidosPistas({ pista, alCerrar }: Props) {
       <div className="nv nv--incrustado nv-sonidos">
         <div className="nv-sonidos__pistas">
           <span className="nv-etiqueta nv-tenue">PISTAS</span>
+          <div className={`nv-sonidos__pista ${esMelodia ? 'nv-sonidos__pista--activa' : ''}`}>
+            <button type="button" onClick={() => setElegida(ID_MELODIA)}>
+              <span className="nv-punto" style={{ background: '#5fd4ff' }} />
+              <span className="nv-sonidos__nombre">
+                Melodía
+                <span className="nv-tenue nv-chico">
+                  {melodia.instrumento === 'sample' ? melodia.nombreSample ?? 'tu sonido' : 'sintetizador'}
+                </span>
+              </span>
+            </button>
+          </div>
           {filas.map((f) => (
             <div key={f.id} className={`nv-sonidos__pista ${elegida === f.id ? 'nv-sonidos__pista--activa' : ''}`}>
               <button type="button" onClick={() => setElegida(f.id)} style={{ ['--color' as string]: f.color }}>
@@ -82,17 +95,6 @@ export function VentanaSonidosPistas({ pista, alCerrar }: Props) {
               )}
             </div>
           ))}
-          <div className={`nv-sonidos__pista ${esMelodia ? 'nv-sonidos__pista--activa' : ''}`}>
-            <button type="button" onClick={() => setElegida(ID_MELODIA)}>
-              <span className="nv-punto" style={{ background: '#5fd4ff' }} />
-              <span className="nv-sonidos__nombre">
-                Melodía
-                <span className="nv-tenue nv-chico">
-                  {melodia.instrumento === 'sample' ? melodia.nombreSample ?? 'tu sonido' : 'sintetizador'}
-                </span>
-              </span>
-            </button>
-          </div>
           <button
             type="button"
             className={`nv-conectar ${elegida === NUEVA ? 'nv-conectar--activo' : ''}`}
@@ -118,7 +120,7 @@ export function VentanaSonidosPistas({ pista, alCerrar }: Props) {
             <>
               <Grupo titulo="Batería">
                 {KIT.map((t) => (
-                  <Ficha key={t} activa={actual === t} onClick={() => elegir(t)} alOir={() => void motorAudio.probarTipo(t)}>
+                  <Ficha key={t} clave={`tipo:${t}`} activa={actual === t} onClick={() => elegir(t)} alOir={() => vistaPrevia.golpe(`tipo:${t}`, () => void motorAudio.probarTipo(t))}>
                     {NOMBRES_SONIDO[t]}
                   </Ficha>
                 ))}
@@ -126,7 +128,7 @@ export function VentanaSonidosPistas({ pista, alCerrar }: Props) {
               {(['percusion', 'ciudad', 'melodico'] as const).map((g) => (
                 <Grupo key={g} titulo={NOMBRE_GRUPO[g]}>
                   {SONOTECA.filter((x) => x.grupo === g).map((x) => (
-                    <Ficha key={x.id} activa={actual === `sonoteca:${x.id}`} onClick={() => elegir(`sonoteca:${x.id}`, x.url)} alOir={() => oirUrl(x.url)}>
+                    <Ficha key={x.id} clave={`url:${x.url}`} activa={actual === `sonoteca:${x.id}`} onClick={() => elegir(`sonoteca:${x.id}`, x.url)} alOir={() => oirUrl(x.url)}>
                       {x.nombre}
                     </Ficha>
                   ))}
@@ -158,17 +160,28 @@ function Ficha({
   activa,
   onClick,
   alOir,
+  clave,
   children,
 }: {
   activa: boolean;
   onClick: () => void;
   alOir: () => void;
+  /** Con qué nombre suena en el centro de escucha (para saber si es este el que suena). */
+  clave: string;
   children: React.ReactNode;
 }) {
+  const { suena } = useVistaPrevia();
+  const sonando = suena(clave);
   return (
     <span className={`nv-sonido ${activa ? 'nv-sonido--activo' : ''}`}>
-      <button type="button" className="nv-sonido__oir" aria-label="Escuchar" title="Escuchar sin elegir" onClick={alOir}>
-        ▶
+      <button
+        type="button"
+        className="nv-sonido__oir"
+        aria-label={sonando ? 'Pausar' : 'Escuchar'}
+        title={sonando ? 'Pausar' : 'Escuchar sin elegir'}
+        onClick={alOir}
+      >
+        {sonando ? '❚❚' : '▶'}
       </button>
       <button type="button" className="nv-sonido__elegir" onClick={onClick} title="Usar este sonido">
         {activa && '✓ '}
@@ -178,12 +191,9 @@ function Ficha({
   );
 }
 
-/** Oye un archivo de sonido sin elegirlo. Si ya sonaba otro, lo corta. */
-let muestra: HTMLAudioElement | null = null;
+/** Oye un archivo de sonido sin elegirlo. Si ya sonaba otro, lo corta; otra vez lo pausa. */
 function oirUrl(url: string) {
-  muestra?.pause();
-  muestra = new Audio(url);
-  void muestra.play();
+  vistaPrevia.oir(`url:${url}`, url);
 }
 
 /**
@@ -239,14 +249,12 @@ function EfectosPropios({ actual, alUsar }: { actual: string; alUsar?: (id: stri
       <div className="nv-sonidos__fichas">
         {proyecto.sonidos.map((s) =>
           alUsar ? (
-            <Ficha key={s.id} activa={actual === `propio:${s.id}`} onClick={() => alUsar(s.id, s.url)} alOir={() => oirUrl(s.url)}>
+            <Ficha key={s.id} clave={`url:${s.url}`} activa={actual === `propio:${s.id}`} onClick={() => alUsar(s.id, s.url)} alOir={() => oirUrl(s.url)}>
               🎙 {s.nombre}
             </Ficha>
           ) : (
             <span key={s.id} className="nv-sonido nv-sonido--quieto">
-              <button type="button" className="nv-sonido__oir" aria-label="Escuchar" onClick={() => oirUrl(s.url)}>
-                ▶
-              </button>
+              <BotonOir url={s.url} />
               <span className="nv-sonido__elegir">🎙 {s.nombre}</span>
             </span>
           ),
@@ -277,5 +285,21 @@ function EfectosPropios({ actual, alUsar }: { actual: string; alUsar?: (id: stri
         <span className="nv-tenue nv-chico">Para la melodía, elige tu efecto arriba en «Tus grabaciones».</span>
       )}
     </div>
+  );
+}
+
+/** ▶ de un efecto propio: cambia a ❚❚ mientras suena y lo pausa al tocarlo. */
+function BotonOir({ url }: { url: string }) {
+  const { suena } = useVistaPrevia();
+  const sonando = suena(`url:${url}`);
+  return (
+    <button
+      type="button"
+      className="nv-sonido__oir"
+      aria-label={sonando ? 'Pausar' : 'Escuchar'}
+      onClick={() => oirUrl(url)}
+    >
+      {sonando ? '❚❚' : '▶'}
+    </button>
   );
 }

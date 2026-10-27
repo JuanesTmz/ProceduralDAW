@@ -17,6 +17,8 @@ import { SelectorInstrumento } from '../narrativa/SelectorInstrumento';
 import { useCabezaLectora } from '../hooks/useCabezaLectora';
 import { usePintarArrastrando } from '../hooks/usePintarArrastrando';
 import { FILAS_MATRIZ } from '../estado/tipos';
+import { recorrido } from '../estado/escenas';
+import { borrarNotas, notasDe, ponerNota } from '../estado/patronEscena';
 import {
   ETIQUETAS_ESCALA,
   gradosPorOctava,
@@ -47,6 +49,9 @@ const COLOR_MATRIZ = '#5fd4ff';
 export function VentanaMatriz({ escena = -1, alCerrar }: { escena?: number; alCerrar: () => void }) {
   const { proyecto, actualizar } = useProyecto();
   const { melodia, cantidadPasos } = proyecto.patron;
+  // Dentro de una escena las notas son las suyas; si no tiene propias, las de General.
+  const escenaId = escena >= 0 ? recorrido(proyecto)[escena]?.id ?? null : null;
+  const notas = notasDe(proyecto, escenaId);
   const celdas = useRef(new Map<string, HTMLButtonElement>());
   const pintando = useRef<boolean | null>(null);
   const cabeza = useRef<HTMLDivElement>(null);
@@ -54,8 +59,8 @@ export function VentanaMatriz({ escena = -1, alCerrar }: { escena?: number; alCe
   useCabezaLectora(cabeza, cantidadPasos);
 
   // Las notas vivas se leen desde el reloj de audio sin re-dibujar React.
-  const notasVivas = useRef(melodia.notas);
-  notasVivas.current = melodia.notas;
+  const notasVivas = useRef(notas);
+  notasVivas.current = notas;
 
   // Al pasar la cabeza lectora, las casillas encendidas de esa columna laten.
   useEffect(
@@ -78,17 +83,10 @@ export function VentanaMatriz({ escena = -1, alCerrar }: { escena?: number; alCe
   const porOctava = gradosPorOctava(melodia.escala);
   // De agudo a grave, como en un pentagrama.
   const filas = Array.from({ length: FILAS_MATRIZ }, (_, i) => FILAS_MATRIZ - 1 - i);
-  const encendidas = new Set(melodia.notas.map((n) => `${n.grado}:${n.paso}`));
+  const encendidas = new Set(notas.map((n) => `${n.grado}:${n.paso}`));
 
   const escribir = (grado: number, paso: number, encender: boolean) => {
-    actualizar((p) => {
-      const m = p.patron.melodia;
-      const existe = m.notas.some((n) => n.grado === grado && n.paso === paso);
-      if (encender && !existe) m.notas.push({ grado, paso });
-      else if (!encender && existe) {
-        m.notas = m.notas.filter((n) => !(n.grado === grado && n.paso === paso));
-      }
-    });
+    actualizar((p) => ponerNota(p, escenaId, grado, paso, encender));
   };
 
   const empezarAPintar = (grado: number, paso: number) => {
@@ -126,7 +124,7 @@ export function VentanaMatriz({ escena = -1, alCerrar }: { escena?: number; alCe
     <Ventana
       titulo="Matriz"
       guia="ventana-matriz"
-      nota={`${melodia.notas.length} ${melodia.notas.length === 1 ? 'nota' : 'notas'} · todo lo que pongas suena en escala`}
+      nota={`${notas.length} ${notas.length === 1 ? 'nota' : 'notas'} · todo lo que pongas suena en escala`}
       color={COLOR_MATRIZ}
       ancha
       alta
@@ -140,10 +138,10 @@ export function VentanaMatriz({ escena = -1, alCerrar }: { escena?: number; alCe
           <button
             type="button"
             className="boton boton--peligro"
-            disabled={melodia.notas.length === 0}
+            disabled={notas.length === 0}
             onClick={() =>
               actualizar((p) => {
-                p.patron.melodia.notas = [];
+                borrarNotas(p, escenaId);
               })
             }
           >

@@ -263,6 +263,13 @@ export interface Escena {
   gesto?: PuntoGesto[];
   /** Lab de IA: dónde quedó el cuadro de cada pista en esta escena (si se movió aquí). */
   reglas?: Record<string, { golpes: number; azar: number }>;
+  /**
+   * Las celdas propias de cada capa en esta escena. Lo escribe el Pad o se
+   * dibuja a mano; si una capa no está aquí, la escena usa las de General.
+   */
+  golpes?: Record<string, { pasos: boolean[]; probabilidad: number[] }>;
+  /** Las notas propias de la melodía en esta escena (si no, las de General). */
+  notas?: NotaMelodia[];
   /** Qué versión de la máquina suena (lab de IA): cambia el azar, no las reglas. */
   version: number;
   /** Desde qué versión empiezan las tres propuestas que se muestran. */

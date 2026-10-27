@@ -1,4 +1,4 @@
-# SONORA — narrativa musical
+# SONORA — narrativa sonora
 
 Herramienta web para contar una historia de Medellín envuelta en música que
 **se genera por reglas** y tiene **estructura** (intro, cuerpo, giro, cierre).
@@ -28,7 +28,7 @@ por paso, ritmos euclidianos y mutación.
 
 | Paso | Qué hace |
 |---|---|
-| **Pantalla 0** | Elegir Urban Lab (IA / Música Urbana). Cambia el orden de la guía y su lenguaje, **no** el acceso: las dos rutas usan todas las herramientas. |
+| **Sin elegir lab** | Ya no hay dos labs: todos usan la misma interfaz, con las mecánicas de IA y de Música Urbana juntas (Pad, celdas, datos, reacciones y tocar en vivo). |
 | **Historia** | Qué vas a contar y por qué es Medellín. |
 | **Monólogo** | Editor con contador de ~100 palabras, grabadora de voz (o subir audio), y reparto del texto entre las secciones. |
 | **Arco** | La curva del relato. Cada punto escribe la intensidad y las capas de una sección. |
