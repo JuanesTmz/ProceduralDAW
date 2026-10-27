@@ -140,6 +140,7 @@ export function VentanaGolpes({ inicial, escena = -1, alCerrar }: Props) {
     <Ventana
       titulo="Golpes"
       guia="ventana-golpes"
+      video="golpes"
       nota={nombre ? `Estás armando ${nombre}` : 'Elige un sonido y dibuja su patrón'}
       color={color}
       ancha

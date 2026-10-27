@@ -97,7 +97,7 @@ function Dibujo() {
           </Pos>
           <Pos x={640} y={455} escala={resorte(f, 190, 260, 14)}>
             <Etiqueta color={C.crema} tam={22}>
-              Golpes · Bombo ← La fuerza
+              Golpes · Bombo, según La fuerza
             </Etiqueta>
           </Pos>
 
@@ -124,7 +124,7 @@ function Dibujo() {
           </Pos>
           <Pos x={640} y={380} escala={resorte(f, 432)}>
             <Etiqueta color={C.crema} tam={22}>
-              La música se aparta ← La voz
+              La música se aparta, según La voz
             </Etiqueta>
           </Pos>
           <Pos x={980} y={330} escala={resorte(f, 438)}>
@@ -144,11 +144,11 @@ function Dibujo() {
 
       <Rotulos
         lista={[
-          [0, 120, 'Eliges un *dato: la fuerza de cada escena'],
-          [120, 220, 'Lo *conectas a algo que suene: los golpes del bombo'],
+          [0, 120, 'Un *dato de tu historia: la fuerza de cada escena'],
+          [120, 220, 'Eliges *qué se mueve según él: los golpes del bombo'],
           [220, 425, 'Y la música cambia *sola en cada escena'],
-          [425, 565, 'Otro: cuando la *voz habla, la música se *aparta'],
-          [565, 600, 'Tú eliges la *relación. La máquina la *aplica'],
+          [425, 565, 'Otro: según la *voz, la música se *aparta'],
+          [565, 600, 'Con *◔ Ver miras cómo queda en *toda la pieza'],
         ]}
       />
       <Fundido duracion={DURA} />

@@ -13,6 +13,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import type { ReactNode } from 'react';
 import { Guia } from '../narrativa/Guia';
+import { BotonVideo } from '../narrativa/BotonTutorial';
 import type { Pantalla } from '../narrativa/pasosGuia';
 
 interface Props {
@@ -30,9 +31,11 @@ interface Props {
   children: ReactNode;
   /** El tour de esta ventana: pone el botón «Guía» y arranca solo la primera vez. */
   guia?: Pantalla;
+  /** El video corto que explica esta ventana: pone un botón «▶ Video» en la cabecera. */
+  video?: string;
 }
 
-export function Ventana({ titulo, nota, color, alCerrar, pie, ancha, alta, children, guia }: Props) {
+export function Ventana({ titulo, nota, color, alCerrar, pie, ancha, alta, children, guia, video }: Props) {
   const caja = useRef<HTMLDivElement>(null);
   const devolverFoco = useRef<HTMLElement | null>(null);
 
@@ -101,6 +104,7 @@ export function Ventana({ titulo, nota, color, alCerrar, pie, ancha, alta, child
             <h2 className="ventana__titulo">{titulo}</h2>
             {nota && <span className="ventana__nota">{nota}</span>}
           </div>
+          {video && <BotonVideo id={video} />}
           {guia && <Guia pantalla={guia} />}
           <button type="button" className="ventana__cerrar" onClick={cerrar} aria-label="Cerrar">
             ✕

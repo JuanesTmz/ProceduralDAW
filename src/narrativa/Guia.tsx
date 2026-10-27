@@ -32,6 +32,7 @@ const NOMBRES: Record<string, string> = {
   pad: 'El Pad',
   datos: 'Los datos',
   visual: 'El visual reacciona',
+  envivo: 'Tocar la imagen en vivo',
 };
 
 /** Qué videos tocan en cada pantalla. */
@@ -46,7 +47,7 @@ function videosDe(pantalla: Pantalla): string[] {
     case 'escena-musica':
       return ['emocion', 'pad', 'golpes', 'datos', 'cajitas'];
     case 'escena-visual':
-      return ['visual', 'cajitas'];
+      return ['visual', 'envivo', 'datos', 'cajitas'];
     case 'ventana-golpes':
       return ['golpes'];
     case 'ventana-matriz':

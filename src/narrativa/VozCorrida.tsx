@@ -14,6 +14,7 @@ import { formatearReloj } from '../estado/proyecto';
 import { EMOCIONES, moverLimiteVoz, repartirVozCorrida } from '../estado/escenas';
 import { useGrabadora } from '../hooks/useGrabadora';
 import { Onda } from './VozEscena';
+import { BotonVideo } from './BotonTutorial';
 
 export function VozCorrida({ alSeguir }: { alSeguir: () => void }) {
   const { proyecto, actualizar } = useProyecto();
@@ -56,7 +57,11 @@ export function VozCorrida({ alSeguir }: { alSeguir: () => void }) {
 
   return (
     <section className="nv-apuntador nv-apuntador--corrido">
-      <span className="nv-etiqueta nv-tenue">TODO EL MONÓLOGO DE CORRIDO</span>
+      <div className="nv-campo__fila">
+        <span className="nv-etiqueta nv-tenue">TODO EL MONÓLOGO DE CORRIDO</span>
+        <span className="nv-espacio" />
+        <BotonVideo id="vozcorrida" texto="¿Cómo se graba de corrido?" />
+      </div>
       <p className={`nv-apuntador__texto nv-apuntador__texto--corrido ${grabando ? 'nv-apuntador__texto--vivo' : ''}`}>
         {escenas.map((e, i) => (
           <span key={e.id} style={{ color: sonando === i ? EMOCIONES[e.emocion].color : undefined }}>

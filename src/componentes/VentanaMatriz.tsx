@@ -124,6 +124,7 @@ export function VentanaMatriz({ escena = -1, alCerrar }: { escena?: number; alCe
     <Ventana
       titulo="Matriz"
       guia="ventana-matriz"
+      video="matriz"
       nota={`${notas.length} ${notas.length === 1 ? 'nota' : 'notas'} · todo lo que pongas suena en escala`}
       color={COLOR_MATRIZ}
       ancha

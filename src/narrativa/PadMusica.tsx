@@ -190,6 +190,7 @@ export function VentanaPad({ id, escena, alCerrar }: { id: string; escena: Escen
       nota={escena ? `Solo para «${escena.respiro ? 'Respiro' : escena.nombre}»` : 'Para toda la pieza'}
       color={pista.color}
       guia="ventana-pad"
+      video="pad"
       alCerrar={alCerrar}
       pie={
         <>

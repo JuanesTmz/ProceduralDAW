@@ -25,6 +25,7 @@ import { fondoEscena } from './PasoEscenas';
 import { ReaccionesImagen } from './ReaccionesImagen';
 import { sorprender } from '../estado/imagen';
 import { useReproduccion } from './useReproduccion';
+import { BotonVideo } from './BotonTutorial';
 
 interface Props {
   escena: Escena | null;
@@ -234,6 +235,9 @@ const FORMAS: { id: Mover; nombre: string; ayuda: string }[] = [
   { id: 'vivo', nombre: 'Tocar en vivo', ayuda: 'Tú mueves la imagen con el dedo mientras suena' },
 ];
 
+/** El video que explica cada forma. */
+const VIDEO_DE: Record<Mover, string> = { datos: 'datos', reacciones: 'visual', vivo: 'envivo' };
+
 /** Las tres formas de mover la imagen. Las dos últimas son de cada escena. */
 function LadoImagen({ escena, indice }: { escena: Escena | null; indice: number }) {
   const [forma, setForma] = useState<Mover>('datos');
@@ -256,7 +260,11 @@ function LadoImagen({ escena, indice }: { escena: Escena | null; indice: number 
           </button>
         ))}
       </div>
-      {actual !== 'datos' && <span className="nv-tenue nv-chico">{FORMAS.find((f) => f.id === actual)?.ayuda}.</span>}
+      <div className="nv-campo__fila">
+        {actual !== 'datos' && <span className="nv-tenue nv-chico">{FORMAS.find((f) => f.id === actual)?.ayuda}.</span>}
+        <span className="nv-espacio" />
+        <BotonVideo id={VIDEO_DE[actual]} />
+      </div>
       {actual === 'datos' && <SeccionDatos />}
       {actual === 'reacciones' && escena && <SeccionReacciones escena={escena} />}
       {actual === 'vivo' && escena && <SeccionVivo escena={escena} indice={indice} />}

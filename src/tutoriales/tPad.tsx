@@ -1,5 +1,5 @@
 /**
- * Tutorial: el Pad. Una regla en vez de golpes.
+ * Tutorial: el Pad. Una regla que escribe los golpes.
  *
  * La Maquinita aplica la regla del cuadro: la mano lleva el punto a la
  * derecha y los golpes caen repartidos parejo; lo sube y entra el azar
@@ -141,11 +141,11 @@ function Dibujo() {
 
       <Rotulos
         lista={[
-          [0, 90, 'Aquí no *dibujas golpes: pones una *regla'],
+          [0, 90, 'Pones una *regla y el Pad *escribe los golpes'],
           [90, 240, 'A la *derecha: más golpes, repartidos *parejo'],
           [240, 400, '*Arriba entra el *azar: unos golpes suenan a veces'],
-          [400, 585, 'Prueba las *cuatro esquinas'],
-          [585, 600, 'En una escena, vale *solo para ella'],
+          [400, 520, 'Prueba las *cuatro esquinas'],
+          [520, 600, 'Después los *retocas a mano en ✎ *Golpes'],
         ]}
       />
       <Fundido duracion={DURA} />
@@ -155,8 +155,8 @@ function Dibujo() {
 
 export const tutorialPad: Composicion = {
   id: 'pad',
-  titulo: 'El Pad: una regla en vez de golpes',
-  descripcion: 'Cómo el cuadro reparte los golpes y cómo entra el azar.',
+  titulo: 'El Pad: una regla que escribe los golpes',
+  descripcion: 'Cómo el cuadro reparte los golpes, cómo entra el azar y cómo retocarlos.',
   duracion: DURA,
   Dibujo,
   sonidos,

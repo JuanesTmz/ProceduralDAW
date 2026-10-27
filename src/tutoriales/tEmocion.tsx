@@ -1,9 +1,10 @@
 /**
- * Tutorial: la emoción y la fuerza cambian la música.
+ * Tutorial: la emoción y la intensidad cambian la música.
  *
  * Los mismos sonidos de General se reparten en dos escenas: en Calma
- * suenan lentos, pocos y suaves; en Euforia, rápidos, todos y brillantes.
- * Al final, la fuerza decide cuántas capas entran.
+ * suenan lentos y en una escala tranquila; en Euforia, rápidos y en una
+ * escala brillante. Suenan todas las capas que no se callaron a mano.
+ * Al final, la intensidad decide qué tan fuerte golpean.
  */
 import { EMOCIONES } from '../estado/escenas';
 import { claves, interpolar, resorte, useFotograma, type Composicion, type Golpe } from './motor';
@@ -26,6 +27,8 @@ for (let f = CALMA[0]; f < CALMA[1]; f++) {
   const t = f - CALMA[0];
   if (t % 20 === 0) sonidos.push({ f, son: { kit: 'bombo', volumen: 0.6 } });
   if (t % 40 === 10) sonidos.push({ f, son: { url: MARIMBA, semitonos: [-5, -3, -7, -5][(t / 40) % 4 | 0], volumen: 0.6 } });
+  if (t % 40 === 30) sonidos.push({ f, son: { kit: 'redoblante', volumen: 0.3 } });
+  if (t % 20 === 10) sonidos.push({ f, son: { kit: 'hihat', volumen: 0.25 } });
 }
 for (let f = EUFORIA[0]; f < EUFORIA[1]; f++) {
   const t = f - EUFORIA[0];
@@ -35,7 +38,7 @@ for (let f = EUFORIA[0]; f < EUFORIA[1]; f++) {
   if (t % 18 === 0) sonidos.push({ f, son: { url: MARIMBA, semitonos: [7, 9, 12, 9][(t / 18) % 4 | 0] } });
 }
 
-function Panel({ emo, activo, capas, cada, x, f, desde }: { emo: 'calma' | 'euforia'; activo: boolean; capas: number; cada: number; x: number; f: number; desde: number }) {
+function Panel({ emo, activo, fuerza, cada, x, f, desde }: { emo: 'calma' | 'euforia'; activo: boolean; fuerza: number; cada: number; x: number; f: number; desde: number }) {
   const perfil = EMOCIONES[emo];
   const t = Math.max(0, f - desde);
   const pulso = activo ? Math.max(0, 1 - (t % cada) / cada) : 0;
@@ -67,12 +70,12 @@ function Panel({ emo, activo, capas, cada, x, f, desde }: { emo: 'calma' | 'eufo
       </svg>
       <div className="tu-panel__capas">
         {CAPAS.map((c, i) => {
-          const on = i < capas;
+          // Suenan todas; la intensidad cambia qué tan fuerte golpean (y cuánto saltan).
           return (
             <span
               key={c.nombre}
               className="tu-chip"
-              style={{ background: on ? c.color : '#ffffff55', transform: on && activo ? `translateY(${-pulso * 10 * (i % 2 ? 0.6 : 1)}px)` : undefined, color: on ? TINTA : '#14161f88' }}
+              style={{ background: c.color, opacity: 0.45 + 0.55 * fuerza, transform: activo ? `translateY(${-pulso * 12 * fuerza * (i % 2 ? 0.6 : 1)}px)` : `scale(${0.9 + 0.15 * fuerza})`, color: TINTA }}
             >
               {c.nombre}
             </span>
@@ -86,13 +89,13 @@ function Panel({ emo, activo, capas, cada, x, f, desde }: { emo: 'calma' | 'eufo
 function Dibujo() {
   const f = useFotograma();
   const separa = resorte(f, 110, 160, 15);
-  const fuerza = Math.round(claves(f, [[520, 1], [580, 5]]));
+  const fuerza = claves(f, [[520, 0.1], [580, 1]]);
 
   return (
     <>
       <Fondo tono={C.cian} acento={C.naranja} />
       <Pos x={190} y={60} escala={resorte(f, 0)}>
-        <Etiqueta color={C.naranja}>EMOCIÓN Y FUERZA</Etiqueta>
+        <Etiqueta color={C.naranja}>EMOCIÓN E INTENSIDAD</Etiqueta>
       </Pos>
 
       {f < 150 && (
@@ -112,8 +115,8 @@ function Dibujo() {
 
       {f >= 110 && (
         <div style={{ position: 'absolute', inset: 0, opacity: separa }}>
-          <Panel emo="calma" activo={f >= CALMA[0] && f < CALMA[1]} capas={f >= 510 ? fuerza : 2} cada={20} x={claves(f, [[110, 400], [190, 120]])} f={f} desde={CALMA[0]} />
-          <Panel emo="euforia" activo={f >= EUFORIA[0] && f < EUFORIA[1]} capas={f >= 510 ? fuerza : 5} cada={9} x={claves(f, [[110, 400], [190, 680]])} f={f} desde={EUFORIA[0]} />
+          <Panel emo="calma" activo={f >= CALMA[0] && f < CALMA[1]} fuerza={f >= 510 ? fuerza : 0.35} cada={20} x={claves(f, [[110, 400], [190, 120]])} f={f} desde={CALMA[0]} />
+          <Panel emo="euforia" activo={f >= EUFORIA[0] && f < EUFORIA[1]} fuerza={f >= 510 ? fuerza : 1} cada={9} x={claves(f, [[110, 400], [190, 680]])} f={f} desde={EUFORIA[0]} />
         </div>
       )}
 
@@ -133,9 +136,9 @@ function Dibujo() {
         lista={[
           [0, 110, 'Los mismos sonidos de *General…'],
           [110, 190, '…suenan distinto según la *emoción de la escena'],
-          [190, 350, '*Calma: lenta, pocas capas, suave'],
-          [350, 510, '*Euforia: rápida, todas las capas, brillante'],
-          [510, 600, 'Y la *fuerza decide cuántas capas entran'],
+          [190, 350, '*Calma: lenta y en una escala *tranquila'],
+          [350, 510, '*Euforia: rápida y en una escala *brillante'],
+          [510, 600, 'Y la *intensidad decide qué tan *fuerte golpean'],
         ]}
       />
       <Fundido duracion={DURA} />
