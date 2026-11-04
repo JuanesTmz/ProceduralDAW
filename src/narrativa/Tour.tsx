@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * El tour guiado: ilumina una parte de la pantalla y una burbuja explica
  * qué es y para qué sirve. Es el mismo sistema de NeuralOracle, sin

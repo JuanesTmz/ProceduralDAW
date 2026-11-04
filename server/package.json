@@ -1,0 +1,33 @@
+{
+  "name": "sonora-servidor",
+  "private": true,
+  "description": "Servidor de SONORA en la nube. Diseñado y desarrollado por Juan Esteban Trillos.",
+  "author": {
+    "name": "Juan Esteban Trillos",
+    "url": "https://www.linkedin.com/in/juan-esteban-trillos"
+  },
+  "type": "module",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env index.js",
+    "dev": "node --watch --env-file-if-exists=.env index.js",
+    "equipo": "node --env-file-if-exists=.env scripts/equipo.js",
+    "plan-c": "node scripts/plan-c.js",
+    "traer-de-azure": "node --env-file-if-exists=.env scripts/traer-de-azure.js",
+    "subir-a-azure": "node --env-file-if-exists=.env scripts/subir-a-azure.js",
+    "prueba": "node --test --test-concurrency=1 \"pruebas/*.test.js\"",
+    "estres": "node pruebas/estres.js"
+  },
+  "dependencies": {
+    "@azure/identity": "^4.14.1",
+    "@azure/storage-blob": "^12.34.0",
+    "express": "^5.3.0",
+    "lib0": "^0.2.119",
+    "mssql": "^12.7.13",
+    "ws": "^8.22.1",
+    "y-protocols": "^1.0.7",
+    "yjs": "^13.6.33"
+  },
+  "devDependencies": {
+    "selfsigned": "^5.5.0"
+  }
+}

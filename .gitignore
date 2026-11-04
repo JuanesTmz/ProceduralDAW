@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# SONORA en la nube
+dist-nube
+server/.datos
+server/.env
+server/.datos-antes-*

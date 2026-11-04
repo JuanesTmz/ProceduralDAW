@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * La barra de arriba: los cuatro pasos, el medidor de 2:30, escuchar la
  * pieza y el lab. Es lo único que se queda fijo en toda la app.
@@ -8,6 +9,8 @@ import { duracionPieza, formatearReloj } from '../estado/proyecto';
 import { DURACION_MAXIMA } from '../estado/escenas';
 import type { ReactNode } from 'react';
 import { useReproduccion } from './useReproduccion';
+import { EstadoNube } from '../nube/EstadoNube';
+import { Caras } from '../nube/Caras';
 
 export type Paso = 'historia' | 'voz' | 'escenas' | 'funcion';
 
@@ -47,6 +50,7 @@ export function Barra({ paso, alCambiar, enEscena, guia }: Props) {
           >
             <span className="nv-paso__num">{i + 1}</span>
             {p.etiqueta}
+            <Caras en={(l) => l.paso === p.id} maximo={2} />
           </button>
         ))}
       </nav>
@@ -76,6 +80,7 @@ export function Barra({ paso, alCambiar, enEscena, guia }: Props) {
         </button>
       )}
       {guia}
+      <EstadoNube />
     </header>
   );
 }

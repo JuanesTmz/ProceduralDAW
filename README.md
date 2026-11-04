@@ -72,3 +72,8 @@ El modelo de interacción del secuenciador se inspira en las cajas de ritmos por
 pasos, y el de la matriz tonal en ToneMatrix. **La implementación es original**:
 no se usa código, sonidos ni marca de terceros. Toda la percusión está
 sintetizada con Tone.js.
+
+## Créditos
+
+SONORA fue diseñado y desarrollado por **Juan Esteban Trillos**
+([www.linkedin.com/in/juan-esteban-trillos](https://www.linkedin.com/in/juan-esteban-trillos)).

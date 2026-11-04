@@ -1,6 +1,7 @@
 # SONORA colaborativa en Azure — plan
 
-Estado: **plan aprobado como base, sin implementar** (26 oct 2026).
+Estado: **fases 1 a 6 montadas** (4 nov 2026; la 3 se hizo antes que la 2), en la rama `paleta-marca` de GitHub.
+Detalles del servidor y de Azure: `server/README.md`.
 Este documento es la referencia para retomar el trabajo en otra sesión.
 Antes de empezar la fase 1 hay que tener respondidas las preguntas del final.
 
@@ -36,7 +37,7 @@ Tablets del equipo ──wss (443)──► Azure Container App (Node, 1 réplic
     propia copia del audio          ├─ API: login de equipo, permisos de archivos, admin
   · cada una dibuja su visual       ├─ sincronización en tiempo real (Yjs, una sala por proyecto)
                                     ├─ tabla de bloqueos (en memoria del servidor)
-                                    ├─► Azure Database for PostgreSQL: equipos, proyectos, versiones
+                                    ├─► Azure SQL Database (serverless): equipos, proyectos, versiones
                                     └─► Azure Blob Storage: voces, fotos, sonidos, videos
 ```
 
@@ -77,8 +78,8 @@ Tablets del equipo ──wss (443)──► Azure Container App (Node, 1 réplic
 | Pieza | Para qué | Nota |
 |---|---|---|
 | Azure Container Apps | App, API, WebSocket de sincronización y bloqueos | Mínimo y máximo **1 réplica** durante el evento (todas las tablets en el mismo servidor, sin arranque en frío). Soporta WebSockets. |
-| Azure Container Registry | Imagen del contenedor | Seguramente ya existe por la Expedición. |
-| Azure Database for PostgreSQL Flexible (Burstable, el más pequeño) | Equipos, proyectos, versiones, archivos, actividad | Conexión con Managed Identity (sin contraseña). Alternativa: Cosmos DB serverless (límite de 2 MB por documento). |
+| Azure Container Registry Basic | Imagen del contenedor | Propio del grupo (`crupbdevsonora01`); la imagen se compila en Azure con `az acr build`. |
+| Azure SQL Database serverless, oferta gratuita | Equipos, proyectos, versiones, archivos, actividad | Conexión con Managed Identity (sin contraseña). El proyecto se guarda como JSON legible, consultable desde el portal. Si se pasa del cupo gratis, sigue funcionando y cobra. (Se eligió en vez de PostgreSQL por costo.) |
 | Azure Blob Storage | Voces, fotos, sonidos propios, archivos de datos, videos exportados | Contenedor privado. El servidor da permisos temporales de subida y lectura. |
 | Log Analytics / Application Insights | Errores y conexiones durante el evento | Viene con el entorno de Container Apps. |
 | Entra ID (inicio de sesión de Microsoft) | Solo para el panel de admin | Juan entra con su cuenta de la organización; no hay otra contraseña que cuidar. |
@@ -93,7 +94,8 @@ evento). **Confirmar con la calculadora de precios de Azure.**
 
 ### Base de datos
 
-- `equipos`: id, nombre, código, PIN guardado con hash, creado.
+- `equipos`: id, nombre, nombre normalizado (columna `codigo`), contraseña guardada con hash, congelado, creado.
+- `videos`: la galería de videos finales.
 - `proyectos`: id, equipo (único), estado del documento Yjs, actualizado.
 - `versiones`: id, proyecto, estado Yjs, fecha, motivo (automática cada pocos minutos y antes de acciones grandes).
 - `archivos`: id, proyecto, ruta en Blob, tipo, quién lo subió, fecha.
@@ -101,7 +103,7 @@ evento). **Confirmar con la calculadora de precios de Azure.**
 
 ### Login
 
-1. Pantalla de entrada: **código del equipo + PIN**. El servidor responde con
+1. Pantalla de entrada: **nombre del equipo + contraseña** (con «Admin» se abre el panel). El servidor responde con
    una cookie de sesión segura (HttpOnly). Hay límite de intentos.
 2. Luego **«¿Quién eres?»**: nombre y color. No hay cuentas por persona; sirve
    para la presencia y los bloqueos.
@@ -133,7 +135,7 @@ el visto bueno de Juan antes de seguir.
 5. **Plan de emergencia** (sección 5).
    *Prueba:* se apaga el WiFi a mitad de una edición, se sigue trabajando y al volver se junta todo.
 6. **Panel de administración** (sección 6).
-   *Prueba:* Juan crea un equipo, entra con su código y lo ve editar desde el panel.
+   *Prueba:* Juan crea un equipo, entra con su nombre y lo ve editar desde el panel.
 7. **Ensayo general.** 10 tablets reales en un equipo y varios equipos a la vez;
    medir el rendimiento de las M10, la latencia y si la red del lugar deja pasar
    WebSockets; guía del día del evento (encender la réplica, revisar el panel,
@@ -155,7 +157,8 @@ el visto bueno de Juan antes de seguir.
 
 ## 6. Panel de administración
 
-- Crear y editar equipos (nombre, código, PIN) y resetear el PIN.
+- Crear, editar y eliminar equipos (nombre y contraseña).
+- Galería de los videos finales que mandan los equipos desde Función.
 - Ver en vivo quién está conectado en cada equipo y en qué escena.
 - Abrir cualquier proyecto en solo lectura y verlo cambiar en tiempo real.
 - Ver y restaurar versiones; liberar un bloqueo atascado.
@@ -177,3 +180,15 @@ el visto bueno de Juan antes de seguir.
 3. **Dirección:** ¿dominio que da Azure por defecto o uno propio?
 4. **Fecha de la hackatón y número de equipos**, para fijar el calendario de las fases.
 5. **GitHub Pages:** ¿la versión publicada sigue viva para practicar sin cuenta?
+
+## 9. Respuestas (27 oct – 4 nov 2026)
+
+1. **Código:** sigue en GitHub; el repo de Azure DevOps se deja para después.
+2. **Azure:** todo en un grupo propio, `RG-UPB-DEV-SONORA` (East US 2), sin tocar nada de los demás. Juan es Owner del grupo.
+3. **Dirección:** por ahora, la que da Azure por defecto; dominio propio sin decidir.
+4. **Fecha:** 19 de noviembre de 2026; número de equipos aún sin definir.
+5. **GitHub Pages:** sigue aparte, sin multijugador (`npm run build`); la nube se compila con `npm run build:nube`.
+
+---
+
+*Diseñado y desarrollado por Juan Esteban Trillos · [www.linkedin.com/in/juan-esteban-trillos](https://www.linkedin.com/in/juan-esteban-trillos)*

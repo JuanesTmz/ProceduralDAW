@@ -1,8 +1,11 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Los botones de herramientas al pie de las capas, abajo a la derecha:
  * Sonidos (con qué suena cada pista) y Datos (qué se mueve solo).
  * Son grandes y de color a propósito: son lo que más se busca.
  */
+import { Caras } from '../nube/Caras';
+
 interface Props {
   alSonidos: () => void;
   /** Texto del botón de sonidos. */
@@ -22,6 +25,7 @@ export function PieHerramientas({ alSonidos, textoSonidos = 'Sonidos', alDatos, 
             <strong>Datos</strong>
             <span>{datosActivos === 0 ? 'nada se mueve solo' : `${datosActivos} se mueven solos`}</span>
           </span>
+          <Caras en={(l) => l.ventana === 'datos'} />
         </button>
       )}
       <button type="button" className="nv-pie-herr__boton nv-pie-herr__boton--sonidos" data-tour="sonidos" onClick={alSonidos}>
@@ -30,6 +34,7 @@ export function PieHerramientas({ alSonidos, textoSonidos = 'Sonidos', alDatos, 
           <strong>{textoSonidos}</strong>
           <span>biblioteca y tus efectos</span>
         </span>
+        <Caras en={(l) => Boolean(l.ventana?.startsWith('sonidos:'))} />
       </button>
     </div>
   );

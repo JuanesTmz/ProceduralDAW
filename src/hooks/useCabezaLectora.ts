@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Mueve la cabeza lectora —la columna que marca el paso que suena—
  * escribiendo directamente en el DOM.

@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Reacciones: «cuando suena esto, la imagen hace aquello».
  *
@@ -55,7 +56,7 @@ export function ReaccionesImagen({ escena }: { escena: Escena }) {
     });
 
   return (
-    <div className="nv-campo">
+    <div className="nv-campo" data-bloqueo={`escena:${escena.id}:reacciones-imagen`}>
       <div className="nv-campo__fila">
         <span className="nv-campo__titulo">Cuando suena… la imagen hace</span>
         <span className="nv-espacio" />

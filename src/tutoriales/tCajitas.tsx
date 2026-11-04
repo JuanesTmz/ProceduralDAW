@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Tutorial: las cajitas. Algo que pasa justo en una palabra.
  *

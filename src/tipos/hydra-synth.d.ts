@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * hydra-synth no trae tipos propios. Solo declaramos lo que usamos:
  * el constructor y el objeto `synth` con las funciones de Hydra.

@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Lo que hace falta para convertir una grabación en un sample usable:
  * leerla, dibujarla y recortarla.

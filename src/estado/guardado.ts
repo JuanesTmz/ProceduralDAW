@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Guardar la pieza en el propio navegador, para que recargar no la borre.
  *
@@ -24,6 +25,11 @@ export function crearUrl(blob: Blob): string {
   return url;
 }
 
+/** El archivo detrás de una URL creada con `crearUrl` (para subirlo a la nube). */
+export function archivoDe(url: string): Blob | undefined {
+  return archivos.get(url);
+}
+
 function abrir(): Promise<IDBDatabase> {
   return new Promise((listo, falla) => {
     const pedido = indexedDB.open(BASE, 1);
@@ -42,11 +48,11 @@ async function conAlmacen<T>(modo: IDBTransactionMode, hacer: (a: IDBObjectStore
   });
 }
 
-/** Guarda el proyecto y los archivos que usa. */
-export async function guardar(proyecto: Proyecto): Promise<void> {
+/** Guarda el proyecto y los archivos que usa. `clave` separa la copia de cada equipo. */
+export async function guardar(proyecto: Proyecto, clave = CLAVE): Promise<void> {
   const texto = JSON.stringify(proyecto);
   try {
-    localStorage.setItem(CLAVE, texto);
+    localStorage.setItem(clave, texto);
   } catch {
     return;
   }
@@ -62,14 +68,22 @@ export async function guardar(proyecto: Proyecto): Promise<void> {
 }
 
 /** Recupera la última pieza, con sus archivos. null si no había nada. */
-export async function cargar(): Promise<Proyecto | null> {
+export async function cargar(clave = CLAVE): Promise<Proyecto | null> {
   let texto: string | null = null;
   try {
-    texto = localStorage.getItem(CLAVE);
+    texto = localStorage.getItem(clave);
   } catch {
     return null;
   }
   if (!texto) return null;
+  return JSON.parse(await rehidratar(texto)) as Proyecto;
+}
+
+/**
+ * Cambia en el texto del proyecto las URLs de archivos que esta tablet tiene
+ * guardados por URLs nuevas que sí funcionan. Las que no tiene quedan igual.
+ */
+export async function rehidratar(texto: string): Promise<string> {
   try {
     const claves = (await conAlmacen('readonly', (a) => a.getAllKeys())) as string[];
     for (const vieja of claves) {
@@ -86,13 +100,13 @@ export async function cargar(): Promise<Proyecto | null> {
   } catch {
     // Sin IndexedDB se recupera el texto; las grabaciones habrá que repetirlas.
   }
-  return JSON.parse(texto) as Proyecto;
+  return texto;
 }
 
 /** Borra todo: la pieza y sus archivos. */
-export async function borrarTodo(): Promise<void> {
+export async function borrarTodo(clave = CLAVE): Promise<void> {
   try {
-    localStorage.removeItem(CLAVE);
+    localStorage.removeItem(clave);
     await conAlmacen('readwrite', (a) => a.clear());
   } catch {
     // Nada que hacer.

@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Los tutoriales animados, en el orden en que aparecen en la galería
  * (el mismo orden en que se usan las herramientas).

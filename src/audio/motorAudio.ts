@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Motor de audio: el único lugar que habla con Tone.js.
  * Los componentes de React piden cosas ("suena esta fila", "cambia el BPM")

@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Grabar la voz de corrido: todo el monólogo en una sola toma.
  *
@@ -13,6 +14,7 @@ import { useProyecto } from '../estado/ProyectoContext';
 import { formatearReloj } from '../estado/proyecto';
 import { EMOCIONES, moverLimiteVoz, repartirVozCorrida } from '../estado/escenas';
 import { useGrabadora } from '../hooks/useGrabadora';
+import { useBloqueoMientras } from '../nube/Caras';
 import { Onda } from './VozEscena';
 import { BotonVideo } from './BotonTutorial';
 
@@ -40,6 +42,8 @@ export function VozCorrida({ alSeguir }: { alSeguir: () => void }) {
     }),
   );
   const grabando = estado === 'grabando';
+  // Mientras se graba, la voz de corrido es de quien graba.
+  useBloqueoMientras('voz:corrido', grabando);
 
   const oirTramo = (i: number) => {
     const e = escenas[i];
@@ -56,7 +60,7 @@ export function VozCorrida({ alSeguir }: { alSeguir: () => void }) {
   };
 
   return (
-    <section className="nv-apuntador nv-apuntador--corrido">
+    <section className="nv-apuntador nv-apuntador--corrido" data-bloqueo="voz:corrido">
       <div className="nv-campo__fila">
         <span className="nv-etiqueta nv-tenue">TODO EL MONÓLOGO DE CORRIDO</span>
         <span className="nv-espacio" />

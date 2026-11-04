@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * La autoguía: una misión corta por pantalla, escrita en el idioma del Urban Lab.
  *

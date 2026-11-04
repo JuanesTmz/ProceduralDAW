@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Mantiene el grafo de audio al día con el estado de React.
  * Un solo efecto: cada cambio del proyecto se refleja en el motor.

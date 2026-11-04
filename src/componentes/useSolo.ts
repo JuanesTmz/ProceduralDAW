@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Tocar un sonido solo, aislado, desde su fila. Todas las filas de una
  * lista comparten este hook: tocar otra la reemplaza, y si suena otra cosa

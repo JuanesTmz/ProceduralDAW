@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Las capas vistas como celdas, al estilo de la línea de tiempo original:
  * una fila de casillas por sonido, que se encienden tocando o arrastrando
@@ -16,7 +17,8 @@ import { useCabezaLectora } from '../hooks/useCabezaLectora';
 import { usePintarArrastrando } from '../hooks/usePintarArrastrando';
 import { golpesDe, notasDe, ponerGolpe } from '../estado/patronEscena';
 import { ID_MELODIA } from './VentanaSonidosPistas';
-import { BotonSolo, Suena } from './FilaSonido';
+import { BotonSolo, Suena } from './FilaSonido';
+import { Caras } from '../nube/Caras';
 
 export interface CapaCeldas {
   id: string;
@@ -89,7 +91,12 @@ export function CeldasCapas({ capas, escenaId, suena, alSuena, alSonidos, alNota
         const callada = suena ? !suena(c.id) : false;
         const esMelodia = c.id === ID_MELODIA;
         return (
-          <div key={c.id} className={`nv-celdas__fila ${callada ? 'nv-celdas__fila--muda' : ''}`} style={{ ['--color' as string]: c.color }}>
+          <div
+            key={c.id}
+            className={`nv-celdas__fila ${callada ? 'nv-celdas__fila--muda' : ''}`}
+            style={{ ['--color' as string]: c.color }}
+            data-bloqueo={`escena:${escenaId ?? 'general'}:capa:${c.id}`}
+          >
             <span className="nv-celdas__nombre" style={{ gridRow: fila }}>
               <BotonSolo sonando={suenaSolo(c.id)} nombre={c.nombre} alTocar={() => alSolo(c.id)} />
               <button type="button" className="nv-celdas__sonido" onClick={() => alSonidos(c.id)} title="Cambiar el sonido">
@@ -98,6 +105,7 @@ export function CeldasCapas({ capas, escenaId, suena, alSuena, alSonidos, alNota
                   <strong>{c.nombre}</strong>
                   <span>{c.origen}</span>
                 </span>
+                <Caras en={(l) => l.ventana === `sonidos:${c.id}`} />
               </button>
             </span>
             <div

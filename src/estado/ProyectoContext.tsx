@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Estado global del proyecto. Un solo objeto Proyecto, y una función
  * actualizar(receta) que recibe una copia mutable: así los componentes
@@ -6,12 +7,15 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Proyecto } from './tipos';
-import { crearProyectoInicial } from './proyecto';
+import { colorDeSonido, crearProyectoInicial } from './proyecto';
 import { escenasASecciones } from './escenas';
 import { aplicarPad } from './patronEscena';
 import { conexionesIniciales } from './musica';
 import { conexionesVisualIniciales } from './imagen';
-import { borrarTodo, cargar, guardar } from './guardado';
+import { borrarTodo, cargar, guardar, rehidratar } from './guardado';
+import { useNube } from '../nube/contexto';
+import type { Sala } from '../nube/sala';
+import { cambiarUrl, subirLocales } from '../nube/archivos';
 
 interface ContextoProyecto {
   proyecto: Proyecto;
@@ -25,15 +29,41 @@ interface ContextoProyecto {
 
 const Contexto = createContext<ContextoProyecto | null>(null);
 
+/** Lo que hay en la sala ahora, con las URLs de los archivos que esta tablet tiene guardados. */
+async function deLaSala(sala: Sala): Promise<Proyecto | null> {
+  const enSala = sala.leer();
+  return enSala ? (JSON.parse(await rehidratar(JSON.stringify(enSala))) as Proyecto) : null;
+}
+
 export function ProveedorProyecto({ children }: { children: ReactNode }) {
   const [proyecto, setProyecto] = useState<Proyecto>(crearProyectoInicial);
+  // El proyecto vigente también fuera del ciclo de React: los cambios propios y
+  // los que llegan de la sala se encadenan sobre él sin pisarse.
+  const actual = useRef(proyecto);
   const [cargando, setCargando] = useState(true);
   const reloj = useRef<number | null>(null);
+  // En la nube, el proyecto es del equipo y su copia en la tablet va aparte.
+  const nube = useNube();
+  const sala = nube?.sala;
+  const clave = nube ? `sonora-nube-${nube.equipo.id}` : undefined;
+
+  /** Deja un proyecto como el vigente. Lo que no vino de la sala se le manda. */
+  const poner = useCallback(
+    (p: Proyecto, deLaSala = false) => {
+      actual.current = p;
+      // Con la sala congelada (o desde el panel, que solo mira) nada sale de aquí.
+      if (!deLaSala && !sala?.quieta()) sala?.local(p);
+      setProyecto(p);
+    },
+    [sala],
+  );
 
   // Al abrir, se recupera la última pieza. Lo que falte (campos nuevos) sale del proyecto vacío.
+  // En la nube sale de la sala del equipo (con las grabaciones que esta tablet
+  // tenga guardadas); si no, de la tablet.
   useEffect(() => {
     let vigente = true;
-    cargar()
+    (sala ? deLaSala(sala) : cargar())
       .then((guardado) => {
         if (!vigente || !guardado) return;
         const base = crearProyectoInicial();
@@ -53,34 +83,75 @@ export function ProveedorProyecto({ children }: { children: ReactNode }) {
           }
         }
         if (completo.escenas.length > 0) completo.secciones = escenasASecciones(completo);
-        setProyecto(completo);
+        // El color de cada pista sale de su sonido: así las guardadas toman la paleta vigente.
+        for (const f of completo.patron.filas) f.color = colorDeSonido(f.tipo, f.sampleUrl);
+        poner(completo);
       })
       .finally(() => vigente && setCargando(false));
     return () => {
       vigente = false;
     };
+    // Se abre una sola vez: la puerta monta un proveedor nuevo por equipo.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Cada cambio se guarda, un ratito después para no escribir en cada tecla.
+  // Lo que cambian las otras tablets del equipo llega aquí y reemplaza lo de la pantalla.
+  useEffect(() => {
+    if (!sala || cargando) return;
+    const alLlegar = () => {
+      // Lo propio que aún no viajó va primero, para no perderlo.
+      sala.local(actual.current);
+      const llegado = { ...sala.leer(), secciones: actual.current.secciones } as Proyecto;
+      if (llegado.escenas.length > 0) llegado.secciones = escenasASecciones(llegado);
+      poner(llegado, true);
+    };
+    const dejar = sala.alCambiarRemoto(alLlegar);
+    // Por si algo llegó mientras la pieza se abría.
+    alLlegar();
+    return dejar;
+  }, [sala, cargando, poner]);
+
+  // En la nube, los archivos grabados aquí se suben y el proyecto pasa a usar su URL de la nube.
+  const persona = nube?.persona.nombre;
+  const subirArchivos = useCallback(() => {
+    if (!sala || persona === undefined || sala.quieta()) return;
+    subirLocales(
+      actual.current,
+      persona,
+      (local, enNube) => {
+        const borrador = structuredClone(actual.current) as Proyecto;
+        cambiarUrl(borrador, local, enNube);
+        poner(borrador);
+      },
+      () => subirArchivos(),
+    );
+  }, [sala, persona, poner]);
+
+  // Cada cambio se guarda también en la tablet, un ratito después para no escribir en cada tecla.
   useEffect(() => {
     if (cargando) return;
     if (reloj.current !== null) window.clearTimeout(reloj.current);
-    reloj.current = window.setTimeout(() => void guardar(proyecto), 700);
-  }, [proyecto, cargando]);
+    reloj.current = window.setTimeout(() => {
+      void guardar(proyecto, clave);
+      subirArchivos();
+    }, 700);
+  }, [proyecto, cargando, clave, subirArchivos]);
 
   const empezarDeNuevo = useCallback(() => {
-    void borrarTodo().then(() => setProyecto(crearProyectoInicial()));
-  }, []);
+    void borrarTodo(clave).then(() => poner(crearProyectoInicial()));
+  }, [clave, poner]);
 
-  const actualizar = useCallback((receta: (borrador: Proyecto) => void) => {
-    setProyecto((anterior) => {
-      const borrador = structuredClone(anterior) as Proyecto;
+  const actualizar = useCallback(
+    (receta: (borrador: Proyecto) => void) => {
+      if (sala?.quieta()) return;
+      const borrador = structuredClone(actual.current) as Proyecto;
       receta(borrador);
       // Con relato, las secciones del motor salen siempre de las escenas.
       if (borrador.escenas.length > 0) borrador.secciones = escenasASecciones(borrador);
-      return borrador;
-    });
-  }, []);
+      poner(borrador);
+    },
+    [poner, sala],
+  );
 
   // Solo en desarrollo: tocar el estado desde la consola para diagnosticar.
   if (import.meta.env.DEV) {
@@ -88,8 +159,8 @@ export function ProveedorProyecto({ children }: { children: ReactNode }) {
   }
 
   const valor = useMemo(
-    () => ({ proyecto, actualizar, reemplazar: setProyecto, cargando, empezarDeNuevo }),
-    [proyecto, actualizar, cargando, empezarDeNuevo],
+    () => ({ proyecto, actualizar, reemplazar: (p: Proyecto) => poner(p), cargando, empezarDeNuevo }),
+    [proyecto, actualizar, poner, cargando, empezarDeNuevo],
   );
 
   return <Contexto.Provider value={valor}>{children}</Contexto.Provider>;

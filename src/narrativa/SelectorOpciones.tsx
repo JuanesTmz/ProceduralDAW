@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Elegir entre opciones con nombre (la figura, la trama, el alfabeto): un
  * botón que muestra la opción actual y, al tocarlo, la lista flotante.

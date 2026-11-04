@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Las capas de la música: una sola mecánica para todos.
  *
@@ -17,7 +18,8 @@ import { BotonSolo, Suena } from './FilaSonido';
 import { PieHerramientas } from './PieHerramientas';
 import { MiniPad, usePistas, useDato, VentanaPad, type Pista } from './PadMusica';
 import { useSolo } from '../componentes/useSolo';
-import { CeldasCapas } from './CeldasCapas';
+import { CeldasCapas } from './CeldasCapas';
+import { Caras } from '../nube/Caras';
 
 type Vista = 'lista' | 'celdas';
 const CLAVE_VISTA = 'sonora-vista-capas';
@@ -173,8 +175,10 @@ function FilaCapa({
   const { actualizar } = useProyecto();
   const dato = useDato(pista.id);
   const esMelodia = pista.id === ID_MELODIA;
+  // Las ventanas de Golpes, Notas y Pad son de esta escena; la de sonidos vale para toda la pieza.
+  const donde = escena?.id ?? 'general';
   return (
-    <div className={`nv-fila-son ${pista.suena ? '' : 'nv-fila-son--muda'}`}>
+    <div className={`nv-fila-son ${pista.suena ? '' : 'nv-fila-son--muda'}`} data-bloqueo={`escena:${escena?.id ?? 'general'}:capa:${pista.id}`}>
       <BotonSolo sonando={solo} nombre={pista.nombre} alTocar={alSolo} />
       <button
         type="button"
@@ -188,6 +192,7 @@ function FilaCapa({
           <strong>{pista.nombre}</strong>
           <span>{pista.origen}</span>
         </span>
+        <Caras en={(l) => l.ventana === `sonidos:${pista.id}`} />
         <span className="nv-fila-son__flecha">▾</span>
       </button>
       {dato && (
@@ -228,6 +233,7 @@ function FilaCapa({
         onClick={alEditar}
       >
         {esMelodia ? '✎ Notas' : '✎ Golpes'}
+        <Caras en={(l) => l.escena === donde && l.ventana === (esMelodia ? 'notas' : `golpes:${pista.id}`)} />
       </button>
       <button
         type="button"
@@ -237,6 +243,7 @@ function FilaCapa({
       >
         <MiniPad x={pista.golpes} y={pista.azar} color={pista.color} />
         Pad
+        <Caras en={(l) => l.escena === donde && l.ventana === `pad:${pista.id}`} />
       </button>
     </div>
   );

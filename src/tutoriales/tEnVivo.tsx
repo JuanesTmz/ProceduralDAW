@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Tutorial: tocar la imagen en vivo y grabarlo (Visuales · Tocar en vivo).
  *

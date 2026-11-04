@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Proyecto por defecto y utilidades para transformarlo.
  * El proyecto arranca con un patrón mínimo que ya suena: el estudiante

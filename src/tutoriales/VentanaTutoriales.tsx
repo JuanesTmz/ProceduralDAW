@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * La ventana de los tutoriales: la galería con todos, o uno abierto en el
  * reproductor. Se carga aparte (React.lazy) para que la app no pese más

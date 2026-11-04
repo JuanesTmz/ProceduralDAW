@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Paso 1: la historia. Qué cuentan, por qué es de Medellín, el monólogo y
  * dónde se parte en escenas.
@@ -62,7 +63,7 @@ export function PasoHistoria({ alSeguir }: { alSeguir: () => void }) {
 
       <div className="nv-historia">
         <div className="nv-tarjeta nv-historia__preguntas">
-          <label className="nv-campo">
+          <label className="nv-campo" data-bloqueo="historia:que">
             <span className="nv-campo__titulo">¿Qué vas a contar?</span>
             <textarea
               rows={3}
@@ -75,7 +76,7 @@ export function PasoHistoria({ alSeguir }: { alSeguir: () => void }) {
               }
             />
           </label>
-          <label className="nv-campo">
+          <label className="nv-campo" data-bloqueo="historia:porQue">
             <span className="nv-campo__titulo">¿Por qué es de Medellín?</span>
             <textarea
               rows={3}
@@ -91,7 +92,7 @@ export function PasoHistoria({ alSeguir }: { alSeguir: () => void }) {
         </div>
 
         <div className="nv-tarjeta nv-historia__texto">
-          <label className="nv-campo">
+          <label className="nv-campo" data-bloqueo="historia:monologo">
             <span className="nv-campo__fila">
               <span className="nv-campo__titulo">Tu monólogo</span>
               <span className="nv-espacio" />

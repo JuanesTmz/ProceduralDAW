@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Piezas compartidas por las filas de sonidos de los dos labs: de dónde
  * viene el sonido (para nombrarlo de verdad) y el interruptor «suena aquí».
@@ -35,6 +36,7 @@ export function BotonSolo({ sonando, nombre, alTocar }: { sonando: boolean; nomb
     <button
       type="button"
       className={`nv-solo ${sonando ? 'nv-solo--on' : ''}`}
+      data-libre
       aria-pressed={sonando}
       aria-label={sonando ? `Parar ${nombre}` : `Oír solo ${nombre}`}
       title={sonando ? 'Parar' : 'Oír solo este sonido'}

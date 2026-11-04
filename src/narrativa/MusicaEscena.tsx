@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * La pestaña Música de una escena, o de toda la pieza (General).
  *
@@ -15,7 +16,8 @@ import { Ventana } from '../componentes/Ventana';
 import { MusicaCapas } from './MusicaCapas';
 import { parametrosMusica } from './PadMusica';
 import { ParametrosDatos } from './ParametrosDatos';
-import { ID_MELODIA, VentanaSonidosPistas } from './VentanaSonidosPistas';
+import { ID_MELODIA, VentanaSonidosPistas } from './VentanaSonidosPistas';
+import { useEnVentana } from '../nube/Caras';
 
 type Herramienta = { tipo: 'golpes'; pista?: string } | { tipo: 'melodia' } | { tipo: 'datos' } | { tipo: 'sonidos'; pista?: string };
 
@@ -30,11 +32,12 @@ export function MusicaEscena({ escena, indice }: Props) {
   const cerrar = () => setHerramienta(null);
   const alSonidos = (pista?: string) => setHerramienta({ tipo: 'sonidos', pista });
   const datosActivos = proyecto.conexiones.length;
+  useEnVentana(herramienta?.tipo === 'datos' ? 'datos' : null);
 
   return (
     <div className="nv-pestana">
       {!escena && (
-        <div className="nv-presets">
+        <div className="nv-presets" data-bloqueo="general:ritmo">
           <span className="nv-campo__titulo">Punto de partida</span>
           {PRESETS.map((p) => (
             <button

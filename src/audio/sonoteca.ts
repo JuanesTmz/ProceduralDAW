@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * La Sonoteca: los sonidos que trae la app, en public/sonoteca/.
  *

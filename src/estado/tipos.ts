@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Tipos del proyecto SONORA.
  * Un "proyecto" es lo que el estudiante construye: un patrón (el loop)

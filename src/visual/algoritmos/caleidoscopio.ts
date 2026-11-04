@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Caleidoscopio: un fractal plegado sobre sí mismo, en espejo.
  *

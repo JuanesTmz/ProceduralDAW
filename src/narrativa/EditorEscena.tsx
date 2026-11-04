@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Dentro de una escena: dos pestañas, Música y Visuales, y nada más.
  *
@@ -21,6 +22,7 @@ import {
 } from '../estado/escenas';
 import type { Escena, Fuerza } from '../estado/tipos';
 import { BarraEscena } from './BarraEscena';
+import { Caras } from '../nube/Caras';
 import { ImagenEscena } from './ImagenEscena';
 import { MusicaEscena } from './MusicaEscena';
 import { useReproduccion } from './useReproduccion';
@@ -67,6 +69,7 @@ export function EditorEscena({ id, pestana, alPestana, alIr, alVolver }: Props) 
               onClick={() => alPestana('musica')}
             >
               ♫  Música
+              <Caras en={(l) => l.escena === id && l.pestana === 'musica'} />
             </button>
             <button
               type="button"
@@ -74,6 +77,7 @@ export function EditorEscena({ id, pestana, alPestana, alIr, alVolver }: Props) 
               onClick={() => alPestana('visual')}
             >
               ◐  Visuales
+              <Caras en={(l) => l.escena === id && l.pestana === 'visual'} />
             </button>
           </div>
           {general && <EscucharPieza />}
@@ -129,6 +133,7 @@ function Riel({ actual, alIr, alVolver }: { actual: string; alIr: (id: string) =
           <strong>General</strong>
           <span className="nv-tenue">toda la pieza</span>
         </span>
+        <Caras en={(l) => l.escena === 'general'} />
       </button>
       {lista.map((e, i) => {
         const { color } = EMOCIONES[e.emocion];
@@ -152,6 +157,7 @@ function Riel({ actual, alIr, alVolver }: { actual: string; alIr: (id: string) =
                 {imagen && <span className="nv-riel__marca" title="Visual editado"> ◐</span>}
               </span>
             </span>
+            <Caras en={(l) => l.escena === e.id} />
             {seccion === i && <span className="nv-riel__sonando" aria-label="Sonando" />}
           </button>
         );
@@ -173,7 +179,7 @@ function Nombre({ escena }: { escena: Escena | null }) {
   const { color } = EMOCIONES[escena.emocion];
   const numero = proyecto.escenas.findIndex((e) => e.id === escena.id) + 1;
   return (
-    <div className="nv-dentro__nombre">
+    <div className="nv-dentro__nombre" data-bloqueo={`escena:${escena.id}:nombre`}>
       <span className="nv-etiqueta" style={{ color }}>
         {escena.respiro ? 'RESPIRO' : `ESCENA ${numero}`}
       </span>
@@ -208,7 +214,7 @@ function Sentir({ escena }: { escena: Escena }) {
     });
 
   return (
-    <div className="nv-sentir">
+    <div className="nv-sentir" data-bloqueo={`escena:${escena.id}:sentir`}>
       <div className="nv-desplegable">
         <button
           type="button"

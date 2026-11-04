@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * El recortador: la onda de la grabación y dos tiradores para quedarse con
  * el pedazo que sirve.

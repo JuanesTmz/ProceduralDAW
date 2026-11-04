@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Con qué suena la melodía: el sintetizador, un sonido melódico de la
  * Sonoteca o una grabación propia. Cualquier sonido se afina solo en cada

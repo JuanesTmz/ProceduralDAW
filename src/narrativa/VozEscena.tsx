@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * La voz de una escena: grabar, escuchar y repetir.
  * Se usa en el paso Voz y dentro de cada escena.
@@ -9,6 +10,7 @@ import { formatearReloj } from '../estado/proyecto';
 import { EMOCIONES } from '../estado/escenas';
 import type { Escena } from '../estado/tipos';
 import { useGrabadora } from '../hooks/useGrabadora';
+import { useBloqueoMientras } from '../nube/Caras';
 
 /** Barras de onda falsas pero estables: salen del id, no del azar. */
 export function Onda({ semilla, color, barras = 70 }: { semilla: string; color: string; barras?: number }) {
@@ -53,6 +55,8 @@ export function VozEscena({ escena, grande = false }: { escena: Escena; grande?:
     });
   });
   const grabando = estado === 'grabando';
+  // Mientras se graba, la voz de esta escena es de quien graba.
+  useBloqueoMientras(claveVoz, grabando);
 
   const escuchar = () => {
     if (!escena.vozUrl) return;
@@ -62,7 +66,7 @@ export function VozEscena({ escena, grande = false }: { escena: Escena; grande?:
 
   if (grabando) {
     return (
-      <div className={`nv-voz ${grande ? 'nv-voz--grande' : ''}`}>
+      <div className={`nv-voz ${grande ? 'nv-voz--grande' : ''}`} data-bloqueo={claveVoz}>
         <span className="nv-voz__vivo">
           <span className="nv-punto nv-punto--rojo" /> Grabando · {formatearReloj(segundos)}
         </span>
@@ -76,7 +80,7 @@ export function VozEscena({ escena, grande = false }: { escena: Escena; grande?:
 
   if (!escena.vozUrl) {
     return (
-      <div className={`nv-voz ${grande ? 'nv-voz--grande' : ''}`}>
+      <div className={`nv-voz ${grande ? 'nv-voz--grande' : ''}`} data-bloqueo={claveVoz}>
         <span className="nv-voz__vacia">{error ?? 'Todavía no está grabada'}</span>
         <button
           type="button"
@@ -92,8 +96,8 @@ export function VozEscena({ escena, grande = false }: { escena: Escena; grande?:
   }
 
   return (
-    <div className={`nv-voz ${grande ? 'nv-voz--grande' : ''}`}>
-      <button type="button" className="nv-redondo" onClick={escuchar} aria-label={oyendo ? 'Pausar' : 'Escuchar'}>
+    <div className={`nv-voz ${grande ? 'nv-voz--grande' : ''}`} data-bloqueo={claveVoz}>
+      <button type="button" className="nv-redondo" data-libre onClick={escuchar} aria-label={oyendo ? 'Pausar' : 'Escuchar'}>
         {oyendo ? '❚❚' : '▶'}
       </button>
       <Onda semilla={escena.vozUrl} color={color} />

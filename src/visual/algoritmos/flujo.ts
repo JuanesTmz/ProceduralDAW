@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Campo de flujo: miles de partículas siguiendo corrientes invisibles.
  *

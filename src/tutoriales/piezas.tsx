@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Las piezas de los tutoriales, en estilo caricatura: contorno grueso,
  * colores planos y saturados, sombra dura, y todo entra con resorte.

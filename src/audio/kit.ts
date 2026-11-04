@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Kit de percusión sintetizado con Tone.js — sonidos propios, sin muestras de terceros.
  * Cada voz expone disparar(tiempo, velocidad) para que el secuenciador la agende

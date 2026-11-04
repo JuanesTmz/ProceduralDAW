@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Constelación de glifos: la pantalla como una rejilla de caracteres, y la
  * foto pasada a letras.

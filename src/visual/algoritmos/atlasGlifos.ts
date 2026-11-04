@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * El atlas de glifos: una tira con cada carácter dibujado una vez, para que
  * la tarjeta gráfica los pueda copiar en miles de casillas a la vez.

@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Escalas: el piso que hace que "nunca suene mal".
  * Todo lo que genera el motor se cuantiza a una escala, y el piano roll

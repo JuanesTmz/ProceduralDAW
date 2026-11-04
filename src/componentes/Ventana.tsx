@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Una ventana: se abre encima de todo, hace lo suyo y se cierra.
  *

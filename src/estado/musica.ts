@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * La música de las escenas: lo que se puede conectar, los puntos de
  * partida (presets) y cómo se sacan datos de un archivo.

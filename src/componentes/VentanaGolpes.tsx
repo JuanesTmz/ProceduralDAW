@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * La ventana de Golpes: una sola celda de golpes, la de la pista elegida.
  *
@@ -21,7 +22,8 @@ import type { TipoSonido } from '../estado/tipos';
 import { recorrido } from '../estado/escenas';
 import { golpesDe, ponerGolpe, redimensionarEscenas } from '../estado/patronEscena';
 import { ListaPistas } from './ListaPistas';
-import { Ventana } from './Ventana';
+import { Ventana } from './Ventana';
+import { Caras, useEnVentana } from '../nube/Caras';
 
 const CASILLAS: (16 | 32 | 64)[] = [16, 32, 64];
 
@@ -48,6 +50,8 @@ export function VentanaGolpes({ inicial, escena = -1, alCerrar }: Props) {
   useCabezaLectora(cabeza, patron.cantidadPasos);
 
   const fila = patron.filas.find((f) => f.id === elegida) ?? patron.filas[0] ?? null;
+  // Los demás ven, junto al botón de Golpes de esta pista, que alguien está aquí.
+  useEnVentana(fila ? `golpes:${fila.id}` : null);
   // Dentro de una escena las celdas son las suyas; si no tiene propias, las de General.
   const escenaId = escena >= 0 ? recorrido(proyecto)[escena]?.id ?? null : null;
   const pasos = fila ? golpesDe(proyecto, escenaId, fila.id).pasos : [];
@@ -132,6 +136,7 @@ export function VentanaGolpes({ inicial, escena = -1, alCerrar }: Props) {
     nombre: f.nombre,
     color: f.color,
     nota: `${golpesDe(proyecto, escenaId, f.id).pasos.filter(Boolean).length} golpes`,
+    caras: <Caras en={(l) => l.escena === (escenaId ?? 'general') && l.ventana === `golpes:${f.id}`} />,
   }));
 
   const propios = proyecto.sonidos;
@@ -165,7 +170,12 @@ export function VentanaGolpes({ inicial, escena = -1, alCerrar }: Props) {
         </>
       }
     >
-      <div className="golpes" onPointerUp={soltar} onPointerCancel={soltar}>
+      <div
+        className="golpes"
+        onPointerUp={soltar}
+        onPointerCancel={soltar}
+        data-bloqueo={fila ? `escena:${escenaId ?? 'general'}:capa:${fila.id}` : undefined}
+      >
         <div className="golpes__celda">
           {/* La celda: una casilla por paso, del tamaño que quepa. */}
           <div

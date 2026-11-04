@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * El Pad de cada sonido, y lo que lo rodea.
  *
@@ -19,7 +20,8 @@ import { aplicarPad, golpesDe, notasDe, tienePropias, volverAGeneral } from '../
 import { useEscucha } from '../componentes/useEscucha';
 import type { Parametro } from './ParametrosDatos';
 import { ID_MELODIA } from './VentanaSonidosPistas';
-import { origenSonido } from './FilaSonido';
+import { origenSonido } from './FilaSonido';
+import { useEnVentana } from '../nube/Caras';
 
 const COLOR_MELODIA = '#5fd4ff';
 
@@ -147,6 +149,7 @@ export function VentanaPad({ id, escena, alCerrar }: { id: string; escena: Escen
   useEffect(() => motorAudio.alCambiarPaso(setPaso), []);
   const caja = useRef<HTMLDivElement>(null);
   const arrastrando = useRef(false);
+  useEnVentana(`pad:${id}`);
   if (!pista) return null;
   const esMelodia = id === ID_MELODIA;
 
@@ -208,7 +211,7 @@ export function VentanaPad({ id, escena, alCerrar }: { id: string; escena: Escen
     >
       <div className="nv nv--incrustado pad" style={{ ['--color' as string]: pista.color }}>
         <Casillas casillas={pista.casillas} paso={paso} melodia={esMelodia} />
-        <div className="pad__marco">
+        <div className="pad__marco" data-bloqueo={`escena:${escena?.id ?? 'general'}:capa:${id}`}>
           <span className="pad__eje pad__eje--y">
             <span>cambia cada vez</span>
             <span>siempre igual</span>

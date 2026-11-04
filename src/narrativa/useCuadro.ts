@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Corre una función en cada cuadro de la pantalla (60 veces por segundo).
  *

@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * La ventana de la Matriz: la melodía a la izquierda, la escala a la derecha.
  *
@@ -26,7 +27,8 @@ import {
   notasDeEscala,
   type NombreEscala,
 } from '../generativo/escalas';
-import { Ventana } from './Ventana';
+import { Ventana } from './Ventana';
+import { useEnVentana } from '../nube/Caras';
 
 const ESCALAS: NombreEscala[] = ['menorPentatonica', 'menor', 'dorica', 'frigia', 'mayor'];
 
@@ -51,6 +53,7 @@ export function VentanaMatriz({ escena = -1, alCerrar }: { escena?: number; alCe
   const { melodia, cantidadPasos } = proyecto.patron;
   // Dentro de una escena las notas son las suyas; si no tiene propias, las de General.
   const escenaId = escena >= 0 ? recorrido(proyecto)[escena]?.id ?? null : null;
+  useEnVentana('notas');
   const notas = notasDe(proyecto, escenaId);
   const celdas = useRef(new Map<string, HTMLButtonElement>());
   const pintando = useRef<boolean | null>(null);
@@ -151,7 +154,12 @@ export function VentanaMatriz({ escena = -1, alCerrar }: { escena?: number; alCe
         </>
       }
     >
-      <div className="matriz-ventana" onPointerUp={soltar} onPointerCancel={soltar}>
+      <div
+        className="matriz-ventana"
+        onPointerUp={soltar}
+        onPointerCancel={soltar}
+        data-bloqueo={`escena:${escenaId ?? 'general'}:capa:melodia`}
+      >
         {/* ---------------- la rejilla, que se lleva el sitio ---------------- */}
         <div className="matriz-rejilla">
           <div className="matriz-rejilla__notas">

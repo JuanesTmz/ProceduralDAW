@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Reordenar una fila de tarjetas arrastrando, con el dedo o el ratón.
  *

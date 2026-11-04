@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * El centro de escucha de todo lo que no es la pieza: probar un sonido,
  * oír una grabación de voz, un efecto propio o un instrumento.

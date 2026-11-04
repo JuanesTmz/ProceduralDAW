@@ -1,0 +1,9 @@
+node_modules
+server/node_modules
+server/.datos
+server/.env
+dist
+dist-nube
+.git
+docs
+server/pruebas

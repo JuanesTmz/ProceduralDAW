@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * El visor de los tutoriales animados. Se abre desde el menú de ayuda o
  * desde un botón «▶ Video» puesto justo en la parte que explica.

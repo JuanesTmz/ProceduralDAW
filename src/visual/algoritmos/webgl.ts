@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Lo que comparten los algoritmos que pinta la tarjeta gráfica: armar el
  * programa, cubrir la pantalla con un triángulo, subir la foto como textura

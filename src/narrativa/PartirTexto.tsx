@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Partir el monólogo en escenas.
  *
@@ -53,7 +54,7 @@ export function PartirTexto() {
   if (palabras.length === 0) return null;
 
   return (
-    <div className="nv-tarjeta nv-partir">
+    <div className="nv-tarjeta nv-partir" data-bloqueo="historia:cortes">
       <div className="nv-campo__fila">
         <span className="nv-campo__titulo">Tus escenas</span>
         <span className="nv-tenue nv-chico">Arrastra los límites para decidir dónde empieza cada una.</span>

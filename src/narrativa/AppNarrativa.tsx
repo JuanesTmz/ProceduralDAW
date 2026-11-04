@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * SONORA, narrativa primero.
  *
@@ -21,7 +22,8 @@ import { PasoFuncion } from './PasoFuncion';
 import { PasoHistoria } from './PasoHistoria';
 import { PasoVoz } from './PasoVoz';
 import { Guia } from './Guia';
-import type { Pantalla } from './pasosGuia';
+import type { Pantalla } from './pasosGuia';
+import { useLugar } from '../nube/Caras';
 
 /** Lo que lleva un proyecto nuevo para sonar y verse bien desde el primer momento. */
 function iniciarProyecto(p: Proyecto) {
@@ -43,6 +45,8 @@ export function AppNarrativa() {
   const [abierta, setAbierta] = useState<string | null>(null);
   const [pestana, setPestana] = useState<Pestana>('musica');
   useSincronizarAudio();
+  // En la nube, las demás tablets ven en qué paso, escena y pestaña está esta persona.
+  useLugar({ paso, escena: paso === 'escenas' ? abierta : null, pestana: paso === 'escenas' && abierta ? pestana : undefined });
   const { actualizar } = useProyecto();
 
   // Ya no se elige lab: un proyecto sin iniciar se prepara solo.

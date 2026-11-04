@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * El catálogo. Añadir un algoritmo es escribir su archivo y sumarlo aquí:
  * la pantalla se dibuja sola a partir de esta lista y de los mandos que

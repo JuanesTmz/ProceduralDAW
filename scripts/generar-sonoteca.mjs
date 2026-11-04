@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Genera la Sonoteca de SONORA: sonidos sintetizados aquí mismo, sin
  * grabaciones de terceros, para que no haya problema de derechos.

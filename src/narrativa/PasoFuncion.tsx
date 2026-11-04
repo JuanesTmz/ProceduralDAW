@@ -1,9 +1,11 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Paso 4: la función. Ver la pieza como se va a presentar.
  *
  * El escenario es el visual generativo de la pieza: sigue a la escena que
  * suena, reacciona al sonido y muestra la frase mientras se dice.
  * «Sin música» deja solo la voz, para oír qué le aporta el sonido al relato.
+ * En la nube, el video exportado también se puede mandar a la galería del panel.
  */
 import { useRef, useState } from 'react';
 import { motorAudio } from '../audio/motorAudio';
@@ -14,6 +16,11 @@ import { Escenario } from './Escenario';
 import { descargar, exportarVideo, type Exportacion } from './exportarVideo';
 import { useReproduccion } from './useReproduccion';
 import { useCuadro } from './useCuadro';
+import { useNube } from '../nube/contexto';
+import { enviarVideo } from '../nube/galeria';
+
+/** El video recién grabado, mientras se decide qué hacer con él (solo en la nube). */
+type Listo = { video: Blob; nombre: string; envio: 'no' | number | 'enviado' | { error: string } };
 
 export function PasoFuncion() {
   const { proyecto } = useProyecto();
@@ -21,6 +28,8 @@ export function PasoFuncion() {
   vivo.current = proyecto;
   const [exportando, setExportando] = useState<{ avance: number } | null>(null);
   const exportacion = useRef<Exportacion | null>(null);
+  const nube = useNube();
+  const [listo, setListo] = useState<Listo | null>(null);
 
   const exportar = async () => {
     setExportando({ avance: 0 });
@@ -34,8 +43,17 @@ export function PasoFuncion() {
     setExportando(null);
     if (blob) {
       const nombre = (vivo.current.escenas[0]?.nombre ?? 'pieza').toLowerCase().replace(/[^a-z0-9áéíóúñ]+/gi, '-');
-      descargar(blob, `sonora-${nombre}.webm`);
+      // En la nube se elige: descargarlo, mandarlo a la galería, o las dos.
+      if (nube) setListo({ video: blob, nombre: `sonora-${nombre}.webm`, envio: 'no' });
+      else descargar(blob, `sonora-${nombre}.webm`);
     }
+  };
+
+  const enviar = (l: Listo) => {
+    setListo({ ...l, envio: 0 });
+    enviarVideo(l.video, nube?.persona.nombre ?? '', (avance) => setListo((x) => (x ? { ...x, envio: avance } : x)))
+      .then(() => setListo((x) => (x ? { ...x, envio: 'enviado' } : x)))
+      .catch((e: Error) => setListo((x) => (x ? { ...x, envio: { error: e.message } } : x)));
   };
   const { sonandoPieza: sonando, seccion } = useReproduccion();
   const llenos = useRef<(HTMLSpanElement | null)[]>([]);
@@ -133,6 +151,46 @@ export function PasoFuncion() {
           ⤓  Exportar video
         </button>
       </div>
+
+      {listo && (
+        <div className="nv-exportando">
+          <div className="nv-tarjeta nv-exportando__caja">
+            <strong className="nv-subtitulo">Tu video está listo</strong>
+            <span className="nv-tenue">
+              Descárgalo en esta tablet o mándalo a la galería de la hackatón
+              {nube ? `, a nombre de ${nube.equipo.nombre}` : ''}.
+            </span>
+            {typeof listo.envio === 'number' && (
+              <span className="nv-medidor__pista nv-exportando__barra">
+                <span className="nv-medidor__lleno" style={{ width: `${Math.round(listo.envio * 100)}%` }} />
+              </span>
+            )}
+            {listo.envio === 'enviado' && <strong className="nv-acento">✓ Enviado a la galería</strong>}
+            {typeof listo.envio === 'object' && <span className="nv-rojo">{listo.envio.error}</span>}
+            <div className="nv-campo__fila">
+              <button type="button" className="nv-boton" onClick={() => descargar(listo.video, listo.nombre)}>
+                ⤓  Descargar
+              </button>
+              <button
+                type="button"
+                className="nv-boton nv-boton--primario"
+                disabled={typeof listo.envio === 'number' || listo.envio === 'enviado'}
+                onClick={() => enviar(listo)}
+              >
+                {typeof listo.envio === 'number'
+                  ? `Enviando… ${Math.round(listo.envio * 100)}%`
+                  : listo.envio === 'enviado'
+                    ? 'Enviado'
+                    : 'Enviar a la galería'}
+              </button>
+              <span className="nv-espacio" />
+              <button type="button" className="nv-boton" disabled={typeof listo.envio === 'number'} onClick={() => setListo(null)}>
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {exportando && (
         <div className="nv-exportando">

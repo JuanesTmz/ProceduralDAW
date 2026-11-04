@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Las paletas: cinco colores de oscuro a claro, que cada algoritmo usa como
  * rampa.

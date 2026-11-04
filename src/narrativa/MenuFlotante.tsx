@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Un menú que flota encima de toda la interfaz, pegado a lo que lo abrió.
  *

@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Azar controlado: la misma semilla produce siempre la misma secuencia.
  * Es la pieza que hace que el motor sea "procedural" y no caótico.

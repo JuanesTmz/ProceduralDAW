@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * La pestaña Visuales de una escena, o de toda la pieza (General).
  *
@@ -41,7 +42,7 @@ export function ImagenEscena({ escena, indice }: Props) {
       <div className="nv-imagen">
         <div className="nv-imagen__vista">
           <Escenario escenaFija={escena?.id} />
-          <div className="nv-estilos">
+          <div className="nv-estilos" data-bloqueo="visual:estilo">
             {ORDEN_ESTILOS.map((a) => (
               <button
                 key={a}
@@ -54,7 +55,7 @@ export function ImagenEscena({ escena, indice }: Props) {
               </button>
             ))}
           </div>
-          <div className="nv-paletas">
+          <div className="nv-paletas" data-bloqueo="visual:paleta">
             <span className="nv-tenue nv-chico">Paleta</span>
             {PALETAS.map((pal) => (
               <button
@@ -121,7 +122,7 @@ function FotoEscena({ escena }: { escena: Escena | null }) {
 
   const fotoUrl = escena ? escena.imagenUrl : proyecto.visual.imagenUrl;
   return (
-    <div className="nv-foto">
+    <div className="nv-foto" data-bloqueo={`escena:${escena?.id ?? 'general'}:foto`}>
       <span
         className="nv-foto__muestra"
         style={{ background: escena ? fondoEscena(escena) : fotoUrl ? `center / cover url(${fotoUrl})` : '#2d3244' }}
@@ -282,7 +283,7 @@ function SeccionReacciones({ escena }: { escena: Escena }) {
   const { actualizar } = useProyecto();
   return (
     <>
-      <div className="nv-campo">
+      <div className="nv-campo" data-bloqueo={`escena:${escena.id}:reacciones`}>
         <span className="nv-campo__titulo">Movimiento de fondo con el sonido</span>
         <div className="nv-selector nv-selector--lleno">
           {(['bombo', 'voz', 'quieta'] as ReaccionVisual[]).map((r) => (
@@ -338,7 +339,7 @@ function SeccionVivo({ escena, indice }: { escena: Escena; indice: number }) {
 
   return (
     <>
-      <div className="nv-jugar">
+      <div className="nv-jugar" data-bloqueo={`escena:${escena.id}:vivo`}>
         <div
           ref={cuadro}
           className="nv-xy nv-xy--chico"

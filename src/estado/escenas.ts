@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Las escenas del relato y cómo se vuelven música.
  *
@@ -63,7 +64,8 @@ function nuevaEscena(numero: number, respiro = false): Escena {
     nombre: respiro ? 'Respiro' : `Escena ${numero}`,
     texto: '',
     respiro,
-    emocion: respiro ? 'misterio' : 'calma',
+    // Cada escena nueva nace con otra emoción (y su color), como en el ejemplo: así se distinguen al partir el texto.
+    emocion: respiro ? 'misterio' : ORDEN_EMOCIONES[(numero - 1) % ORDEN_EMOCIONES.length],
     fuerza: 2,
     vozDuracion: 0,
     duracionRespiro: 8,
@@ -78,7 +80,7 @@ function nuevaEscena(numero: number, respiro = false): Escena {
  *
  * Las escenas se conservan por posición: si se mueve un corte, la escena 2
  * sigue siendo la escena 2 con su emoción, su foto y su voz; solo cambia el
- * trozo de texto que le toca. Si aparece una nueva, nace con valores neutros.
+ * trozo de texto que le toca. Si aparece una nueva, nace con valores neutros y una emoción distinta a la de la anterior.
  */
 export function sincronizarEscenas(p: Proyecto): void {
   const palabras = palabrasDe(p.narracion.texto);

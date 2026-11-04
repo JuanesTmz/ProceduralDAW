@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Qué parámetros se mueven solos con un dato.
  *
@@ -74,7 +75,7 @@ export function ParametrosDatos({ clave, grupos }: Props) {
             const f = c ? fuente(proyecto, c.fuente) : undefined;
             const col = f ? COLOR_GRUPO[f.grupo] : '#5ee0ff';
             return (
-              <div key={par.clave} className="nv-parametro-bloque">
+              <div key={par.clave} className="nv-parametro-bloque" data-bloqueo={`datos:${clave}:${par.clave}`}>
                 <div className={`nv-parametro ${c ? 'nv-parametro--dato' : ''}`} style={{ ['--c' as string]: col }}>
                   <span className="nv-parametro__nombre">{par.etiqueta}</span>
                   <SelectorDato

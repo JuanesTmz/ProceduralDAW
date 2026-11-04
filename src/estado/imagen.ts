@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * La imagen de las escenas: qué se puede conectar en el visual y cómo se
  * arma la paleta.

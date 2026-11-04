@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Lo que se toca en vivo sobre la imagen: el gesto del cuadro X/Y y los
  * golpes visuales. Es un canal pequeño entre los botones y el escenario,

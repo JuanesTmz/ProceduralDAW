@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * La columna de pistas: el mismo selector en la ventana de Golpes y en la
  * de Procedural.
@@ -15,6 +16,8 @@ export interface PistaElegible {
   color: string;
   /** Línea pequeña: el estado de esa pista, no una explicación. */
   nota?: string;
+  /** Quiénes están editando esa pista en otras tablets. */
+  caras?: ReactNode;
 }
 
 interface Props {
@@ -48,6 +51,7 @@ export function ListaPistas({ titulo, pistas, elegida, alElegir, pie }: Props) {
                 <span className="pista__nombre">{pista.nombre}</span>
                 {pista.nota && <span className="pista__nota">{pista.nota}</span>}
               </span>
+              {pista.caras}
             </button>
           );
         })}

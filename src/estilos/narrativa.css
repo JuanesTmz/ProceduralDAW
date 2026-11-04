@@ -1,3 +1,4 @@
+/* Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos */
 /* SONORA · narrativa primero.
    Todo va bajo el prefijo nv- para no chocar con los estilos viejos. */
 
@@ -14,6 +15,11 @@
   --nv-ia: #5ee0ff;
   --nv-mu: #ff7ab8;
   --nv-rojo: #ff4d6d;
+  /* Lo que se trae de Escuela Inteligente: sus colores en una línea, la trama
+     diagonal de la Expedición y la sombra dura bajo lo que se toca. */
+  --nv-marca: linear-gradient(90deg, #ff5bff, #35bfff 18%, #04ef77 36%, #00a7b8 52%, #fce905 68%, #9f1ded 84%, #ff6a12);
+  --nv-trama: repeating-linear-gradient(115deg, #fff0 0 8px, #ffffff2e 8px 16px);
+  --nv-sombra-dura: 0 3px 0 #0009;
   height: 100vh;
   height: 100dvh;
   display: flex;
@@ -47,10 +53,10 @@
 .nv-italica { font-style: italic; }
 .nv-chico { font-size: 12px; }
 .nv-etiqueta {
-  font-family: var(--mono);
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  font-weight: 600;
+  font-size: 11.5px;
+  letter-spacing: 0.12em;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 .nv-punto {
   display: inline-block;
@@ -101,8 +107,12 @@
   background: var(--nv-acento);
   color: #0f1117;
   border-color: var(--nv-acento);
-  font-weight: 700;
+  font-weight: 800;
+  box-shadow: 0 3px 0 #b87a0d;
+  transition: transform 0.1s, box-shadow 0.1s;
 }
+.nv-boton--primario:hover { transform: translateY(-1px); box-shadow: 0 4px 0 #b87a0d; }
+.nv-boton--primario:active { transform: translateY(2px); box-shadow: 0 1px 0 #b87a0d; }
 .nv-boton--rojo {
   background: var(--nv-rojo);
   border-color: var(--nv-rojo);
@@ -179,10 +189,21 @@
   padding: 10px 20px;
   background: var(--nv-s1);
   flex: none;
+  position: relative;
+}
+.nv-barra::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--nv-marca);
+  opacity: 0.75;
 }
 .nv-logo {
   color: var(--nv-acento);
-  font-weight: 800;
+  font-weight: 900;
   letter-spacing: 0.16em;
   font-size: 17px;
 }
@@ -212,7 +233,7 @@
 .nv-paso--activo .nv-paso__num { background: var(--nv-acento); border-color: var(--nv-acento); color: #0f1117; }
 .nv-medidor { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
 .nv-medidor__pista { width: 150px; height: 5px; border-radius: 3px; background: var(--nv-s3); overflow: hidden; }
-.nv-medidor__lleno { display: block; height: 100%; background: var(--nv-acento); border-radius: 3px; }
+.nv-medidor__lleno { display: block; height: 100%; background: var(--nv-trama), var(--nv-acento); border-radius: 3px; }
 .nv-medidor--pasado .nv-medidor__lleno { background: var(--nv-rojo); }
 .nv-medidor--pasado .nv-mono { color: var(--nv-rojo); }
 .nv-lab {
@@ -1354,7 +1375,7 @@
   background: #1b1e2b;
   cursor: pointer;
 }
-.tu-escenario { position: absolute; left: 0; top: 0; transform-origin: 0 0; overflow: hidden; font-family: 'Trebuchet MS', system-ui, sans-serif; color: #fff4e0; }
+.tu-escenario { position: absolute; left: 0; top: 0; transform-origin: 0 0; overflow: hidden; font-family: var(--fuente); color: #fff4e0; }
 .tu-pausa {
   position: absolute;
   inset: 0;
@@ -2034,11 +2055,11 @@ html, body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent
   border: 1.5px solid color-mix(in srgb, var(--c) 70%, transparent);
   color: var(--nv-texto);
   text-align: left;
-  box-shadow: 0 0 0 0 transparent, 0 4px 14px #0006;
-  transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--c) 45%, #000);
+  transition: background 0.15s, box-shadow 0.1s, transform 0.1s;
 }
-.nv-pie-herr__boton:hover { background: color-mix(in srgb, var(--c) 26%, var(--nv-s1)); box-shadow: 0 0 18px color-mix(in srgb, var(--c) 35%, transparent), 0 4px 14px #0006; }
-.nv-pie-herr__boton:active { transform: scale(0.97); }
+.nv-pie-herr__boton:hover { background: color-mix(in srgb, var(--c) 26%, var(--nv-s1)); transform: translateY(-1px); box-shadow: 0 5px 0 color-mix(in srgb, var(--c) 45%, #000), 0 0 18px color-mix(in srgb, var(--c) 30%, transparent); }
+.nv-pie-herr__boton:active { transform: translateY(3px); box-shadow: 0 1px 0 color-mix(in srgb, var(--c) 45%, #000); }
 .nv-pie-herr__boton--datos { --c: var(--nv-ia); }
 .nv-pie-herr__boton--sonidos { --c: var(--nv-acento); }
 .nv-pie-herr__icono {
@@ -2047,7 +2068,7 @@ html, body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent
   display: grid;
   place-items: center;
   border-radius: 10px;
-  background: var(--c);
+  background: var(--nv-trama), var(--c);
   color: #14161d;
   font-size: 18px;
   font-weight: 700;

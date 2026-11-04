@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Marejada de formas: una rejilla de figuras que oscila alrededor de lo que
  * la toca, con la figura y la trama a elección.

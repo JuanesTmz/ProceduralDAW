@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Exportar la pieza como video: el visual, la frase y todo lo que suena.
  *
@@ -7,6 +8,7 @@
  * navegador y se sube a donde sea.
  */
 import * as Tone from 'tone';
+import arreglarDuracion from 'fix-webm-duration';
 import { motorAudio } from '../audio/motorAudio';
 import { motorVisual } from '../visual/motorVisual';
 import { palabrasDe } from '../estado/proyecto';
@@ -101,15 +103,21 @@ export function exportarVideo(leerProyecto: () => Proyecto, alProgreso: (avance:
     alProgreso(motorAudio.progresoPieza);
   };
 
+  let inicio = 0;
   const terminado = new Promise<Blob | null>((listo) => {
     grabadora.onstop = () => {
       cancelAnimationFrame(cuadro);
       Tone.getDestination().disconnect(destino);
-      listo(cancelado || trozos.length === 0 ? null : new Blob(trozos, { type: 'video/webm' }));
+      if (cancelado || trozos.length === 0) return listo(null);
+      // El navegador graba el .webm sin anotar cuánto dura: sin esto, los
+      // reproductores muestran 0:00 y no dejan adelantar.
+      const video = new Blob(trozos, { type: 'video/webm' });
+      arreglarDuracion(video, performance.now() - inicio, { logger: false }).then(listo, () => listo(video));
     };
   });
 
   void (async () => {
+    inicio = performance.now();
     grabadora.start(500);
     pintar();
     await motorAudio.reproducirPieza();

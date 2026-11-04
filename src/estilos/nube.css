@@ -1,0 +1,247 @@
+/* Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos */
+/* SONORA en la nube: la entrada del equipo y el estado en la barra.
+   Usa los colores de .nv; todo va con el prefijo nu-. */
+
+/* ---------- la puerta ---------- */
+.nu-puerta {
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  overflow: auto;
+  background:
+    radial-gradient(60% 50% at 15% 10%, #35bfff1f, transparent),
+    radial-gradient(50% 45% at 90% 90%, #ff5bff1a, transparent),
+    var(--nv-fondo);
+}
+.nu-tarjeta {
+  position: relative;
+  width: min(440px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 30px 30px 26px;
+  border-radius: 18px;
+  background: var(--nv-s1);
+  box-shadow: 0 6px 0 #0008, 0 30px 80px #0006;
+  overflow: hidden;
+}
+/* La línea con los colores de la marca, como en la barra. */
+.nu-tarjeta::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: var(--nv-marca);
+}
+.nu-logo { font-size: 15px; letter-spacing: 0.2em; color: var(--nv-acento); margin-bottom: 8px; }
+.nu-cargando { animation: nu-latido 1.4s ease-in-out infinite; }
+@keyframes nu-latido { 50% { opacity: 0.45; } }
+
+.nu-formulario { display: flex; flex-direction: column; gap: 16px; margin-top: 14px; }
+.nu-formulario .nv-boton--primario { justify-content: center; font-size: 16px; min-height: 50px; }
+.nu-formulario .nv-enlace { align-self: center; }
+.nu-campo { display: flex; flex-direction: column; gap: 7px; flex: 1; }
+.nu-campo input {
+  font: inherit;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--nv-texto);
+  background: var(--nv-fondo);
+  border: 2px solid var(--nv-linea);
+  border-radius: 12px;
+  padding: 11px 14px;
+  min-height: 52px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.nu-campo input:focus { outline: none; border-color: var(--nv-acento); }
+.nu-error { margin: 0; color: var(--nv-rojo); font-weight: 700; }
+
+.nu-quien { display: flex; align-items: flex-end; gap: 14px; }
+.nu-avatar {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  flex: none;
+  color: #0f1117;
+  font-weight: 900;
+  font-size: 22px;
+  background-image: var(--nv-trama);
+  box-shadow: var(--nv-sombra-dura);
+}
+.nu-avatar--chico { width: 30px; height: 30px; font-size: 14px; box-shadow: none; }
+.nu-colores { display: flex; flex-wrap: wrap; gap: 8px; }
+:where(.nv) .nu-color {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  box-shadow: inset 0 0 0 2px #0004;
+  transition: transform 0.1s;
+}
+:where(.nv) .nu-color--elegido { border-color: var(--nv-texto); transform: scale(1.1); }
+
+/* ---------- en la barra ---------- */
+.nu-estado { position: relative; display: flex; align-items: center; gap: 10px; }
+.nu-guardado { font-size: 12px; font-weight: 700; color: var(--nv-tenue); white-space: nowrap; }
+.nu-guardado::before {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: #04ef77;
+  vertical-align: 1px;
+}
+.nu-guardado--en-vivo { color: #04ef77; }
+.nu-guardado--en-vivo::before { box-shadow: 0 0 0 0 #04ef7799; animation: nu-pulso 2s infinite; }
+.nu-guardado--conectando::before { background: var(--nv-acento); animation: nu-latido 0.8s infinite; }
+.nu-guardado--sin-conexion { color: var(--nv-rojo); }
+.nu-guardado--sin-conexion::before { background: var(--nv-rojo); }
+@keyframes nu-pulso { 70% { box-shadow: 0 0 0 6px #04ef7700; } 100% { box-shadow: 0 0 0 0 #04ef7700; } }
+
+/* Las caras de los demás, encimadas como en Figma. */
+.nu-caras { display: flex; align-items: center; padding-left: 6px; }
+.nu-cara { margin-left: -6px; border: 2px solid var(--nv-fondo); box-sizing: content-box; }
+.nu-cara--mas {
+  display: grid;
+  place-items: center;
+  height: 30px;
+  min-width: 30px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--nv-s3);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+:where(.nv) .nu-persona {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px 4px 4px;
+  border-radius: 999px;
+  background: var(--nv-s2);
+  min-height: 40px;
+}
+.nu-persona__texto { display: flex; flex-direction: column; line-height: 1.15; text-align: left; }
+.nu-persona__texto strong { font-size: 13px; }
+.nu-persona__texto small { font-size: 11px; color: var(--nv-suave); }
+.nu-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+  padding: 6px;
+  border-radius: 12px;
+  background: var(--nv-s2);
+  box-shadow: 0 14px 40px #0009;
+}
+.nu-menu__quienes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 12px 12px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--nv-linea);
+}
+.nu-menu__quien { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+:where(.nv) .nu-menu button { text-align: left; padding: 12px; border-radius: 8px; font-weight: 600; }
+:where(.nv) .nu-menu button:hover { background: var(--nv-s3); }
+
+/* «¿Quién eres?» encima de la app, sin cerrarla. */
+.nu-encima { position: fixed; inset: 0; z-index: 200; }
+.nu-encima .nu-puerta { height: 100%; background: #0f1117e6; }
+
+/* ---------- presencia: caras chicas en pasos, escenas y pestañas ---------- */
+.nu-caras--lugar { display: inline-flex; padding-left: 4px; vertical-align: middle; }
+.nu-avatar--mini { width: 20px; height: 20px; font-size: 10.5px; box-shadow: none; }
+.nu-caras--lugar .nu-cara { margin-left: -5px; border-width: 1.5px; }
+.nu-cara--mini { height: 20px; min-width: 20px; font-size: 10px; }
+
+/* ---------- bloqueos: lo que otra persona está moviendo ---------- */
+/* La pieza no responde aquí (lo que lleva data-libre, como oír solo, sí),
+   se atenúa y lleva el nombre y el color de quien la tiene. */
+[data-bloqueado-por] {
+  position: relative;
+  outline: 2px solid var(--bloqueo-color, #fff);
+  outline-offset: 3px;
+  border-radius: 10px;
+}
+[data-bloqueado-por] * { pointer-events: none !important; }
+[data-bloqueado-por] [data-libre],
+[data-bloqueado-por] [data-libre] * { pointer-events: auto !important; }
+[data-bloqueado-por] > :not([data-libre]) { opacity: 0.45; transition: opacity 0.15s; }
+[data-bloqueado-por]::after {
+  content: var(--bloqueo-texto);
+  position: absolute;
+  top: -12px;
+  right: 10px;
+  z-index: 30;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--bloqueo-color, #fff);
+  color: #0f1117;
+  font: 800 11.5px/1.2 var(--fuente);
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 3px 0 #0007;
+  animation: nu-aparece 0.15s ease-out;
+}
+@keyframes nu-aparece { from { opacity: 0; transform: translateY(3px); } }
+/* Las filas de celdas no tienen caja propia (display: contents): el aviso va en sus pasos. */
+.nv-celdas__fila[data-bloqueado-por]::after { content: none; }
+.nv-celdas__fila[data-bloqueado-por] > .nv-celdas__pasos {
+  position: relative;
+  outline: 2px solid var(--bloqueo-color);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+.nv-celdas__fila[data-bloqueado-por] > .nv-celdas__pasos::after {
+  content: var(--bloqueo-texto);
+  position: absolute;
+  top: -12px;
+  right: 6px;
+  z-index: 30;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--bloqueo-color);
+  color: #0f1117;
+  font: 800 11px/1.2 var(--fuente);
+  white-space: nowrap;
+  opacity: 1;
+}
+
+/* ---------- copias en el menú ---------- */
+.nu-menu__confirmar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 12px;
+  margin: 4px 0;
+  border-radius: 10px;
+  background: #ffb0201a;
+  font-size: 13px;
+  font-weight: 600;
+}
+.nu-menu__confirmar > span { flex-basis: 100%; }
+.nu-menu__aviso { margin: 4px 12px 8px; font-size: 12.5px; color: var(--nv-suave); }
+
+/* ---------- edición cerrada y panel mirando ---------- */
+.nu-cerrado {
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #ff4d6d26;
+  color: var(--nv-rojo);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.nu-mirando { border-color: #ffffff55; }

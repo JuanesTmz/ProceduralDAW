@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Paso 3: las escenas. La pantalla principal de la app.
  *
@@ -26,7 +27,8 @@ import { PRESETS } from '../estado/musica';
 import type { Escena } from '../estado/tipos';
 import { useReproduccion } from './useReproduccion';
 import { useCuadro } from './useCuadro';
-import { Onda } from './VozEscena';
+import { Onda } from './VozEscena';
+import { Caras } from '../nube/Caras';
 
 export function fondoEscena(e: Escena): string {
   if (e.imagenUrl) return `center / cover no-repeat url(${e.imagenUrl})`;
@@ -121,6 +123,7 @@ export function PasoEscenas({ alEntrar, alGeneral }: { alEntrar: (id: string) =>
           <span className="nv-tarjeta-escena__arriba">
             <span className="nv-etiqueta nv-acento">GENERAL</span>
             <span className="nv-espacio" />
+            <Caras en={(l) => l.escena === 'general'} />
             <span className="nv-flecha nv-acento">›</span>
           </span>
           <strong>Toda la pieza</strong>
@@ -182,6 +185,7 @@ export function PasoEscenas({ alEntrar, alGeneral }: { alEntrar: (id: string) =>
                   </span>
                   <strong>{e.nombre}</strong>
                 </span>
+                <Caras en={(l) => l.escena === e.id} />
                 <span className="nv-flecha">›</span>
               </span>
               <span className="nv-espacio-v" />

@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Sonidos: con qué suena cada pista, en un solo lugar.
  *
@@ -21,7 +22,8 @@ import { NOMBRE_GRUPO, SONOTECA } from '../audio/sonoteca';
 import { useGrabadora } from '../hooks/useGrabadora';
 import { Recortador } from '../componentes/Recortador';
 import { Ventana } from '../componentes/Ventana';
-import { SelectorInstrumento } from './SelectorInstrumento';
+import { SelectorInstrumento } from './SelectorInstrumento';
+import { useEnVentana } from '../nube/Caras';
 
 const KIT: TipoSonido[] = ['bombo', 'redoblante', 'hihat', 'palma', 'tom', 'aro'];
 export const ID_MELODIA = 'melodia';
@@ -41,6 +43,7 @@ export function VentanaSonidosPistas({ pista, alCerrar }: Props) {
   const [elegida, setElegida] = useState(pista ?? filas[0]?.id ?? ID_MELODIA);
   const esMelodia = elegida === ID_MELODIA;
   const fila = filas.find((f) => f.id === elegida);
+  useEnVentana(`sonidos:${elegida}`);
   const actual = fila ? valorSonido(proyecto, fila.tipo, fila.sampleUrl) : '';
 
   const elegir = (valor: string, url?: string) => {
@@ -105,7 +108,8 @@ export function VentanaSonidosPistas({ pista, alCerrar }: Props) {
           </button>
         </div>
 
-        <div className="nv-sonidos__catalogo">
+        {/* Elegir el sonido de una pista es de una persona a la vez. */}
+        <div className="nv-sonidos__catalogo" data-bloqueo={`sonido:${elegida}`}>
           {elegida === NUEVA && (
             <p className="nv-sonidos__aviso">Toca el sonido con que va a sonar la pista nueva.</p>
           )}

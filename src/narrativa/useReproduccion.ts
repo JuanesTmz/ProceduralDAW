@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Lo que la interfaz necesita saber del motor mientras suena: qué se pidió
  * oír (la clave de la reproducción activa), si suena la pieza y qué escena

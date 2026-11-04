@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Cómo se mueve un parámetro a lo largo de la pieza, según su dato.
  *

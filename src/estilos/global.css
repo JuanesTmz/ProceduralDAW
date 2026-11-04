@@ -1,5 +1,6 @@
+/* Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos */
 /* SONORA — estilos propios, sin librerías de UI.
-   Tipografías del sistema para que la app funcione sin internet (PWA). */
+   Nunito Sans, la letra de Escuela Inteligente; sin internet cae en la del sistema. */
 
 :root {
   --fondo: #0d1014;
@@ -21,7 +22,7 @@
   --radio: 10px;
   --radio-chico: 6px;
   --sombra: 0 8px 28px rgba(0, 0, 0, 0.45);
-  --fuente: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+  --fuente: 'Nunito Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
     sans-serif;
   --mono: 'Cascadia Mono', 'Segoe UI Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 }

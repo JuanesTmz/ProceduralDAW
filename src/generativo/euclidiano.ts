@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Ritmos euclidianos: repartir n pulsos lo más parejo posible en k pasos.
  * Es la regla que está detrás de muchísimos ritmos del mundo —el tresillo

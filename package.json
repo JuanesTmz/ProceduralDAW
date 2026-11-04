@@ -1,21 +1,36 @@
 {
   "name": "sonora",
   "private": true,
+  "description": "SONORA — narrativa sonora. Diseñado y desarrollado por Juan Esteban Trillos.",
+  "author": {
+    "name": "Juan Esteban Trillos",
+    "url": "https://www.linkedin.com/in/juan-esteban-trillos"
+  },
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "tablet": "vite --host --mode tablet --port 5181",
+    "nube": "vite --mode nube",
     "sonoteca": "node scripts/generar-sonoteca.mjs",
     "build": "tsc -b && vite build",
+    "build:nube": "tsc -b && vite build --mode nube",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "servidor": "npm --prefix server run dev"
   },
   "dependencies": {
+    "fflate": "^0.8.3",
+    "fix-webm-duration": "^1.0.6",
     "hydra-synth": "^1.4.0",
+    "lib0": "^0.2.119",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "tone": "^15.1.22"
+    "tone": "^15.1.22",
+    "y-indexeddb": "^9.0.12",
+    "y-protocols": "^1.0.7",
+    "y-websocket": "^3.1.0",
+    "yjs": "^13.6.33"
   },
   "devDependencies": {
     "@types/node": "^24.13.3",

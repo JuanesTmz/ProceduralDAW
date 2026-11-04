@@ -1,3 +1,4 @@
+// Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * La vista previa de un dato: cómo se movería a lo largo de toda la pieza.
  *
