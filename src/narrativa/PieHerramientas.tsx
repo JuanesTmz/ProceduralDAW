@@ -1,38 +1,34 @@
 // Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
- * Los botones de herramientas al pie de las capas, abajo a la derecha:
- * Sonidos (con qué suena cada pista) y Datos (qué se mueve solo).
- * Son grandes y de color a propósito: son lo que más se busca.
+ * Los botones al pie de las capas: agregar una capa nueva y abrir los
+ * sonidos (la biblioteca y los efectos que graba el equipo). Son grandes y
+ * de color a propósito: son lo que más se busca.
  */
 import { Caras } from '../nube/Caras';
 
 interface Props {
   alSonidos: () => void;
-  /** Texto del botón de sonidos. */
-  textoSonidos?: string;
-  /** Si viene, aparece el botón de Datos. */
-  alDatos?: () => void;
-  datosActivos?: number;
+  /** Si viene, aparece «+ Añadir capa». */
+  alAgregar?: () => void;
 }
 
-export function PieHerramientas({ alSonidos, textoSonidos = 'Sonidos', alDatos, datosActivos = 0 }: Props) {
+export function PieHerramientas({ alSonidos, alAgregar }: Props) {
   return (
     <div className="nv-pie-herr">
-      {alDatos && (
-        <button type="button" className="nv-pie-herr__boton nv-pie-herr__boton--datos" data-tour="datos" onClick={alDatos}>
-          <span className="nv-pie-herr__icono">↯</span>
+      {alAgregar && (
+        <button type="button" className="nv-pie-herr__boton nv-pie-herr__boton--agregar" data-tour="nueva-pista" onClick={alAgregar}>
+          <span className="nv-pie-herr__icono">+</span>
           <span className="nv-pie-herr__texto">
-            <strong>Datos</strong>
-            <span>{datosActivos === 0 ? 'nada se mueve solo' : `${datosActivos} se mueven solos`}</span>
+            <strong>Añadir capa</strong>
+            <span>un sonido más</span>
           </span>
-          <Caras en={(l) => l.ventana === 'datos'} />
         </button>
       )}
       <button type="button" className="nv-pie-herr__boton nv-pie-herr__boton--sonidos" data-tour="sonidos" onClick={alSonidos}>
         <span className="nv-pie-herr__icono">♪</span>
         <span className="nv-pie-herr__texto">
-          <strong>{textoSonidos}</strong>
-          <span>biblioteca y tus efectos</span>
+          <strong>Sonidos</strong>
+          <span>cambiar o grabar los tuyos</span>
         </span>
         <Caras en={(l) => Boolean(l.ventana?.startsWith('sonidos:'))} />
       </button>

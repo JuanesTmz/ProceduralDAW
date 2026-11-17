@@ -15,6 +15,22 @@ export interface Grabacion {
   duracion: number;
 }
 
+/**
+ * Opus a 128 kbps: con la tasa baja que algunos Android eligen por su
+ * cuenta, la voz sale metálica. Si el navegador no acepta las opciones,
+ * se graba como él quiera.
+ */
+function crearGrabadora(flujo: MediaStream): MediaRecorder {
+  const tipo = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'].find(
+    (t) => typeof MediaRecorder.isTypeSupported === 'function' && MediaRecorder.isTypeSupported(t),
+  );
+  try {
+    return new MediaRecorder(flujo, { ...(tipo ? { mimeType: tipo } : {}), audioBitsPerSecond: 128_000 });
+  } catch {
+    return new MediaRecorder(flujo);
+  }
+}
+
 export function useGrabadora(alTerminar: (grabacion: Grabacion) => void) {
   const [estado, setEstado] = useState<EstadoGrabadora>('inactiva');
   const [segundos, setSegundos] = useState(0);
@@ -49,13 +65,22 @@ export function useGrabadora(alTerminar: (grabacion: Grabacion) => void) {
 
     setEstado('pidiendo');
     try {
+      // Sin los filtros de llamada: en Android la supresión de ruido y el
+      // control automático de volumen dejan la voz robótica y con estática,
+      // y la supresión además borra los efectos (una reja, una olla) por no
+      // ser voz. Mientras se graba no suena música, así que el eco no hace falta.
       const flujo = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true },
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+          channelCount: 1,
+        },
       });
       pistas.current = flujo;
       trozos.current = [];
 
-      const rec = new MediaRecorder(flujo);
+      const rec = crearGrabadora(flujo);
       grabadora.current = rec;
 
       rec.ondataavailable = (e) => {

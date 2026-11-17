@@ -6,21 +6,25 @@
  * y un solo botón grande para grabar. Arriba, las escenas como pasos con
  * su estado (grabada o no). Al terminar una, se sigue a la próxima.
  * Los respiros no aparecen: no tienen voz.
+ *
+ * Desde nov. 2026 solo se graba escena por escena (se quitó «de corrido»):
+ * si después se mueve un corte, las palabras se mueven con él y la escena
+ * se regraba. Por eso cada voz recuerda el texto con que se grabó, y si ya
+ * no coincide se avisa.
  */
 import { useEffect, useState } from 'react';
 import { useVistaPrevia, vistaPrevia } from '../audio/vistaPrevia';
 import { useProyecto } from '../estado/ProyectoContext';
 import { formatearReloj } from '../estado/proyecto';
-import { EMOCIONES } from '../estado/escenas';
+import { EMOCIONES, vozDesactualizada } from '../estado/escenas';
 import { useGrabadora } from '../hooks/useGrabadora';
 import { Onda } from './VozEscena';
-import { VozCorrida } from './VozCorrida';
 
 export function PasoVoz({ alSeguir }: { alSeguir: () => void }) {
   const { proyecto, actualizar } = useProyecto();
   const { escenas } = proyecto;
   const [indice, setIndice] = useState(() => {
-    const primera = escenas.findIndex((e) => !e.vozUrl);
+    const primera = escenas.findIndex((e) => !e.vozUrl || vozDesactualizada(e));
     return primera < 0 ? 0 : primera;
   });
   const escena = escenas[Math.min(indice, escenas.length - 1)];
@@ -36,6 +40,7 @@ export function PasoVoz({ alSeguir }: { alSeguir: () => void }) {
       e.vozUrl = g.url;
       e.vozDuracion = g.duracion;
       e.vozDesde = undefined;
+      e.vozTexto = e.texto;
     });
   });
 
@@ -58,7 +63,8 @@ export function PasoVoz({ alSeguir }: { alSeguir: () => void }) {
 
   const color = EMOCIONES[escena.emocion].color;
   const grabando = estado === 'grabando';
-  const grabadas = escenas.filter((e) => e.vozUrl).length;
+  const grabadas = escenas.filter((e) => e.vozUrl && !vozDesactualizada(e)).length;
+  const vieja = vozDesactualizada(escena);
   const esUltima = indice >= escenas.length - 1;
 
   const escuchar = () => {
@@ -71,37 +77,13 @@ export function PasoVoz({ alSeguir }: { alSeguir: () => void }) {
       <div className="nv-cabeza">
         <div>
           <h1 className="nv-titulo">Graba tu voz</h1>
-          <p className="nv-sub">
-            {proyecto.modoVoz === 'corrido'
-              ? 'Todo el monólogo de una vez; después marcas dónde cambia cada escena.'
-              : 'Una escena a la vez. Léela despacio: se dice, no se canta.'}
-          </p>
+          <p className="nv-sub">Una escena a la vez. Léela despacio: se dice, no se canta.</p>
         </div>
         <span className="nv-espacio" />
-        {proyecto.modoVoz === 'escena' && (
-          <span className="nv-tenue">
-            {grabadas} de {escenas.length} grabadas
-          </span>
-        )}
-        <div className="nv-selector" data-tour="modo-voz">
-          {(['escena', 'corrido'] as const).map((m) => (
-            <button
-              key={m}
-              type="button"
-              disabled={grabando}
-              className={`nv-selector__op ${proyecto.modoVoz === m ? 'nv-selector__op--activa' : ''}`}
-              onClick={() => actualizar((p) => (p.modoVoz = m))}
-            >
-              {m === 'escena' ? 'Por escena' : 'Todo de corrido'}
-            </button>
-          ))}
-        </div>
+        <span className="nv-tenue">
+          {grabadas} de {escenas.length} grabadas
+        </span>
       </div>
-
-      {proyecto.modoVoz === 'corrido' ? (
-        <VozCorrida alSeguir={alSeguir} />
-      ) : (
-      <>
 
       <nav className="nv-pasos-voz" aria-label="Escenas">
         {escenas.map((e, i) => {
@@ -115,8 +97,11 @@ export function PasoVoz({ alSeguir }: { alSeguir: () => void }) {
               style={{ ['--color' as string]: c }}
               onClick={() => setIndice(i)}
             >
-              <span className={`nv-paso-voz__marca ${e.vozUrl ? 'nv-paso-voz__marca--lista' : ''}`}>
-                {e.vozUrl ? '✓' : i + 1}
+              <span
+                className={`nv-paso-voz__marca ${e.vozUrl ? 'nv-paso-voz__marca--lista' : ''} ${vozDesactualizada(e) ? 'nv-paso-voz__marca--vieja' : ''}`}
+                title={vozDesactualizada(e) ? 'El texto cambió: vuelve a grabarla' : undefined}
+              >
+                {vozDesactualizada(e) ? '!' : e.vozUrl ? '✓' : i + 1}
               </span>
               <span className="nv-paso-voz__nombre">{e.nombre}</span>
             </button>
@@ -131,6 +116,12 @@ export function PasoVoz({ alSeguir }: { alSeguir: () => void }) {
         <p className={`nv-apuntador__texto ${grabando ? 'nv-apuntador__texto--vivo' : ''}`}>
           {escena.texto}
         </p>
+        {vieja && !grabando && (
+          <p className="nv-aviso-voz">
+            El texto de esta escena cambió desde que la grabaste (se movió un corte). Vuelve a grabarla para que la voz diga lo
+            mismo que el texto.
+          </p>
+        )}
 
         <div className="nv-apuntador__control">
           {grabando ? (
@@ -150,7 +141,11 @@ export function PasoVoz({ alSeguir }: { alSeguir: () => void }) {
                 <Onda semilla={escena.vozUrl} color={color} barras={90} />
               </div>
               <span className="nv-mono">{formatearReloj(escena.vozDuracion)}</span>
-              <button type="button" className="nv-boton" onClick={() => void empezar()}>
+              <button
+                type="button"
+                className={`nv-boton ${vieja ? 'nv-boton--rojo' : ''}`}
+                onClick={() => void empezar()}
+              >
                 Grabar de nuevo
               </button>
               <button
@@ -179,8 +174,6 @@ export function PasoVoz({ alSeguir }: { alSeguir: () => void }) {
           )}
         </div>
       </section>
-      </>
-      )}
     </div>
   );
 }

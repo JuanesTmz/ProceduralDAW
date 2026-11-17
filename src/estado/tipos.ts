@@ -63,6 +63,16 @@ export interface Fila {
   sampleUrl?: string;
   /** Nota base para afinar el sample o el sonido. */
   nota?: string;
+  /**
+   * Capas con notas (el bajo de una base): el grado de la escala de cada
+   * paso. Con esto un sonido melódico toca una línea y no una sola nota.
+   * Si una casilla se enciende sin grado, suena la tónica.
+   */
+  grados?: (number | null)[];
+  /** La octava donde cae el grado 0 de `grados`. */
+  octava?: number;
+  /** Fuerza de cada paso, de 0 a 1 (los acentos y golpes suaves del género). */
+  acentos?: number[];
 }
 
 /**
@@ -101,6 +111,10 @@ export interface Melodia {
   escala: NombreEscala;
   /** El estudiante puede ocultar la matriz para concentrarse en el ritmo. */
   visible: boolean;
+  /** Cuánto eco lleva la melodía (0 a 1). Sin valor, el de siempre. */
+  eco?: number;
+  /** Cuántos pasos dura cada nota. Sin valor, dos (una corchea). */
+  largo?: number;
 }
 
 export interface Efectos {
@@ -220,6 +234,8 @@ export interface ArchivoDatos {
   colores?: string[];
   /** Solo en imágenes: luz, color, detalle y bits de la foto. Las guardadas antes no lo traen. */
   canales?: CanalesFoto;
+  /** Solo en las fotos de Visuales: la imagen misma, para verla y usarla de fondo. */
+  url?: string;
 }
 
 // ------------------------------------------------------------ El relato
@@ -251,6 +267,11 @@ export interface Escena {
   vozDuracion: number;
   /** Si la voz es un tramo de la grabación de corrido: desde qué segundo. */
   vozDesde?: number;
+  /**
+   * El texto que tenía la escena cuando se grabó su voz. Si el texto cambia
+   * (se movió un corte), la voz ya no dice lo mismo y hay que regrabarla.
+   */
+  vozTexto?: string;
   /** Solo en respiros: cuánto dura, en segundos. */
   duracionRespiro: number;
   despuesDe: number;
@@ -285,6 +306,8 @@ export interface Escena {
   golpesVisuales?: { t: number; tipo: GolpeVisual }[];
   /** Música Urbana: qué efecto dispara cada sonido de esta escena. */
   reacciones?: ReglaReaccion[];
+  /** Los golpes de la imagen propios de esta escena (si no, los de toda la pieza). */
+  efectosPasos?: Partial<Record<GolpeVisual, boolean[]>>;
 }
 
 export type ReaccionVisual = 'bombo' | 'voz' | 'quieta';
@@ -340,6 +363,11 @@ export interface Historia {
   que: string;
   /** ¿Por qué es Medellín? — el arraigo territorial que pide la rúbrica. */
   porQue: string;
+  /**
+   * Lo que el equipo anota en cada estación del SmartFest (una casilla por
+   * estación, en orden). Es la ayuda para escribir el monólogo final.
+   */
+  estaciones?: string[];
 }
 
 /**
@@ -409,6 +437,10 @@ export interface Visual {
   semilla: number;
   /** Colores sacados de una imagen del estudiante; mandan sobre la paleta. */
   paletaPropia?: string[];
+  /** Los golpes de la imagen en celdas, para toda la pieza (ver estado/efectos.ts). */
+  efectosPasos?: Partial<Record<GolpeVisual, boolean[]>>;
+  /** Brillo, zoom, giro… de la obra entera, a mano (0..1). */
+  obra?: Record<string, number>;
 }
 
 /** Bucle del patrón, o recorrido completo por las secciones. */

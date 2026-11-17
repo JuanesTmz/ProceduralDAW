@@ -62,13 +62,14 @@ export function EditorEscena({ id, pestana, alPestana, alIr, alVolver }: Props) 
           <Nombre escena={escena} />
           {escena && <Sentir escena={escena} />}
           <span className="nv-espacio" />
-          <div className="nv-selector nv-selector--pestanas">
+          <div className="nv-selector nv-selector--pestanas nv-selector--grandes" role="tablist" aria-label="Qué editar">
             <button
               type="button"
               className={`nv-selector__op ${pestana === 'musica' ? 'nv-selector__op--activa' : ''}`}
               onClick={() => alPestana('musica')}
             >
-              ♫  Música
+              <span className="nv-pestana-icono" aria-hidden="true">♫</span>
+              Música
               <Caras en={(l) => l.escena === id && l.pestana === 'musica'} />
             </button>
             <button
@@ -76,11 +77,12 @@ export function EditorEscena({ id, pestana, alPestana, alIr, alVolver }: Props) 
               className={`nv-selector__op ${pestana === 'visual' ? 'nv-selector__op--activa' : ''}`}
               onClick={() => alPestana('visual')}
             >
-              ◐  Visuales
+              <span className="nv-pestana-icono" aria-hidden="true">◐</span>
+              Visuales
               <Caras en={(l) => l.escena === id && l.pestana === 'visual'} />
             </button>
           </div>
-          {general && <EscucharPieza />}
+          {general ? <EscucharPieza /> : escena && <EscucharEscena indice={indice} />}
         </div>
         {escena && (
           <BarraEscena
@@ -112,6 +114,24 @@ function EscucharPieza() {
   );
 }
 
+/**
+ * El mismo botón grande de «Escuchar la pieza», pero para esta escena: en la
+ * prueba, después de cambiar algo no encontraban dónde oír solo la escena.
+ */
+function EscucharEscena({ indice }: { indice: number }) {
+  const { activa } = useReproduccion();
+  const sonando = activa !== null && motorAudio.escenaSola === indice;
+  return (
+    <button
+      type="button"
+      className="nv-boton nv-boton--primario"
+      onClick={() => (sonando ? motorAudio.detener() : void motorAudio.reproducirEscena(indice))}
+    >
+      {sonando ? '■  Parar' : '▶  Escuchar esta escena'}
+    </button>
+  );
+}
+
 /** Todas las escenas en una columna: se ve cuál está abierta y cuáles ya se tocaron. */
 function Riel({ actual, alIr, alVolver }: { actual: string; alIr: (id: string) => void; alVolver: () => void }) {
   const { proyecto } = useProyecto();
@@ -128,13 +148,14 @@ function Riel({ actual, alIr, alVolver }: { actual: string; alIr: (id: string) =
         className={`nv-riel__item nv-riel__item--general ${actual === 'general' ? 'nv-riel__item--activo' : ''}`}
         onClick={() => alIr('general')}
       >
-        <span className="nv-riel__num">✦</span>
+        <span className="nv-riel__num">★</span>
         <span className="nv-riel__texto">
           <strong>General</strong>
-          <span className="nv-tenue">toda la pieza</span>
+          <span>empieza aquí · toda la pieza</span>
         </span>
         <Caras en={(l) => l.escena === 'general'} />
       </button>
+      <span className="nv-riel__separador">ESCENAS</span>
       {lista.map((e, i) => {
         const { color } = EMOCIONES[e.emocion];
         const numero = proyecto.escenas.findIndex((x) => x.id === e.id) + 1;

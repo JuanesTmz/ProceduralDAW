@@ -15,14 +15,16 @@ import type { Proyecto } from '../estado/tipos';
 import { Barra, type Paso } from './Barra';
 import { EditorEscena, type Pestana } from './EditorEscena';
 import { conexionesVisualIniciales, visualInicial } from '../estado/imagen';
-import { aplicarPreset, conexionesIniciales, sincronizarReglas } from '../estado/musica';
+import { aplicarPreset, sincronizarReglas } from '../estado/musica';
 import { recorrido } from '../estado/escenas';
 import { PasoEscenas } from './PasoEscenas';
 import { PasoFuncion } from './PasoFuncion';
 import { PasoHistoria } from './PasoHistoria';
 import { PasoVoz } from './PasoVoz';
 import { Guia } from './Guia';
-import type { Pantalla } from './pasosGuia';
+import { Animo } from './Animo';
+import type { Pantalla } from './pasosGuia';
+
 import { useLugar } from '../nube/Caras';
 
 /** Lo que lleva un proyecto nuevo para sonar y verse bien desde el primer momento. */
@@ -31,11 +33,12 @@ function iniciarProyecto(p: Proyecto) {
   p.track = 'ia';
   // Cada proyecto nuevo arranca con un estilo, una paleta y unos mandos distintos.
   if (Object.keys(p.visual.parametros).length === 0 && !p.visual.imagenUrl) visualInicial(p);
-  // La primera vez se arranca desde el preset: ya suena con golpes y melodía.
+  // La primera vez se arranca desde una base: ya suena con golpes y melodía.
   if (p.patron.melodia.notas.length === 0) aplicarPreset(p, p.preset);
   sincronizarReglas(p);
-  // Y con un ejemplo de datos conectados que ya funciona.
-  if (p.conexiones.length === 0) p.conexiones = conexionesIniciales(p);
+  // La música ya no se mueve con datos (se quitó en nov. 2026): solo celdas.
+  p.conexiones = [];
+  // La imagen arranca con unas cajitas ya puestas, para que se vea la idea sin explicarla.
   if (p.conexionesVisual.length === 0) p.conexionesVisual = conexionesVisualIniciales(p.visual.algoritmo);
 }
 
@@ -103,6 +106,7 @@ export function AppNarrativa() {
           ))}
         {paso === 'funcion' && <PasoFuncion />}
       </main>
+      <Animo />
     </div>
   );
 }

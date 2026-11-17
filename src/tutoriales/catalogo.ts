@@ -1,35 +1,38 @@
 // Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
- * Los tutoriales animados, en el orden en que aparecen en la galería
- * (el mismo orden en que se usan las herramientas).
+ * Los tutoriales, en el orden en que aparecen en la galería (el mismo orden
+ * en que se usa la app). Los cinco primeros muestran la interfaz de verdad
+ * y son los que se abren solos al entrar a cada parte.
+ *
+ * Desde nov. 2026 ya no están «Voz de corrido», «El Pad», «Los datos» de
+ * la música ni «Tocar la imagen en vivo»: esas partes se quitaron de la app.
  */
 import type { Composicion } from './motor';
 import { tutorialCajitas } from './tCajitas';
-import { tutorialDatos } from './tDatos';
 import { tutorialEmocion } from './tEmocion';
-import { tutorialEnVivo } from './tEnVivo';
 import { tutorialGolpes } from './tGolpes';
 import { tutorialInstrumento } from './tInstrumento';
 import { tutorialMatriz } from './tMatriz';
 import { tutorialNarrativa } from './tNarrativa';
-import { tutorialPad } from './tPad';
 import { tutorialRespiros } from './tRespiros';
 import { tutorialVisual } from './tVisual';
-import { tutorialVozCorrida } from './tVozCorrida';
+import { tutorialHistoria, tutorialMezcla, tutorialMusica, tutorialSonidos, tutorialVisuales, tutorialVoz } from './tReales';
 
 export const TUTORIALES: Composicion[] = [
+  tutorialHistoria,
+  tutorialVoz,
+  tutorialMusica,
+  tutorialSonidos,
+  tutorialMezcla,
+  tutorialVisuales,
   tutorialNarrativa,
-  tutorialVozCorrida,
   tutorialRespiros,
   tutorialEmocion,
   tutorialCajitas,
   tutorialGolpes,
   tutorialMatriz,
   tutorialInstrumento,
-  tutorialPad,
-  tutorialDatos,
   tutorialVisual,
-  tutorialEnVivo,
 ];
 
 export function tutorial(id: string): Composicion | undefined {

@@ -5,7 +5,7 @@
  *
  *   node scripts/generar-sonoteca.mjs
  *
- * Escribe WAV mono a 22 050 Hz en public/sonoteca/. Los melódicos se afinan
+ * Escribe WAV mono a 44 100 Hz en public/sonoteca/. Los melódicos se afinan
  * en una nota conocida (la que dice `nota`) para que la matriz los pueda
  * transportar a cualquier casilla.
  */
@@ -13,7 +13,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const SR = 22050;
+const SR = 44100;
 const salida = join(dirname(fileURLToPath(import.meta.url)), '..', 'public', 'sonoteca');
 mkdirSync(salida, { recursive: true });
 
@@ -132,14 +132,108 @@ function pluck(nota) {
 
 function bajo808(nota) {
   const f = frec(nota);
-  const x = buffer(1.6);
+  const x = buffer(2.6);
   let fase = 0;
   for (let i = 0; i < x.length; i++) {
     const t = i / SR;
-    fase += (2 * Math.PI * f * (1 + 1.5 * Math.exp(-t / 0.03))) / SR;
-    x[i] = Math.tanh(1.8 * Math.sin(fase)) * env(t, 0.002, 0.55);
+    // Arranca más agudo y cae a la nota: el «pum» del 808.
+    fase += (2 * Math.PI * f * (1 + 0.9 * Math.exp(-t / 0.04))) / SR;
+    const cola = Math.min(1, t / 0.004) * (0.25 + 0.75 * Math.exp(-t / 0.18)) * Math.exp(-t / 1.4);
+    x[i] = Math.tanh(1.35 * Math.sin(fase)) * cola;
   }
+  return normalizar(biquad(x, 'lp', 900));
+}
+
+/**
+ * Piano acústico: cuerdas dobles un poco desafinadas entre sí, armónicos que
+ * se apagan más rápido cuanto más agudos, la inarmonía de una cuerda real y
+ * el golpe del martillo.
+ */
+function pianoAcustico(nota) {
+  const f = frec(nota);
+  const largo = 2.8;
+  const x = buffer(largo);
+  const B = 0.00035;
+  for (let n = 1; n <= 14; n++) {
+    const fn = n * f * Math.sqrt(1 + B * n * n);
+    if (fn > SR / 2.2) break;
+    const amp = Math.pow(n, -1.15) * (n === 1 ? 1 : 0.9);
+    const caida = 2.4 / (1 + 0.45 * n);
+    for (const d of [-0.0009, 0.0009]) {
+      const w = 2 * Math.PI * fn * (1 + d);
+      for (let i = 0; i < x.length; i++) {
+        const t = i / SR;
+        // Dos etapas: el ataque brillante cae rápido y queda la resonancia.
+        const e = Math.min(1, t / 0.002) * (0.6 * Math.exp(-t / (caida * 0.18)) + 0.4 * Math.exp(-t / caida));
+        x[i] += 0.5 * amp * Math.sin(w * t) * e;
+      }
+    }
+  }
+  const martillo = buffer(0.03);
+  for (let i = 0; i < martillo.length; i++) martillo[i] = ruido() * env(i / SR, 0.0005, 0.006);
+  const golpe = biquad(martillo, 'lp', 2500);
+  for (let i = 0; i < golpe.length; i++) x[i] += 0.25 * golpe[i];
   return normalizar(x);
+}
+
+/** Bajo de cuerda (eléctrico tocado con los dedos): Karplus-Strong grave con cuerpo. */
+function bajoCuerda(nota) {
+  const f = frec(nota);
+  const x = buffer(2.2);
+  const n = Math.round(SR / f);
+  const linea = Array.from({ length: n }, () => ruido());
+  // El dedo no es un golpe de ruido blanco: se suaviza la cuerda antes de soltarla.
+  for (let k = 0; k < 3; k++) for (let j = 0; j < n; j++) linea[j] = 0.5 * (linea[j] + linea[(j + 1) % n]);
+  for (let i = 0; i < x.length; i++) {
+    const j = i % n;
+    const v = linea[j];
+    linea[j] = 0.9985 * 0.5 * (v + linea[(j + 1) % n]);
+    const t = i / SR;
+    x[i] = v + 0.6 * Math.sin(2 * Math.PI * f * t) * env(t, 0.004, 0.9);
+  }
+  return normalizar(biquad(biquad(x, 'lp', 1100), 'hp', 35));
+}
+
+/** Acordeón: dos lengüetas un pelo desafinadas (el «musette»), con el fuelle que respira. */
+function acordeon(nota) {
+  const f = frec(nota);
+  const largo = 1.8;
+  const x = buffer(largo);
+  for (const [r, a] of [[1, 1], [1.0045, 0.8], [2, 0.35]]) {
+    const fr = f * r;
+    for (let h = 1; h <= 18; h++) {
+      if (fr * h > SR / 2.4) break;
+      const amp = (a / h) * (h % 2 === 0 ? 0.6 : 1);
+      const w = 2 * Math.PI * fr * h;
+      for (let i = 0; i < x.length; i++) x[i] += amp * Math.sin(w * (i / SR));
+    }
+  }
+  for (let i = 0; i < x.length; i++) {
+    const t = i / SR;
+    const fuelle = Math.min(1, t / 0.035) * Math.min(1, (largo - t) / 0.15) * (1 + 0.04 * Math.sin(2 * Math.PI * 5.2 * t));
+    x[i] *= fuelle;
+  }
+  return normalizar(biquad(biquad(x, 'lp', 3800), 'bp', 1300, 0.5));
+}
+
+/** Guitarra que puntea (el requinto de la bachata, la guitarra de la champeta): brillante y corta. */
+function requinto(nota) {
+  const f = frec(nota);
+  const x = buffer(1.5);
+  const n = Math.round(SR / f);
+  const linea = Array.from({ length: n }, () => ruido());
+  for (let i = 0; i < x.length; i++) {
+    const j = i % n;
+    const v = linea[j];
+    linea[j] = 0.994 * (0.62 * v + 0.38 * linea[(j + 1) % n]);
+    x[i] = v;
+  }
+  // El cuerpo de la guitarra: un par de resonancias de madera.
+  const cuerpo = biquad(x, 'bp', 220, 1.2);
+  const boca = biquad(x, 'bp', 2400, 1.5);
+  const y = new Float32Array(x.length);
+  for (let i = 0; i < x.length; i++) y[i] = x[i] + 0.8 * cuerpo[i] + 0.4 * boca[i];
+  return normalizar(biquad(y, 'lp', 6500));
 }
 
 function campana(nota, largo = 2.6) {
@@ -267,6 +361,80 @@ function chasquido() {
   return normalizar(biquad(x, 'bp', 2600, 2), 0.85);
 }
 
+/** Güira: raspador de metal, el «chi-ki» de la bachata y el merengue. */
+function guira(largo = 0.11) {
+  const x = buffer(largo + 0.05);
+  for (let i = 0; i < x.length; i++) {
+    const t = i / SR;
+    // Los dientes del raspador: ráfagas muy seguidas.
+    const dientes = 0.55 + 0.45 * Math.sign(Math.sin(2 * Math.PI * 140 * t));
+    x[i] = ruido() * dientes * Math.min(1, t / 0.004) * Math.max(0, Math.min(1, (largo - t) / 0.03));
+  }
+  const metal = biquad(biquad(x, 'hp', 4500), 'bp', 8200, 1.4);
+  const brillo = biquad(x, 'hp', 9000);
+  const y = new Float32Array(x.length);
+  for (let i = 0; i < x.length; i++) y[i] = metal[i] + 0.5 * brillo[i];
+  return normalizar(y, 0.8);
+}
+
+/** Un parche de mano afinado: bongó, tumbadora. `golpe` es cuánto «slap» lleva. */
+function parche(frecuencia, caida, golpe = 0.25) {
+  const x = buffer(caida * 5 + 0.05);
+  let fase = 0;
+  for (let i = 0; i < x.length; i++) {
+    const t = i / SR;
+    fase += (2 * Math.PI * frecuencia * (1 + 0.25 * Math.exp(-t / 0.012))) / SR;
+    x[i] =
+      Math.sin(fase) * env(t, 0.0008, caida) +
+      0.35 * Math.sin(fase * 2.32) * env(t, 0.0008, caida * 0.4) +
+      golpe * ruido() * env(t, 0.0003, 0.006);
+  }
+  return normalizar(biquad(x, 'hp', 60));
+}
+
+/** Caja de batería: el tono del parche y la bordona (el «chas»). */
+function caja() {
+  const x = buffer(0.32);
+  let fase = 0;
+  for (let i = 0; i < x.length; i++) {
+    const t = i / SR;
+    fase += (2 * Math.PI * 185 * (1 + 0.35 * Math.exp(-t / 0.01))) / SR;
+    x[i] = 0.8 * Math.sin(fase) * env(t, 0.0008, 0.05);
+  }
+  const bordona = buffer(0.32);
+  for (let i = 0; i < bordona.length; i++) bordona[i] = ruido() * env(i / SR, 0.0008, 0.09);
+  const b = biquad(biquad(bordona, 'hp', 1800), 'bp', 4200, 0.8);
+  for (let i = 0; i < x.length; i++) x[i] += 1.1 * b[i];
+  return normalizar(x);
+}
+
+/** Hi-hat: placas de metal. Cerrado es un «tss» corto; abierto sigue vibrando. */
+function hatAbierto(caida = 0.16, largo = 0.55) {
+  const x = buffer(largo);
+  // Seis osciladores cuadrados inarmónicos, como los platillos de las cajas de ritmos.
+  const frecuencias = [205.3, 304.4, 369.6, 522.7, 540, 800];
+  for (let i = 0; i < x.length; i++) {
+    const t = i / SR;
+    let v = 0;
+    for (const fr of frecuencias) v += Math.sign(Math.sin(2 * Math.PI * fr * 2.7 * t));
+    x[i] = (v / 6 + 0.5 * ruido()) * env(t, 0.001, caida);
+  }
+  return normalizar(biquad(biquad(x, 'hp', 7000), 'bp', 10000, 0.7), 0.75);
+}
+
+/** Palmas de varias personas: ráfagas un poco desfasadas y una cola de sala. */
+function palmas() {
+  const x = buffer(0.35);
+  for (const desfase of [0, 0.009, 0.017, 0.028]) {
+    const inicio = Math.round(desfase * SR);
+    for (let i = inicio; i < x.length; i++) {
+      const t = (i - inicio) / SR;
+      x[i] += ruido() * env(t, 0.0005, desfase === 0.028 ? 0.07 : 0.008);
+    }
+  }
+  return normalizar(biquad(biquad(x, 'bp', 1300, 1.1), 'hp', 500));
+}
+
 // ------------------------------------------------------------ ciudad
 
 function lluvia() {
@@ -389,6 +557,10 @@ const sonidos = [
   ['piano', 'Piano eléctrico', 'melodico', 'C4', () => pianoElectrico('C4')],
   ['pluck', 'Cuerda pulsada', 'melodico', 'C4', () => pluck('C4')],
   ['bajo808', 'Bajo 808', 'melodico', 'C2', () => bajo808('C2')],
+  ['pianoac', 'Piano', 'melodico', 'C4', () => pianoAcustico('C4')],
+  ['bajo', 'Bajo', 'melodico', 'C2', () => bajoCuerda('C2')],
+  ['acordeon', 'Acordeón', 'melodico', 'C4', () => acordeon('C4')],
+  ['requinto', 'Guitarra', 'melodico', 'C4', () => requinto('C4')],
   ['campana', 'Campana', 'melodico', 'C5', () => campana('C5')],
   ['pad', 'Colchón', 'melodico', 'C3', () => pad('C3')],
   ['silbido', 'Silbido', 'melodico', 'C5', () => silbido('C5')],
@@ -400,6 +572,14 @@ const sonidos = [
   ['clave', 'Clave', 'percusion', null, clave],
   ['guiro', 'Güiro', 'percusion', null, guiro],
   ['chasquido', 'Chasquido', 'percusion', null, chasquido],
+  ['guira', 'Güira', 'percusion', null, () => guira()],
+  ['bongo', 'Bongó', 'percusion', null, () => parche(420, 0.07, 0.3)],
+  ['bongograve', 'Bongó grave', 'percusion', null, () => parche(300, 0.09, 0.25)],
+  ['tumbadora', 'Tumbadora', 'percusion', null, () => parche(190, 0.14, 0.15)],
+  ['caja', 'Caja', 'percusion', null, caja],
+  ['hatcerrado', 'Hi-hat cerrado', 'percusion', null, () => hatAbierto(0.03, 0.12)],
+  ['hatabierto', 'Hi-hat abierto', 'percusion', null, () => hatAbierto()],
+  ['palmas', 'Palmas', 'percusion', null, palmas],
   ['lluvia', 'Lluvia', 'ciudad', null, lluvia],
   ['viento', 'Viento en la loma', 'ciudad', null, viento],
   ['trafico', 'Tráfico lejano', 'ciudad', null, trafico],

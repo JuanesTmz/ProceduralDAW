@@ -2,83 +2,75 @@
 /**
  * La ayuda: un solo botón «?» por pantalla (y por ventana).
  *
- * Abre un menú corto con el recorrido guiado de esa pantalla, los videos
- * que tocan ahí y la galería con todos. Así la ayuda está siempre en el
- * mismo sitio y no compite con los botones de trabajo.
+ * Desde nov. 2026 lo primero son los tutoriales en video: en la prueba nadie
+ * leyó el recorrido guiado (todos tocaban «Saltar»), así que la primera vez
+ * que se entra a una parte se abre su tutorial, que muestra la interfaz de
+ * verdad en movimiento. El «?» lista los tutoriales de esa parte, la galería
+ * con todos y, al final, el recorrido guiado escrito: sigue ahí para quien
+ * lo busque, pero ya no arranca solo.
  *
- * La primera vez que se entra a una pantalla el recorrido arranca solo;
- * después se repite desde el menú. Lo ya visto se recuerda en este
- * navegador (es una comodidad de quien usa la tablet, no parte del
- * proyecto: empezar de cero no vuelve a mostrar los recorridos).
+ * Lo ya visto se recuerda en este navegador (es una comodidad de quien usa
+ * la tablet, no parte del proyecto).
  */
 import { useEffect, useRef, useState } from 'react';
-import { useProyecto } from '../estado/ProyectoContext';
 import { MenuFlotante } from './MenuFlotante';
 import { pasosDe, type Pantalla, type PasoTour } from './pasosGuia';
-import { Tour } from './Tour';
 import { VisorTutorial } from './BotonTutorial';
+import { Tour } from './Tour';
 
-const CLAVE = 'sonora-guia-vista';
+const CLAVE = 'sonora-videos-vistos';
 
-/** Los videos, con su nombre corto para el menú (el catálogo se carga solo al abrir uno). */
+/** Los tutoriales, con su nombre corto para el menú (el catálogo se carga solo al abrir uno). */
 const NOMBRES: Record<string, string> = {
+  historia: 'Escribe tu historia',
+  voz: 'Graba tu voz',
+  musica: 'La música: base y golpes',
+  sonidos: 'Cambiar y grabar sonidos',
+  mezcla: 'La mezcla',
   narrativa: '¿Qué es narrativa sonora?',
-  vozcorrida: 'Grabar la voz de corrido',
   respiros: 'Los respiros',
   emocion: 'La emoción cambia la música',
   cajitas: 'Las cajitas',
   golpes: 'Las celdas de golpes',
   matriz: 'La matriz y las escalas',
   instrumento: 'Tu sonido se vuelve instrumento',
-  pad: 'El Pad',
-  datos: 'Los datos',
+  visuales: 'Visuales: fotos y cajitas',
   visual: 'El visual reacciona',
-  envivo: 'Tocar la imagen en vivo',
 };
 
-/** Qué videos tocan en cada pantalla. */
+/** Qué tutoriales tocan en cada pantalla. El primero se abre solo la primera vez. */
 function videosDe(pantalla: Pantalla): string[] {
   switch (pantalla) {
     case 'historia':
-      return ['narrativa'];
+      return ['historia', 'narrativa'];
     case 'voz':
-      return ['vozcorrida'];
+      return ['voz'];
     case 'escenas':
-      return ['respiros', 'emocion'];
+      return ['emocion', 'respiros'];
     case 'escena-musica':
-      return ['emocion', 'pad', 'golpes', 'datos', 'cajitas'];
+      return ['musica', 'sonidos', 'mezcla', 'matriz', 'cajitas'];
     case 'escena-visual':
-      return ['visual', 'envivo', 'datos', 'cajitas'];
+      return ['visuales', 'visual', 'cajitas'];
     case 'ventana-golpes':
       return ['golpes'];
     case 'ventana-matriz':
       return ['matriz', 'instrumento'];
-    case 'ventana-pad':
-      return ['pad'];
     case 'ventana-sonidos':
-      return ['instrumento'];
+      return ['sonidos', 'instrumento'];
     case 'ventana-datos':
-      return ['datos'];
+      return ['visual'];
+    case 'ventana-mezcla':
+      return ['mezcla'];
     default:
       return [];
   }
 }
 
-function leerVistas(): Set<string> {
+function leerVistos(): Set<string> {
   try {
     return new Set(JSON.parse(localStorage.getItem(CLAVE) ?? '[]') as string[]);
   } catch {
     return new Set();
-  }
-}
-
-function marcarVista(clave: string): void {
-  try {
-    const vistas = leerVistas();
-    vistas.add(clave);
-    localStorage.setItem(CLAVE, JSON.stringify([...vistas]));
-  } catch {
-    // Sin almacenamiento la guía sigue funcionando; solo se volverá a ofrecer.
   }
 }
 
@@ -87,42 +79,49 @@ function visibles(pasos: PasoTour[]): PasoTour[] {
   return pasos.filter((p) => !p.objetivo || document.querySelector(p.objetivo));
 }
 
+function marcarVisto(clave: string): void {
+  try {
+    const vistos = leerVistos();
+    vistos.add(clave);
+    localStorage.setItem(CLAVE, JSON.stringify([...vistos]));
+  } catch {
+    // Sin almacenamiento la ayuda sigue funcionando; solo se volverá a abrir.
+  }
+}
+
 export function Guia({ pantalla }: { pantalla: Pantalla }) {
-  const { proyecto } = useProyecto();
-  const clave = `${pantalla}:${proyecto.track ?? ''}`;
-  const [pasos, setPasos] = useState<PasoTour[] | null>(null);
-  const [vista, setVista] = useState(() => leerVistas().has(clave));
-  const [menu, setMenu] = useState(false);
-  /** El video abierto: un id, 'todos' para la galería, o nada. */
-  const [video, setVideo] = useState<string | null>(null);
-  const boton = useRef<HTMLButtonElement>(null);
   const videos = videosDe(pantalla);
+  const [visto, setVisto] = useState(() => leerVistos().has(pantalla));
+  const [menu, setMenu] = useState(false);
+  /** El tutorial abierto: un id, 'todos' para la galería, o nada. */
+  const [video, setVideo] = useState<string | null>(null);
+  /** El recorrido escrito, solo cuando se pide desde el menú. */
+  const [pasos, setPasos] = useState<PasoTour[] | null>(null);
+  const boton = useRef<HTMLButtonElement>(null);
 
-  const recorrido = () => {
-    setMenu(false);
-    setPasos(visibles(pasosDe(pantalla)));
-  };
-
-  // Al entrar a una pantalla nueva, el recorrido arranca solo si nunca se vio.
+  // La primera vez que se entra a una parte, su tutorial se abre solo.
   useEffect(() => {
+    setVideo(null);
     setPasos(null);
-    const yaVista = leerVistas().has(clave);
-    setVista(yaVista);
-    if (yaVista) return;
-    // Espera a que la pantalla termine de armarse para medir bien.
-    const t = window.setTimeout(() => setPasos(visibles(pasosDe(pantalla))), 700);
+    const yaVisto = leerVistos().has(pantalla);
+    setVisto(yaVisto);
+    const primero = videosDe(pantalla)[0];
+    if (yaVisto || !primero) return;
+    const t = window.setTimeout(() => {
+      // Si otro tutorial ya está abierto (una ventana sobre otra), no se apilan.
+      if (document.querySelector('.tu-ventana')) return;
+      setVideo(primero);
+      marcarVisto(pantalla);
+      setVisto(true);
+    }, 600);
     return () => window.clearTimeout(t);
-  }, [clave, pantalla, proyecto.track]);
+  }, [pantalla]);
 
-  const cerrar = () => {
-    setPasos(null);
-    marcarVista(clave);
-    setVista(true);
-  };
-
-  const abrirVideo = (id: string) => {
+  const abrir = (id: string) => {
     setMenu(false);
     setVideo(id);
+    marcarVisto(pantalla);
+    setVisto(true);
   };
 
   return (
@@ -130,34 +129,48 @@ export function Guia({ pantalla }: { pantalla: Pantalla }) {
       <button
         ref={boton}
         type="button"
-        className={`nv-ayuda ${vista ? '' : 'nv-ayuda--nueva'} ${menu ? 'nv-ayuda--abierta' : ''}`}
+        className={`nv-ayuda ${visto ? '' : 'nv-ayuda--nueva'} ${menu ? 'nv-ayuda--abierta' : ''}`}
         onClick={() => setMenu(!menu)}
-        aria-label="Ayuda"
+        aria-label="Tutoriales"
         aria-expanded={menu}
-        title="Ayuda"
+        title="Tutoriales"
       >
         ?
       </button>
       {menu && boton.current && (
         <MenuFlotante ancla={boton.current} alCerrar={() => setMenu(false)} className="nv-ayuda__menu">
-          <button type="button" className="nv-ayuda__item nv-ayuda__item--principal" onClick={recorrido}>
-            <span className="nv-ayuda__icono">◎</span>
-            Recorrido guiado
-          </button>
-          {videos.length > 0 && <span className="nv-ayuda__titulo">Videos</span>}
-          {videos.map((id) => (
-            <button key={id} type="button" className="nv-ayuda__item" onClick={() => abrirVideo(id)}>
+          {videos.length > 0 && <span className="nv-ayuda__titulo">Tutoriales de esta parte</span>}
+          {videos.map((id, i) => (
+            <button
+              key={id}
+              type="button"
+              className={`nv-ayuda__item ${i === 0 ? 'nv-ayuda__item--principal' : ''}`}
+              onClick={() => abrir(id)}
+            >
               <span className="nv-ayuda__icono">▶</span>
               {NOMBRES[id] ?? id}
             </button>
           ))}
-          <button type="button" className="nv-ayuda__item nv-ayuda__item--todos" onClick={() => abrirVideo('todos')}>
-            Ver todos los videos
+          <button type="button" className="nv-ayuda__item nv-ayuda__item--todos" onClick={() => abrir('todos')}>
+            Ver todos los tutoriales
           </button>
+          {pasosDe(pantalla).length > 0 && (
+            <button
+              type="button"
+              className="nv-ayuda__item"
+              onClick={() => {
+                setMenu(false);
+                setPasos(visibles(pasosDe(pantalla)));
+              }}
+            >
+              <span className="nv-ayuda__icono">◎</span>
+              Recorrido guiado (escrito)
+            </button>
+          )}
         </MenuFlotante>
       )}
       {video && <VisorTutorial id={video === 'todos' ? undefined : video} alCerrar={() => setVideo(null)} />}
-      <Tour pasos={pasos ?? []} abierto={Boolean(pasos && pasos.length > 0)} alCerrar={cerrar} />
+      <Tour pasos={pasos ?? []} abierto={Boolean(pasos && pasos.length > 0)} alCerrar={() => setPasos(null)} />
     </>
   );
 }

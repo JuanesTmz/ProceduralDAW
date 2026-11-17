@@ -7,3 +7,5 @@ dist-nube
 .git
 docs
 server/pruebas
+*.local
+server/*.local

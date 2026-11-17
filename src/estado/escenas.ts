@@ -103,6 +103,11 @@ export function sincronizarEscenas(p: Proyecto): void {
   }
 }
 
+/** La voz de la escena se grabó con otro texto (se movió un corte): hay que volver a grabarla. */
+export function vozDesactualizada(e: Escena): boolean {
+  return Boolean(e.vozUrl && e.vozTexto !== undefined && e.vozTexto !== e.texto);
+}
+
 /** Mueve el límite número `k` a la palabra `indice`, sin cruzar a sus vecinos. */
 export function moverCorte(p: Proyecto, k: number, indice: number): void {
   const total = palabrasDe(p.narracion.texto).length;
@@ -352,6 +357,13 @@ export function cargarEjemplo(p: Proyecto): void {
   p.historia.que = 'La última chiva de la loma, que se quedó quieta cuando llegó el metrocable.';
   p.historia.porQue =
     'Las chivas y el metrocable son dos maneras de subir las lomas de Medellín: una se fue y la otra llegó.';
+  p.historia.estaciones = [
+    'Una chiva vieja parqueada, con el motor tosiendo.',
+    'La gente sube apretada y la radio suena un tango.',
+    'Arriba pasan las cabinas del metrocable, en silencio.',
+    'Don Arturo, el conductor, que madruga aunque no tenga ruta.',
+    'Que lo viejo no se va del todo: se queda esperando.',
+  ];
   p.narracion.texto = TEXTO_EJEMPLO;
   const palabras = palabrasDe(TEXTO_EJEMPLO);
   const empieza = (frase: string) =>

@@ -38,11 +38,11 @@ export function VisorTutorial({ id, alCerrar }: { id?: string; alCerrar: () => v
  * «▶ Video»: abre el video corto de esta parte, ahí mismo. Va en las zonas
  * que más cuesta entender a la primera (datos, el Pad, reacciones…).
  */
-export function BotonVideo({ id, texto = 'Ver video' }: { id: string; texto?: string }) {
+export function BotonVideo({ id, texto = 'Ver tutorial' }: { id: string; texto?: string }) {
   const [abierto, setAbierto] = useState(false);
   return (
     <>
-      <button type="button" className="nv-video" onClick={() => setAbierto(true)} title="Un video corto que lo explica">
+      <button type="button" className="nv-video" onClick={() => setAbierto(true)} title="Un tutorial corto que lo explica">
         <span className="nv-video__icono" aria-hidden="true">▶</span>
         {texto}
       </button>

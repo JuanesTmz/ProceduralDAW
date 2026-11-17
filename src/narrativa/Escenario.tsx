@@ -4,9 +4,13 @@
  *
  * Aquí vive el director del visual. En cada cuadro mira qué escena suena
  * y decide el algoritmo, la paleta, la foto que hace de material y el
- * valor de cada mando. La emoción y la fuerza de la escena lo mueven en
- * dos caminos a la vez: las conexiones con datos (qué mando se mueve según
- * qué dato) y lo que se toca (la reacción elegida, el gesto y los golpes en vivo).
+ * valor de cada mando. Dos cosas lo mueven:
+ *  - Las cajitas asignadas (conexionesVisual): cada mando del estilo puede
+ *    llevar un dato —un instrumento, la voz, la emoción, la luz o el color de
+ *    una foto— y se mueve con él. La caja «Colores» cambia la paleta.
+ *  - Los golpes de la imagen, en celdas: en cada paso de la vuelta, los
+ *    efectos que tengan su casilla encendida (estado/efectos.ts).
+ *  - Brillo, zoom, giro… de la obra entera, a mano o con una cajita.
  *
  * La foto no se pega encima: se lee como datos (CampoImagen) y el
  * algoritmo la usa como relieve, corriente o densidad.
@@ -16,14 +20,17 @@ import { motorAudio } from '../audio/motorAudio';
 import { useProyecto } from '../estado/ProyectoContext';
 import { palabrasDe } from '../estado/proyecto';
 import { duracionVoz, intensidadDeEscena, recorrido } from '../estado/escenas';
-import { FUERZA_REACCION, paletaDeEmocion, VALOR_REACCION } from '../estado/imagen';
+import { paletaDeEmocion, VALOR_REACCION } from '../estado/imagen';
+import { useEnDemo } from '../componentes/demo';
+import { estiloDeObra, pasosEfectosDe, PARAMETROS_OBRA } from '../estado/efectos';
+import { ORDEN_GOLPES } from '../estado/imagen';
 import { valorDato } from '../estado/datos';
 import { algoritmoDe, valoresPorDefecto } from '../visual/algoritmos';
 import { campoDe } from '../visual/imagenDatos';
 import { motorVisual } from '../visual/motorVisual';
 import { paletaDe } from '../visual/paletas';
 import { enVivo } from '../visual/enVivo';
-import type { Escena, GolpeVisual, PuntoGesto } from '../estado/tipos';
+import type { Escena, GolpeVisual } from '../estado/tipos';
 
 interface Props {
   /** Qué escena mostrar mientras no suena nada (vista previa). */
@@ -31,18 +38,14 @@ interface Props {
   texto?: boolean;
 }
 
-function gestoEn(puntos: PuntoGesto[] | undefined, t: number): { x: number; y: number } | null {
-  if (!puntos || puntos.length === 0) return null;
-  let i = 0;
-  while (i < puntos.length - 1 && puntos[i + 1].t <= t) i++;
-  const a = puntos[i];
-  const b = puntos[i + 1];
-  if (!b || b.t === a.t) return a;
-  const k = Math.max(0, Math.min(1, (t - a.t) / (b.t - a.t)));
-  return { x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k };
+export function Escenario(props: Props) {
+  // Dentro de un tutorial no se arma el visual de verdad: hay uno solo y es de la app.
+  const demo = useEnDemo();
+  if (demo) return <div className="nv-obra nv-obra--demo" />;
+  return <EscenarioVivo {...props} />;
 }
 
-export function Escenario({ escenaFija, texto = true }: Props) {
+function EscenarioVivo({ escenaFija, texto = true }: Props) {
   const { proyecto } = useProyecto();
   const datos = useRef(proyecto);
   datos.current = proyecto;
@@ -81,15 +84,15 @@ export function Escenario({ escenaFija, texto = true }: Props) {
 
   useEffect(() => enVivo.alDisparar(golpear), []);
 
-  // Cada golpe que se oye dispara los efectos que se le asignaron a ese sonido.
+  // En cada paso de la vuelta, los golpes de la imagen que tengan su casilla encendida.
   useEffect(
     () =>
-      motorAudio.alGolpe((id) => {
+      motorAudio.alCambiarPaso((paso) => {
+        if (paso < 0) return;
         const p = datos.current;
-        const escena = recorrido(p)[motorAudio.seccionActual];
-        for (const r of escena?.reacciones ?? []) {
-          if (r.fuente === id || r.fuente === 'todo') golpear(r.efecto, FUERZA_REACCION[r.fuerza]);
-        }
+        const escena = motorAudio.estaSonando ? recorrido(p)[motorAudio.seccionActual] : undefined;
+        const pasos = pasosEfectosDe(p, escena);
+        for (const g of ORDEN_GOLPES) if (pasos[g]?.[paso]) golpear(g);
       }),
     [],
   );
@@ -99,12 +102,9 @@ export function Escenario({ escenaFija, texto = true }: Props) {
     if (!nodo) return;
     motorVisual.iniciar(nodo, () => undefined);
     let cuadro = 0;
-    let toque: { x: number; y: number } | null = null;
-    let fraccionPrevia = 0;
-    let seccionPrevia = -2;
+    const toque: { x: number; y: number } | null = null;
     let reveladasPrevias = 0;
     let escenaPrevia = '';
-    let vozArriba = false;
 
     const paso = () => {
       cuadro = requestAnimationFrame(paso);
@@ -118,8 +118,6 @@ export function Escenario({ escenaFija, texto = true }: Props) {
       const parametros = { ...valoresPorDefecto(alg), ...(v.parametros[v.algoritmo] ?? {}) };
       let paleta = v.paletaPropia ?? paletaDe(v.paleta).colores;
       let reaccion = v.reaccion;
-      let brillo = 1;
-      toque = null;
       const fraccion = sonando ? motorAudio.fraccionSeccion : 0;
 
       if (escena) {
@@ -127,64 +125,43 @@ export function Escenario({ escenaFija, texto = true }: Props) {
         const energia = intensidadDeEscena(escena);
         if ('velocidad' in parametros) parametros.velocidad *= 0.55 + 0.9 * energia;
 
-        {
-          const contexto = {
-            proyecto: p,
-            escena,
-            sonando,
-            fraccion,
-            avance: sonando ? motorAudio.progresoPieza : 0,
-            vivo: motorAudio.vivo(),
-          };
-          for (const c of p.conexionesVisual) {
-            const w = c.cantidad / 3;
-            const valor = valorDato(c.fuente, contexto);
-            if (c.destino === 'paleta') {
-              const archivo = c.fuente.startsWith('archivo:')
-                ? p.archivosDatos.find((a) => a.id === c.fuente.split(':')[1])
-                : undefined;
-              const deLaFoto = c.fuente.startsWith('foto:') ? campoDe(escena.imagenUrl ?? v.imagenUrl)?.colores() : undefined;
-              if (archivo?.colores && archivo.colores.length >= 2) paleta = archivo.colores;
-              else if (deLaFoto && deLaFoto.length >= 2) paleta = deLaFoto;
-              else if (c.fuente === 'emocion') paleta = paletaDeEmocion(escena.emocion);
-              continue;
-            }
-            const mando = alg.mandos.find((m) => m.id === c.destino);
-            if (!mando) continue;
-            const objetivo = mando.min + valor * (mando.max - mando.min);
-            parametros[mando.id] = parametros[mando.id] + (objetivo - parametros[mando.id]) * w;
+        const contexto = {
+          proyecto: p,
+          escena,
+          sonando,
+          fraccion,
+          avance: sonando ? motorAudio.progresoPieza : 0,
+          vivo: motorAudio.vivo(),
+        };
+        const obra: Record<string, number> = {};
+        for (const x of PARAMETROS_OBRA) obra[x.id] = v.obra?.[x.id] ?? x.neutro;
+        for (const c of p.conexionesVisual) {
+          if (c.destino.startsWith('obra:')) {
+            const id = c.destino.slice(5);
+            obra[id] = obra[id] + (valorDato(c.fuente, contexto) - obra[id]) * (c.cantidad / 3);
+            continue;
           }
+          // La caja «Colores»: la paleta sale de la emoción o de una foto.
+          if (c.destino === 'paleta') {
+            const [, id] = c.fuente.split(':');
+            const archivo = c.fuente.startsWith('archivo:') ? p.archivosDatos.find((a) => a.id === id) : undefined;
+            const deLaFoto = c.fuente.startsWith('foto:') ? campoDe(escena.imagenUrl ?? v.imagenUrl)?.colores() : undefined;
+            if (archivo?.colores && archivo.colores.length >= 2) paleta = archivo.colores;
+            else if (deLaFoto && deLaFoto.length >= 2) paleta = deLaFoto;
+            else if (c.fuente === 'emocion') paleta = paletaDeEmocion(escena.emocion);
+            continue;
+          }
+          // Un mando: se mueve hacia donde diga el dato, con la fuerza de la cajita.
+          const mando = alg.mandos.find((m) => m.id === c.destino);
+          if (!mando) continue;
+          const objetivo = mando.min + valorDato(c.fuente, contexto) * (mando.max - mando.min);
+          parametros[mando.id] = parametros[mando.id] + (objetivo - parametros[mando.id]) * (c.cantidad / 3);
         }
-        {
-          reaccion = VALOR_REACCION[escena.reaccion ?? 'bombo'];
-          const gesto = enVivo.gesto ?? (sonando ? gestoEn(escena.gestoVisual, fraccion) : null);
-          if (gesto) {
-            // El cuadro mide la y hacia arriba; la pantalla, hacia abajo.
-            toque = { x: gesto.x, y: 1 - gesto.y };
-            if ('velocidad' in parametros) parametros.velocidad *= 0.3 + 2.2 * gesto.x;
-            reaccion = Math.min(1, reaccion * (0.5 + gesto.x));
-            brillo = 0.55 + 0.9 * gesto.y;
-          }
-          // Los golpes grabados se disparan cuando la escena pasa por su momento.
-          if (sonando && indice === seccionPrevia && escena.golpesVisuales) {
-            for (const g of escena.golpesVisuales) {
-              if (g.t > fraccionPrevia && g.t <= fraccion) golpear(g.tipo);
-            }
-          }
-        }
-      }
-      fraccionPrevia = fraccion;
-      seccionPrevia = indice;
-
-      // La voz no da golpes sueltos: cuando arranca una frase (sube de golpe) dispara sus reacciones.
-      if (sonando) {
-        const nivelVoz = motorAudio.vivo().voz;
-        if (!vozArriba && nivelVoz > 0.3) {
-          vozArriba = true;
-          for (const r of escena?.reacciones ?? []) {
-            if (r.fuente === 'voz') golpear(r.efecto, FUERZA_REACCION[r.fuerza]);
-          }
-        } else if (vozArriba && nivelVoz < 0.12) vozArriba = false;
+        reaccion = VALOR_REACCION[escena.reaccion ?? 'bombo'];
+        const estilo = estiloDeObra(obra);
+        const l = lienzo.current;
+        if (l && l.style.transform !== estilo.transform) l.style.transform = estilo.transform;
+        if (l && l.style.filter !== estilo.filter) l.style.filter = estilo.filter;
       }
 
       // Crece, acelera y se retuerce: un empujón que se apaga solo, sobre los mandos del estilo.
@@ -219,7 +196,6 @@ export function Escenario({ escenaFija, texto = true }: Props) {
         toque,
         texto: escena && !escena.respiro ? escena.texto : '',
       });
-      if (marco.current) marco.current.style.filter = brillo === 1 ? '' : `brightness(${brillo.toFixed(2)})`;
 
       // El texto aparece al ritmo de la voz grabada (o estimada).
       if (!escena || escena.respiro) {

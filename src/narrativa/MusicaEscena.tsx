@@ -2,24 +2,19 @@
 /**
  * La pestaña Música de una escena, o de toda la pieza (General).
  *
- * Las capas (cada una con su Pad, sus celdas y su sonido), y abajo a la derecha
- * las herramientas: Sonidos y Datos. El Pad escribe las celdas y las celdas se
- * retocan a mano.
+ * En General, arriba, las bases (reggaetón, trap, bachata…) y el tempo.
+ * Debajo, las capas como celdas: se tocan para poner y quitar golpes, y el
+ * nombre de cada capa abre los sonidos. La melodía abre su matriz.
  */
 import { useState } from 'react';
 import { useProyecto } from '../estado/ProyectoContext';
-import { aplicarPreset, PRESETS } from '../estado/musica';
+import { aplicarPreset, BASES, hayEscenasRetocadas } from '../estado/musica';
 import type { Escena } from '../estado/tipos';
-import { VentanaGolpes } from '../componentes/VentanaGolpes';
 import { VentanaMatriz } from '../componentes/VentanaMatriz';
-import { Ventana } from '../componentes/Ventana';
 import { MusicaCapas } from './MusicaCapas';
-import { parametrosMusica } from './PadMusica';
-import { ParametrosDatos } from './ParametrosDatos';
-import { ID_MELODIA, VentanaSonidosPistas } from './VentanaSonidosPistas';
-import { useEnVentana } from '../nube/Caras';
+import { VentanaSonidosPistas } from './VentanaSonidosPistas';
 
-type Herramienta = { tipo: 'golpes'; pista?: string } | { tipo: 'melodia' } | { tipo: 'datos' } | { tipo: 'sonidos'; pista?: string };
+type Herramienta = { tipo: 'melodia' } | { tipo: 'sonidos'; pista?: string };
 
 interface Props {
   escena: Escena | null;
@@ -27,83 +22,86 @@ interface Props {
 }
 
 export function MusicaEscena({ escena, indice }: Props) {
-  const { proyecto, actualizar } = useProyecto();
   const [herramienta, setHerramienta] = useState<Herramienta | null>(null);
   const cerrar = () => setHerramienta(null);
-  const alSonidos = (pista?: string) => setHerramienta({ tipo: 'sonidos', pista });
-  const datosActivos = proyecto.conexiones.length;
-  useEnVentana(herramienta?.tipo === 'datos' ? 'datos' : null);
 
   return (
     <div className="nv-pestana">
-      {!escena && (
-        <div className="nv-presets" data-bloqueo="general:ritmo">
-          <span className="nv-campo__titulo">Punto de partida</span>
-          {PRESETS.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              className={`nv-preset ${proyecto.preset === p.id ? 'nv-preset--activo' : ''}`}
-              title={p.descripcion}
-              onClick={() => actualizar((borrador) => aplicarPreset(borrador, p.id))}
-            >
-              <strong>{p.nombre}</strong>
-              <span>{p.descripcion}</span>
-            </button>
-          ))}
-          <label className="nv-preset nv-preset--tempo">
-            <strong>Tempo · {proyecto.bpm}</strong>
-            <input
-              type="range"
-              min={60}
-              max={140}
-              step={1}
-              value={proyecto.bpm}
-              onChange={(ev) => actualizar((p) => (p.bpm = Number(ev.target.value)))}
-            />
-          </label>
-          {(
-            <label className="nv-preset nv-preset--tempo">
-              <strong>Swing · {proyecto.swing < 0.05 ? 'cuadrado' : proyecto.swing < 0.3 ? 'suelto' : 'cojo'}</strong>
-              <input
-                type="range"
-                min={0}
-                max={0.6}
-                step={0.01}
-                value={proyecto.swing}
-                onChange={(ev) => actualizar((p) => (p.swing = Number(ev.target.value)))}
-              />
-            </label>
-          )}
-        </div>
-      )}
+      {!escena && <Bases />}
 
       <MusicaCapas
         escena={escena}
         indice={indice}
-        alSonidos={alSonidos}
-        alEditar={(pista) => setHerramienta(pista === ID_MELODIA ? { tipo: 'melodia' } : { tipo: 'golpes', pista })}
-        alDatos={() => setHerramienta({ tipo: 'datos' })}
-        datosActivos={datosActivos}
+        alSonidos={(pista) => setHerramienta({ tipo: 'sonidos', pista })}
+        alNotas={() => setHerramienta({ tipo: 'melodia' })}
       />
 
-      {herramienta?.tipo === 'golpes' && <VentanaGolpes inicial={herramienta.pista} escena={indice} alCerrar={cerrar} />}
       {herramienta?.tipo === 'melodia' && <VentanaMatriz escena={indice} alCerrar={cerrar} />}
-      {herramienta?.tipo === 'sonidos' && <VentanaSonidosPistas pista={herramienta.pista} alCerrar={cerrar} />}
-      {herramienta?.tipo === 'datos' && (
-        <Ventana
-          titulo="Datos"
-          guia="ventana-datos"
-          video="datos"
-          nota="Elige qué parámetros se mueven solos con un dato. Valen para toda la pieza."
-          ancha
-          alCerrar={cerrar}
-        >
-          <div className="nv nv--incrustado nv-datos-ventana">
-            <ParametrosDatos clave="conexiones" grupos={parametrosMusica(proyecto, actualizar)} />
-          </div>
-        </Ventana>
+      {herramienta?.tipo === 'sonidos' && (
+        <VentanaSonidosPistas pista={herramienta.pista} alCerrar={cerrar} />
       )}
+    </div>
+  );
+}
+
+/**
+ * Las bases musicales, como tarjetas. Si alguna escena ya tiene golpes
+ * propios, cambiar de base los borra: se pide tocar dos veces.
+ */
+function Bases() {
+  const { proyecto, actualizar } = useProyecto();
+  const [porConfirmar, setPorConfirmar] = useState<string | null>(null);
+  const retocadas = hayEscenasRetocadas(proyecto);
+
+  const elegir = (id: string) => {
+    if (retocadas && porConfirmar !== id) {
+      setPorConfirmar(id);
+      window.setTimeout(() => setPorConfirmar((x) => (x === id ? null : x)), 3500);
+      return;
+    }
+    setPorConfirmar(null);
+    actualizar((p) => aplicarPreset(p, id));
+  };
+
+  return (
+    <div className="nv-bases" data-bloqueo="general:ritmo">
+      <div className="nv-campo__fila">
+        <span className="nv-campo__titulo">Elige una base</span>
+        <span className="nv-tenue nv-chico">Suena en toda la pieza. Después la cambias tocando las casillas.</span>
+        <span className="nv-espacio" />
+        <label className="nv-bases__tempo">
+          <span>Velocidad · {proyecto.bpm}</span>
+          <input
+            type="range"
+            min={60}
+            max={140}
+            step={1}
+            value={proyecto.bpm}
+            onChange={(ev) => actualizar((p) => (p.bpm = Number(ev.target.value)))}
+          />
+        </label>
+      </div>
+      <div className="nv-bases__lista">
+        {BASES.map((b) => {
+          const activa = proyecto.preset === b.id;
+          const confirmar = porConfirmar === b.id;
+          return (
+            <button
+              key={b.id}
+              type="button"
+              className={`nv-base ${activa ? 'nv-base--activa' : ''} ${confirmar ? 'nv-base--confirmar' : ''}`}
+              title={b.descripcion}
+              onClick={() => elegir(b.id)}
+            >
+              <span className="nv-base__icono" aria-hidden="true">{b.icono}</span>
+              <strong>{b.nombre}</strong>
+              <span className="nv-base__nota">
+                {confirmar ? 'Borra los golpes de las escenas. ¿Seguro? Toca otra vez' : activa ? '✓ Sonando' : b.descripcion}
+              </span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

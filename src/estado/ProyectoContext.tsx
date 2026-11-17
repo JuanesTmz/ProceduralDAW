@@ -10,7 +10,7 @@ import type { Proyecto } from './tipos';
 import { colorDeSonido, crearProyectoInicial } from './proyecto';
 import { escenasASecciones } from './escenas';
 import { aplicarPad } from './patronEscena';
-import { conexionesIniciales } from './musica';
+import { migrarReacciones } from './efectos';
 import { conexionesVisualIniciales } from './imagen';
 import { borrarTodo, cargar, guardar, rehidratar } from './guardado';
 import { useNube } from '../nube/contexto';
@@ -67,11 +67,15 @@ export function ProveedorProyecto({ children }: { children: ReactNode }) {
       .then((guardado) => {
         if (!vigente || !guardado) return;
         const base = crearProyectoInicial();
-        const completo = { ...base, ...guardado, visual: { ...base.visual, ...guardado.visual } };
+        const completo = {
+          ...base,
+          ...guardado,
+          visual: { ...base.visual, ...guardado.visual },
+          historia: { ...base.historia, ...guardado.historia },
+        };
         // Ya no hay dos labs: un proyecto de antes abre como cualquiera, con los datos de ejemplo si no tenía.
         if (completo.track) {
           completo.track = 'ia';
-          if (completo.conexiones.length === 0) completo.conexiones = conexionesIniciales(completo);
           if (completo.conexionesVisual.length === 0) completo.conexionesVisual = conexionesVisualIniciales(completo.visual.algoritmo);
         }
         // Proyectos de antes: el cuadro del Pad ahora escribe celdas, así que
@@ -82,6 +86,13 @@ export function ProveedorProyecto({ children }: { children: ReactNode }) {
             if (!yaTiene) aplicarPad(completo, e.id, id, r.golpes, r.azar);
           }
         }
+        // Noviembre 2026: la música ya no se mueve con datos, y la voz se graba
+        // solo escena por escena (las grabadas de corrido siguen sonando).
+        completo.conexiones = [];
+        completo.modoVoz = 'escena';
+        // Los golpes de la imagen por sonido pasan a celdas.
+        migrarReacciones(completo);
+        if (!completo.historia.estaciones) completo.historia.estaciones = ['', '', '', '', ''];
         if (completo.escenas.length > 0) completo.secciones = escenasASecciones(completo);
         // El color de cada pista sale de su sonido: así las guardadas toman la paleta vigente.
         for (const f of completo.patron.filas) f.color = colorDeSonido(f.tipo, f.sampleUrl);
@@ -163,6 +174,35 @@ export function ProveedorProyecto({ children }: { children: ReactNode }) {
     [proyecto, actualizar, poner, cargando, empezarDeNuevo],
   );
 
+  return <Contexto.Provider value={valor}>{children}</Contexto.Provider>;
+}
+
+/** Lo que un tutorial puede hacerle a su proyecto de demostración. */
+export interface ApiDemo {
+  actualizar: (receta: (borrador: Proyecto) => void) => void;
+  proyecto: () => Proyecto;
+}
+
+/**
+ * El proyecto de un tutorial: vive solo en memoria, no se guarda ni viaja a
+ * la sala. Las pantallas de verdad lo leen y lo cambian como si fuera el de
+ * siempre, y el guion del tutorial lo maneja por `api`.
+ */
+export function ProveedorDemo({ inicial, api, children }: { inicial: () => Proyecto; api: { current: ApiDemo | null }; children: ReactNode }) {
+  const [proyecto, setProyecto] = useState<Proyecto>(inicial);
+  const actual = useRef(proyecto);
+  const actualizar = useCallback((receta: (borrador: Proyecto) => void) => {
+    const borrador = structuredClone(actual.current) as Proyecto;
+    receta(borrador);
+    if (borrador.escenas.length > 0) borrador.secciones = escenasASecciones(borrador);
+    actual.current = borrador;
+    setProyecto(borrador);
+  }, []);
+  api.current = { actualizar, proyecto: () => actual.current };
+  const valor = useMemo(
+    () => ({ proyecto, actualizar, reemplazar: () => {}, cargando: false, empezarDeNuevo: () => {} }),
+    [proyecto, actualizar],
+  );
   return <Contexto.Provider value={valor}>{children}</Contexto.Provider>;
 }
 

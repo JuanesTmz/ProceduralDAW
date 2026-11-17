@@ -15,7 +15,7 @@ export interface VozPercusion {
    * `maxDuracion`: hasta cuánto puede sonar este golpe (segundos). Solo recorta
    * los sonidos que son más largos que eso; los cortos suenan enteros.
    */
-  disparar: (tiempo: number, velocidad: number, maxDuracion?: number) => void;
+  disparar: (tiempo: number, velocidad: number, maxDuracion?: number, semitonos?: number) => void;
   /** Corta lo que esté sonando o agendado (los samples largos no se apagan solos). */
   parar?: () => void;
   liberar: () => void;
@@ -179,13 +179,15 @@ export function crearVozSample(url: string, alCargar?: () => void): VozPercusion
   return {
     tipo: 'sample',
     salida,
-    disparar: (tiempo, velocidad, maxDuracion) => {
+    disparar: (tiempo, velocidad, maxDuracion, semitonos = 0) => {
       if (!buffer.loaded) return;
       const ganancia = new Tone.Gain(Math.max(velocidad, 0.001)).connect(salida);
       // Un fundido corto para que el recorte de un sonido largo no suene a clic.
+      // Con semitonos, el sonido se afina más agudo o más grave (las capas con notas).
       const fuente = new Tone.ToneBufferSource({
         url: buffer,
         fadeOut: 0.05,
+        playbackRate: Math.pow(2, semitonos / 12),
         onended: () => {
           activos.delete(fuente);
           fuente.dispose();

@@ -23,11 +23,13 @@ import {
   reordenar,
 } from '../estado/escenas';
 import { useOrdenArrastrable } from './useOrdenArrastrable';
-import { PRESETS } from '../estado/musica';
+import { nombreBase } from '../estado/musica';
+import { NOMBRE_ESTILO } from '../estado/imagen';
 import type { Escena } from '../estado/tipos';
 import { useReproduccion } from './useReproduccion';
 import { useCuadro } from './useCuadro';
-import { Onda } from './VozEscena';
+import { Onda } from './VozEscena';
+
 import { Caras } from '../nube/Caras';
 
 export function fondoEscena(e: Escena): string {
@@ -119,17 +121,20 @@ export function PasoEscenas({ alEntrar, alGeneral }: { alEntrar: (id: string) =>
       </div>
 
       <div className="nv-tarjetas">
+        {/* General es el punto de partida: lo que se arma aquí suena y se ve en todas las escenas. */}
         <button type="button" className="nv-tarjeta-general" onClick={alGeneral}>
           <span className="nv-tarjeta-escena__arriba">
-            <span className="nv-etiqueta nv-acento">GENERAL</span>
+            <span className="nv-general__insignia">★ EMPIEZA AQUÍ</span>
             <span className="nv-espacio" />
             <Caras en={(l) => l.escena === 'general'} />
-            <span className="nv-flecha nv-acento">›</span>
+            <span className="nv-flecha">›</span>
           </span>
-          <strong>Toda la pieza</strong>
+          <strong className="nv-general__titulo">General</strong>
+          <span className="nv-general__texto">La música y la imagen de toda la pieza</span>
           <span className="nv-espacio-v" />
-          <span className="nv-tenue nv-chico">
-            {PRESETS.find((x) => x.id === proyecto.preset)?.nombre ?? 'Sonido de base'}
+          <span className="nv-general__datos">
+            <span>♫ {nombreBase(proyecto.preset) ?? 'Elige una base'}</span>
+            <span>◐ {NOMBRE_ESTILO[proyecto.visual.algoritmo]}</span>
           </span>
         </button>
         {lista.map((e, i) => {

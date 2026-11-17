@@ -15,6 +15,7 @@ import { createPortal } from 'react-dom';
 import type { ReactNode } from 'react';
 import { Guia } from '../narrativa/Guia';
 import { BotonVideo } from '../narrativa/BotonTutorial';
+import { useEnDemo } from './demo';
 import type { Pantalla } from '../narrativa/pasosGuia';
 
 interface Props {
@@ -41,8 +42,11 @@ export function Ventana({ titulo, nota, color, alCerrar, pie, ancha, alta, child
   const devolverFoco = useRef<HTMLElement | null>(null);
 
   const cerrar = useCallback(() => alCerrar(), [alCerrar]);
+  const demo = useEnDemo();
 
   useEffect(() => {
+    // Dentro de un tutorial la ventana es parte del dibujo: no toma foco ni teclado.
+    if (demo) return;
     devolverFoco.current = document.activeElement as HTMLElement | null;
     caja.current?.focus();
 
@@ -50,7 +54,8 @@ export function Ventana({ titulo, nota, color, alCerrar, pie, ancha, alta, child
       // Con la guía o un menú abiertos, Escape cierra eso y no la ventana.
       if (e.key === 'Escape' && document.querySelector('.nv-tour, .nv-flotante')) return;
       // Con ventanas apiladas (un tutorial abierto desde otra ventana), solo responde la de arriba.
-      const todas = document.querySelectorAll('.ventana');
+      // Las ventanas dibujadas dentro de un tutorial no cuentan.
+      const todas = document.querySelectorAll('.velo:not(.velo--demo) > .ventana');
       if (todas[todas.length - 1] !== caja.current) return;
       if (e.key === 'Escape') {
         e.stopPropagation();
@@ -79,7 +84,27 @@ export function Ventana({ titulo, nota, color, alCerrar, pie, ancha, alta, child
       window.removeEventListener('keydown', alTeclear, true);
       devolverFoco.current?.focus?.();
     };
-  }, [cerrar]);
+  }, [cerrar, demo]);
+
+  if (demo) {
+    return (
+      <div className="velo velo--demo">
+        <div className={`ventana ${ancha ? 'ventana--ancha' : ''} ${alta ? 'ventana--alta' : ''}`} style={color ? { color } : undefined}>
+          <header className="ventana__cabecera">
+            <div className="ventana__textos">
+              <h2 className="ventana__titulo">{titulo}</h2>
+              {nota && <span className="ventana__nota">{nota}</span>}
+            </div>
+            <button type="button" className="ventana__cerrar" onClick={cerrar} aria-label="Cerrar">
+              ✕
+            </button>
+          </header>
+          <div className="ventana__cuerpo">{children}</div>
+          {pie && <footer className="ventana__pie">{pie}</footer>}
+        </div>
+      </div>
+    );
+  }
 
   return createPortal(
     <div

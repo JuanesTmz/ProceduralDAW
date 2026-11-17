@@ -24,6 +24,30 @@
     "nota": "C2"
   },
   {
+    "id": "pianoac",
+    "nombre": "Piano",
+    "grupo": "melodico",
+    "nota": "C4"
+  },
+  {
+    "id": "bajo",
+    "nombre": "Bajo",
+    "grupo": "melodico",
+    "nota": "C2"
+  },
+  {
+    "id": "acordeon",
+    "nombre": "Acordeón",
+    "grupo": "melodico",
+    "nota": "C4"
+  },
+  {
+    "id": "requinto",
+    "nombre": "Guitarra",
+    "grupo": "melodico",
+    "nota": "C4"
+  },
+  {
     "id": "campana",
     "nombre": "Campana",
     "grupo": "melodico",
@@ -81,6 +105,46 @@
   {
     "id": "chasquido",
     "nombre": "Chasquido",
+    "grupo": "percusion"
+  },
+  {
+    "id": "guira",
+    "nombre": "Güira",
+    "grupo": "percusion"
+  },
+  {
+    "id": "bongo",
+    "nombre": "Bongó",
+    "grupo": "percusion"
+  },
+  {
+    "id": "bongograve",
+    "nombre": "Bongó grave",
+    "grupo": "percusion"
+  },
+  {
+    "id": "tumbadora",
+    "nombre": "Tumbadora",
+    "grupo": "percusion"
+  },
+  {
+    "id": "caja",
+    "nombre": "Caja",
+    "grupo": "percusion"
+  },
+  {
+    "id": "hatcerrado",
+    "nombre": "Hi-hat cerrado",
+    "grupo": "percusion"
+  },
+  {
+    "id": "hatabierto",
+    "nombre": "Hi-hat abierto",
+    "grupo": "percusion"
+  },
+  {
+    "id": "palmas",
+    "nombre": "Palmas",
     "grupo": "percusion"
   },
   {

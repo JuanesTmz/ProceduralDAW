@@ -1,4 +1,6 @@
 // Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
+// Primero que todo: el contexto de audio con margen para la tablet.
+import './audio/contexto';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './estilos/global.css';
@@ -12,6 +14,7 @@ import './estilos/taller.css';
 import './estilos/pantalla.css';
 import './estilos/narrativa.css';
 import './estilos/nube.css';
+import './estilos/ajustes.css';
 import App from './App';
 import { ajustarVista } from './vista';
 

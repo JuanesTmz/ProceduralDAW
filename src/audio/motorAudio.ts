@@ -96,6 +96,19 @@ export type OyenteSeccion = (indice: number) => void;
 const REALCE_VOZ = 1.8;
 /** A cuánto baja la música mientras habla la voz (1 = no baja). */
 const MUSICA_BAJO_VOZ = 0.32;
+/**
+ * Nivel de la música antes de los efectos: un poco de margen para que, con
+ * muchas capas en «Fuerte», el limitador solo toque los picos. Medido con el
+ * ejemplo: los picos quedan cerca de -5 dB, sin que el limitador actúe.
+ */
+const NIVEL_MUSICA = 0.8;
+/** El eco de la melodía si el proyecto no dice otro (el de antes de las bases). */
+const ECO_MELODIA = 0.28;
+
+/** La nota MIDI de un nombre como 'C2' o 'F#3'. */
+function midiDe(nota: string): number {
+  return Tone.Frequency(nota).toMidi();
+}
 
 class MotorAudio {
   private iniciado = false;
@@ -106,6 +119,8 @@ class MotorAudio {
   private maestro: Tone.Gain | null = null;
   private clic: Tone.MembraneSynth | null = null;
   private matriz: Tone.PolySynth<Tone.Synth> | null = null;
+  /** El eco de la melodía que pide el proyecto (cada base trae el suyo). */
+  private ecoMelodia = ECO_MELODIA;
   private ecoMatriz: Tone.FeedbackDelay | null = null;
   private gananciaMatriz: Tone.Gain | null = null;
   /** El sonido propio del estudiante tocando la matriz, afinado por casilla. */
@@ -189,7 +204,7 @@ class MotorAudio {
   /** La narración: va aparte de la música, sin efectos y sin el fade del cierre. */
   private narrador: Tone.Player | null = null;
   private gananciaNarrador: Tone.Gain | null = null;
-  private limitador: Tone.Limiter | null = null;
+  private limitador: Tone.Compressor | null = null;
   private urlNarracion: string | undefined;
   /** Instante del contexto de audio en que arrancó la pieza. */
   private inicioPieza = 0;
@@ -321,7 +336,7 @@ class MotorAudio {
     this.ecoMatriz = new Tone.FeedbackDelay({
       delayTime: '8n.',
       feedback: 0.34,
-      wet: 0.28,
+      wet: this.ecoMelodia,
     }).connect(this.gananciaMatriz);
     this.matriz = new Tone.PolySynth(Tone.Synth, {
       oscillator: { type: 'triangle' },
@@ -340,7 +355,16 @@ class MotorAudio {
     await Tone.start();
 
     // El limitador del final deja que la voz suba sin que nada sature.
-    this.limitador = new Tone.Limiter(-1).toDestination();
+    // No es Tone.Limiter: ese suelta en 10 ms, y con el bombo (una onda de
+    // ~20 ms) aprieta y suelta dentro de cada vuelta de la onda y la deforma:
+    // eso se oía como «cruje» en los parlantes de la tablet.
+    this.limitador = new Tone.Compressor({
+      threshold: -3,
+      ratio: 20,
+      knee: 2,
+      attack: 0.003,
+      release: 0.25,
+    }).toDestination();
     this.maestro = new Tone.Gain(0.85).connect(this.limitador);
     this.reverb = new Tone.Reverb({ decay: 2.4, wet: 0.16 }).connect(this.maestro);
     this.delay = new Tone.FeedbackDelay({ delayTime: '8n', feedback: 0.25, wet: 0 }).connect(
@@ -354,7 +378,7 @@ class MotorAudio {
     this.modulador = new Tone.Gain(1).connect(this.silenciador);
     this.gananciaCajitas = new Tone.Gain(0.9).connect(this.maestro);
     for (const r of this.sueltas.values()) r.connect(this.gananciaCajitas);
-    this.bus = new Tone.Gain(1).connect(this.modulador);
+    this.bus = new Tone.Gain(NIVEL_MUSICA).connect(this.modulador);
 
     this.clic = new Tone.MembraneSynth({
       pitchDecay: 0.008,
@@ -706,6 +730,8 @@ class MotorAudio {
     // Lo que mueven las conexiones (lab de IA) y el gesto en vivo (Música Urbana).
     const mod = seccion ? this.modular(seccion, tiempo) : null;
     this.envolventeBombo *= 0.55;
+    // La escala de esta parte: la usan la melodía y las capas con notas (el bajo).
+    const escala = mod?.escala ?? seccion?.escala ?? patron.melodia.escala;
 
     for (const filaBase of patron.filas) {
       const propios = seccion?.pasosFilas?.[filaBase.id];
@@ -742,17 +768,24 @@ class MotorAudio {
       // Lo dibujado a mano suena igual de fuerte en todas sus celdas: el acento
       // por tiempo y el empujoncito al azar son del lab de IA, donde la máquina
       // decide cómo respira el ritmo.
-      const velocidad = aMano
-        ? VELOCIDAD_NIVEL[nivel]
-        : VELOCIDAD_NIVEL[nivel] *
-          acentoDePaso(paso, patron.cantidadPasos) *
-          humanizar(semillaActiva, fila.id, paso, this.vuelta) *
-          (ajuste?.velocidad ?? 1);
-      this.voces.get(fila.id)?.voz.disparar(
-        cuando,
-        Math.min(1, velocidad * (mod?.velocidad ?? 1)),
-        this.espacioDelGolpe(fila.pasos, paso, segundosPorPaso),
-      );
+      // El acento propio de la casilla (los golpes suaves y fuertes de una base).
+      const acento = fila.acentos?.[paso] ?? 1;
+      const velocidad =
+        acento *
+        (aMano
+          ? VELOCIDAD_NIVEL[nivel]
+          : VELOCIDAD_NIVEL[nivel] *
+            acentoDePaso(paso, patron.cantidadPasos) *
+            humanizar(semillaActiva, fila.id, paso, this.vuelta) *
+            (ajuste?.velocidad ?? 1));
+      // Una capa con notas (el bajo) toca cada casilla en su grado, y cada nota
+      // dura hasta la siguiente: así la línea no se encima consigo misma.
+      const conNotas = fila.tipo === 'sample' && fila.nota && fila.grados;
+      const semitonos = conNotas ? this.semitonosDeFila(fila, paso, escala) : 0;
+      const largo = conNotas
+        ? this.distanciaAlSiguiente(fila.pasos, paso) * segundosPorPaso
+        : this.espacioDelGolpe(fila.pasos, paso, segundosPorPaso);
+      this.voces.get(fila.id)?.voz.disparar(cuando, Math.min(1, velocidad * (mod?.velocidad ?? 1)), largo, semitonos);
       this.marcarGolpe(fila.id, Math.min(1, velocidad), cuando);
       if (fila.tipo === 'bombo') this.envolventeBombo = 1;
     }
@@ -764,7 +797,6 @@ class MotorAudio {
       (!this.soloPista || this.soloPista === 'melodia');
     if (melodiaSuena) {
       // Se disparan juntas: en la matriz varias notas en la misma columna son un acorde.
-      const escala = mod?.escala ?? seccion?.escala ?? melodia.escala;
       const probMelodia = mod?.melodia ?? 1;
       const tocadas = (seccion?.notas ?? melodia.notas)
         .filter((n) => n.paso === paso)
@@ -775,7 +807,7 @@ class MotorAudio {
         );
       const acorde = tocadas.map((n) => notaTone(semitonoDeGrado(n.grado, escala), melodia.octavaBase));
       if (acorde.length > 0) {
-        this.dispararMatriz(acorde, cuando);
+        this.dispararMatriz(acorde, cuando, (melodia.largo ?? 2) * segundosPorPaso);
         const altura = tocadas.reduce((a, n) => a + n.grado, 0) / tocadas.length / (FILAS_MATRIZ - 1);
         this.marcarGolpe('melodia', 0.9, cuando, altura);
       }
@@ -826,6 +858,21 @@ class MotorAudio {
       }
     }
     return Math.max(4, hasta) * segundosPorPaso;
+  }
+
+  /** Cuántos pasos hay hasta el siguiente golpe de la capa (dando la vuelta). */
+  private distanciaAlSiguiente(pasos: boolean[], paso: number): number {
+    const n = pasos.length;
+    for (let d = 1; d < n; d++) if (pasos[(paso + d) % n]) return d;
+    return n;
+  }
+
+  /** Cuánto se afina el sonido de una capa con notas en este paso. */
+  private semitonosDeFila(fila: Fila, paso: number, escala: NombreEscala): number {
+    const grado = fila.grados?.[paso] ?? 0;
+    const base = fila.nota ?? 'C2';
+    const octava = fila.octava ?? Number(base.slice(-1));
+    return midiDe(notaTone(semitonoDeGrado(grado, escala), octava)) - midiDe(base);
   }
 
   /** Pasa a la sección siguiente, o termina la pieza si ya no hay más. */
@@ -1269,6 +1316,9 @@ class MotorAudio {
     }
 
     const melodia = proyecto.patron.melodia;
+    // Cada base trae cuánto eco lleva su melodía (una línea de bajo con eco es un barro).
+    this.ecoMelodia = melodia.eco ?? ECO_MELODIA;
+    this.ecoMatriz?.wet.rampTo(this.ecoMelodia, 0.05);
     this.cargarMuestreadorMatriz(melodia);
     const haySolo = proyecto.patron.filas.some((f) => f.soloActivo) || melodia.soloActivo;
     const melodiaAudible = !melodia.silenciada && (!haySolo || melodia.soloActivo);
@@ -1345,11 +1395,11 @@ class MotorAudio {
    * propio termina de cargar sigue respondiendo el sintetizador, para que
    * la grilla nunca quede muda.
    */
-  private dispararMatriz(notas: string[], tiempo: number): void {
+  private dispararMatriz(notas: string[], tiempo: number, duracion: number | string = '8n'): void {
     const melodia = this.proyecto?.patron.melodia;
     const muestreador = melodia?.instrumento === 'sample' ? this.muestreadorMatriz : null;
-    if (muestreador?.loaded) muestreador.triggerAttackRelease(notas, '8n', tiempo);
-    else this.matriz?.triggerAttackRelease(notas, '8n', tiempo);
+    if (muestreador?.loaded) muestreador.triggerAttackRelease(notas, duracion, tiempo);
+    else this.matriz?.triggerAttackRelease(notas, duracion, tiempo);
   }
 
   /** Crea o reemplaza la voz de una fila. */
@@ -1415,7 +1465,7 @@ class MotorAudio {
   /** Apaga solo la música y deja la voz: para oír qué le aporta el sonido al relato. */
   silenciarMusica(silencio: boolean): void {
     this.musicaApagada = silencio;
-    this.bus?.gain.rampTo(silencio ? 0 : 1, 0.15);
+    this.bus?.gain.rampTo(silencio ? 0 : NIVEL_MUSICA, 0.15);
   }
 
   ajustarVolumenMaestro(volumen: number): void {

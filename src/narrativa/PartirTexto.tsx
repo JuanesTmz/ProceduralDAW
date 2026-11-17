@@ -16,6 +16,7 @@ import {
   EMOCIONES,
   moverCorte,
   quitarCorte,
+  vozDesactualizada,
 } from '../estado/escenas';
 
 export function PartirTexto() {
@@ -58,6 +59,11 @@ export function PartirTexto() {
       <div className="nv-campo__fila">
         <span className="nv-campo__titulo">Tus escenas</span>
         <span className="nv-tenue nv-chico">Arrastra los límites para decidir dónde empieza cada una.</span>
+        {proyecto.escenas.some(vozDesactualizada) && (
+          <span className="nv-aviso-voz nv-aviso-voz--chico">
+            Cambiaste el texto de escenas que ya tenían voz: vuelve a grabarlas en el paso Voz.
+          </span>
+        )}
         <span className="nv-espacio" />
         <div className="nv-contador">
           <button

@@ -369,7 +369,7 @@ export function crearProyectoInicial(): Proyecto {
     nombre: 'Mi pieza',
     track: null,
     modoReproduccion: 'pieza',
-    historia: { que: '', porQue: '' },
+    historia: { que: '', porQue: '', estaciones: ['', '', '', '', ''] },
     narracion: {
       texto: '',
       origen: 'ninguno',
@@ -413,7 +413,7 @@ export function crearProyectoInicial(): Proyecto {
     conexiones: [],
     conexionesVisual: [],
     archivosDatos: [],
-    preset: 'pulso',
+    preset: 'reggaeton',
     modoVoz: 'escena',
   };
 }

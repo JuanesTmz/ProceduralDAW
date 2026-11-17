@@ -1,0 +1,496 @@
+/* Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos */
+/* SONORA · ajustes tras la prueba con los chicos (nov. 2026): bases, celdas
+   solas, guardar sonido, estaciones, mezcla, avisos y tutoriales con la
+   interfaz real. Va después de narrativa.css y nube.css. */
+
+/* ---------- bases musicales (General) ---------- */
+.nv-bases { display: flex; flex-direction: column; gap: 10px; }
+.nv-bases__lista { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.nv-base {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 8px;
+  align-items: center;
+  text-align: left;
+  padding: 9px 11px;
+  min-height: 62px;
+  border-radius: 12px;
+  background: var(--nv-s1);
+  border: 1px solid var(--nv-linea);
+  color: var(--nv-texto);
+  transition: border-color 0.12s, background 0.12s, transform 0.08s;
+}
+.nv-base:active { transform: translateY(2px); }
+.nv-base__icono { grid-row: 1 / 3; font-size: 24px; line-height: 1; }
+.nv-base strong { font-size: 15px; }
+.nv-base__nota { font-size: 11.5px; line-height: 1.25; color: var(--nv-suave); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.nv-base--activa { border-color: var(--nv-acento); background: #ffb0201f; box-shadow: var(--nv-sombra-dura); }
+.nv-base--activa strong, .nv-base--activa .nv-base__nota { color: var(--nv-acento); }
+.nv-base--confirmar { border-color: var(--nv-rojo); background: #ff4d6d1f; }
+.nv-base--confirmar .nv-base__nota { color: var(--nv-rojo); }
+.nv-bases__tempo { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--nv-suave); }
+.nv-bases__tempo input { width: 160px; accent-color: var(--nv-acento); }
+@media (max-width: 1100px) { .nv-bases__lista { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+/* ---------- celdas: la única forma de editar la música ---------- */
+.nv-musica__pista { max-width: 520px; }
+.nv-pie-herr__boton--agregar { --c: #3ee08f; }
+/* Una capa sin ningún golpe invita a tocarla. */
+.nv-celdas__fila:not(.nv-celdas__fila--muda) .nv-celdas__pasos:not(:has(.nv-celda--on)):not(.nv-celdas__pasos--melodia) .nv-celda {
+  animation: nv-invita 1.8s ease-in-out infinite;
+}
+@keyframes nv-invita { 50% { border-color: color-mix(in srgb, var(--color, #fff) 70%, transparent); } }
+
+/* ---------- pestañas Música / Visuales más visibles ---------- */
+.nv-selector--grandes { padding: 4px; }
+.nv-selector--grandes .nv-selector__op { padding: 11px 24px; font-size: 16px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+.nv-pestana-icono { font-size: 18px; }
+
+/* ---------- sonidos: escoger y guardar ---------- */
+.nv-sonido__elegir { display: inline-flex; align-items: center; gap: 7px; padding: 9px 13px; }
+.nv-sonido__icono { width: 14px; text-align: center; font-size: 11px; color: var(--nv-suave); }
+.nv-sonido--activo .nv-sonido__icono { color: var(--nv-acento); }
+.nv-sonido--elegida { border-color: #3ee08f; background: #3ee08f22; color: #3ee08f; font-weight: 700; box-shadow: 0 0 0 2px #3ee08f55; }
+.nv-sonido--elegida .nv-sonido__icono { color: #3ee08f; }
+.nv-sonidos { grid-template-rows: 1fr auto; }
+.nv-sonidos__pistas { grid-row: 1 / 3; }
+.nv-guardar-sonido {
+  grid-column: 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #3ee08f1a;
+  border: 1px solid #3ee08f66;
+  animation: nu-aparece 0.15s ease-out;
+}
+.nv-guardar-sonido--hecho { background: #ffffff0a; border-color: var(--nv-linea); }
+.nv-guardar-sonido__texto { flex: 1; font-size: 14px; }
+.nv-guardar-sonido__texto strong { color: #3ee08f; }
+.nv-guardar-sonido__boton { font-size: 16px; padding: 11px 22px; }
+.nv-sonidos__propios {
+  margin-top: 4px;
+  padding: 14px;
+  border: 1px dashed #ff4d6d66;
+  border-radius: 12px;
+  background: #ff4d6d0d;
+  gap: 8px;
+}
+
+/* ---------- historia por estaciones ---------- */
+.nv-estaciones { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.nv-estacion { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 12px 12px 10px; }
+.nv-estacion textarea { resize: none; min-height: 72px; font-size: 14px; }
+.nv-estacion__num {
+  position: absolute;
+  top: -9px;
+  right: 10px;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--nv-acento);
+  color: #0f1117;
+  font-weight: 800;
+  font-size: 13px;
+  box-shadow: var(--nv-sombra-dura);
+}
+.nv-historia__texto { display: flex; flex-direction: column; }
+@media (max-width: 1000px) { .nv-estaciones { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+/* ---------- voz: avisar cuando hay que regrabar ---------- */
+.nv-aviso-voz {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #ff4d6d1f;
+  border: 1px solid #ff4d6d66;
+  color: #ffb3c1;
+  font-size: 15px;
+}
+.nv-aviso-voz--chico { padding: 4px 10px; font-size: 12.5px; }
+.nv-paso-voz__marca--vieja { background: var(--nv-rojo); color: #fff; }
+
+/* ---------- mezcla ---------- */
+.nv-boton-mezcla { display: inline-flex; align-items: center; gap: 6px; }
+.ventana:has(> .ventana__cuerpo > .nv-mezcla) { width: min(640px, calc(100vw - 32px)); }
+.nv-mezcla { display: flex; flex-direction: column; gap: 6px; color: var(--nv-texto); }
+.nv-mezcla__titulo { margin-top: 8px; }
+.nv-mezcla__fila {
+  display: grid;
+  grid-template-columns: auto 150px 1fr 36px;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #ffffff08;
+}
+.nv-mezcla__fila--destacada { background: #ffffff12; border: 1px solid #ffffff2a; }
+.nv-mezcla__nombre { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+.nv-mezcla__nombre strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nv-mezcla__fila input { width: 100%; accent-color: var(--color); height: 28px; }
+.nv-mezcla__valor { text-align: right; color: var(--nv-suave); font-size: 12px; }
+.nv-mezcla__pie { display: flex; justify-content: flex-end; padding-top: 8px; }
+
+/* ---------- se guarda solo ---------- */
+.nv-guardado {
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #3ee08f;
+  background: #3ee08f14;
+  border: 1px solid #3ee08f40;
+  white-space: nowrap;
+  transition: color 0.2s, background 0.2s;
+}
+.nv-guardado--activo { color: var(--nv-acento); background: #ffb02014; border-color: #ffb02040; }
+
+/* ---------- ¡vas muy bien! ---------- */
+.nv-animo {
+  position: fixed;
+  left: 50%;
+  bottom: 22px;
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 12px 22px;
+  border-radius: 16px;
+  background: #3ee08f;
+  color: #0f1117;
+  box-shadow: 0 5px 0 #0007, 0 14px 40px #0008;
+  transform: translateX(-50%);
+  animation: nv-animo 4.5s ease-in-out both;
+  pointer-events: none;
+  text-align: center;
+}
+.nv-animo strong { font-size: 18px; }
+.nv-animo span { font-size: 14px; }
+.nv-animo__guardado { font-size: 12px !important; opacity: 0.75; font-weight: 700; }
+@keyframes nv-animo {
+  0% { opacity: 0; transform: translate(-50%, 20px) scale(0.9); }
+  8%, 88% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, 10px); }
+}
+
+/* ---------- tutoriales con la interfaz de verdad ---------- */
+.tu-fondo-real {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 15% 15%, #a77bff2b, transparent 40%),
+    radial-gradient(circle at 85% 90%, #3ddcff26, transparent 45%),
+    #12141d;
+}
+.tu-tableta {
+  position: absolute;
+  padding: 12px;
+  border-radius: 26px;
+  background: #050609;
+  border: 3px solid #14161f;
+  box-shadow: 10px 10px 0 #14161f;
+}
+.tu-real {
+  position: relative;
+  transform-origin: 0 0;
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--nv-fondo);
+  color: var(--nv-texto);
+  font-family: var(--fuente);
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+}
+.tu-real > * { flex: 1; min-height: 0; }
+.tu-real .nv-contenido { height: 100%; }
+.tu-real__editor { height: 100%; }
+/* Las ventanas, dentro del video y no encima de la app. */
+.velo--demo { position: absolute; inset: 0; z-index: 5; animation: none; backdrop-filter: none; }
+.velo--demo .ventana { animation: none; max-height: 100%; }
+.tu-real .ventana--alta { height: 100%; }
+/* En el video no se ven los bloqueos ni las caras del equipo. */
+.tu-real [data-bloqueado-por] { outline: none; }
+.tu-real [data-bloqueado-por]::after { content: none; }
+.tu-real [data-bloqueado-por] > :not([data-libre]) { opacity: 1; }
+.tu-real .nv-animo { display: none; }
+.tu-mano-real { position: absolute; left: 0; top: 0; z-index: 20; pointer-events: none; transition: opacity 0.2s; }
+.tu-halo { position: absolute; left: 0; top: 0; z-index: 15; pointer-events: none; }
+.tu-halo__aro {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  border: 6px solid var(--color);
+  box-shadow: 0 0 30px var(--color);
+}
+.tu-halo__texto {
+  position: absolute;
+  left: 60px;
+  top: -70px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 4px solid #14161f;
+  background: var(--color);
+  color: #fff;
+  font-size: 24px;
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: 5px 5px 0 #14161f;
+}
+
+/* ---------- visuales: cajitas (nov. 2026) ---------- */
+/* Lo que se arma a la izquierda, la obra a la derecha. */
+.nv-imagen--cajitas { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
+.nv-imagen__mesa { display: flex; flex-direction: column; gap: 12px; min-height: 0; overflow: auto; padding-right: 4px; }
+.nv-imagen--cajitas .nv-obra { flex: none; aspect-ratio: 16 / 10; }
+.nv-obra--demo { background: radial-gradient(circle at 30% 30%, #5e60ce, transparent 55%), radial-gradient(circle at 75% 70%, #ff5d8f, transparent 50%), #10121a; }
+.nv-cajitas__titulo { font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--nv-suave); }
+
+/* El estilo, en una fila de muestras chicas. */
+.nv-cajitas__estilos { display: flex; gap: 6px; align-items: stretch; }
+.nv-estilo-chico {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: var(--nv-s1);
+  color: var(--nv-suave);
+}
+.nv-estilo-chico .nv-estilo__muestra { height: 26px; }
+.nv-estilo-chico__nombre { font-size: 10.5px; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nv-estilo-chico--activo { border-color: var(--nv-acento); color: var(--nv-texto); font-weight: 700; }
+
+/* Las fotos, en fila. */
+.nv-fotos { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.nv-foto-chica { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.nv-foto-chica__imagen {
+  position: relative;
+  width: 76px;
+  height: 52px;
+  border-radius: 9px;
+  background: center / cover no-repeat #2d3244;
+  border: 2px solid transparent;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--nv-suave);
+}
+.nv-foto-chica--obra .nv-foto-chica__imagen { border-color: var(--nv-acento); }
+.nv-foto-chica__obra { position: absolute; bottom: 2px; left: 2px; right: 2px; border-radius: 5px; background: #000b; color: var(--nv-acento); font-size: 9.5px; font-weight: 800; }
+.nv-foto-chica__nombre { font-size: 11px; font-weight: 700; color: var(--nv-suave); }
+.nv-foto-chica__quitar {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--nv-s3);
+  border: 1px solid var(--nv-linea);
+  font-size: 13px;
+  line-height: 1;
+}
+.nv-foto-chica--subir { cursor: pointer; }
+.nv-foto-chica--subir .nv-foto-chica__imagen { border: 2px dashed #8fe35a88; background: #8fe35a0d; color: #8fe35a; }
+
+/* Las cajas: una por parámetro (o por golpe). */
+.nv-cajas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.nv-caja {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 82px;
+  padding: 9px 10px;
+  border-radius: 12px;
+  background: var(--nv-s1);
+  border: 1.5px dashed var(--nv-linea);
+  transition: border-color 0.12s, background 0.12s, transform 0.12s;
+}
+.nv-caja__titulo { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 800; line-height: 1.2; }
+.nv-caja__probar { margin-left: auto; width: 24px; height: 24px; border-radius: 50%; background: #ffffff12; font-size: 10px; }
+.nv-caja__vacia { font-size: 11.5px; color: var(--nv-tenue); font-style: italic; }
+.nv-caja__nota { font-size: 11px; color: var(--nv-tenue); }
+.nv-caja__mano { width: 100%; accent-color: var(--nv-suave); margin-top: auto; }
+.nv-caja__puesta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  max-width: 100%;
+  padding: 5px 6px 5px 10px;
+  border-radius: 8px;
+  background: var(--color);
+  color: #0f1117;
+  font-size: 12.5px;
+  font-weight: 800;
+  box-shadow: 0 2px 0 #0007;
+  animation: nv-cajita-entra 0.25s cubic-bezier(.2, 1.4, .4, 1);
+}
+.nv-caja__puesta--chica { font-size: 11.5px; padding: 3px 4px 3px 8px; }
+.nv-caja__dato { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nv-caja__quitar { width: 18px; height: 18px; border-radius: 50%; background: #0003; font-size: 12px; line-height: 1; flex: none; }
+.nv-caja__pie { display: flex; align-items: center; gap: 8px; margin-top: auto; }
+.nv-caja__barra { flex: 1; height: 6px; border-radius: 3px; background: #ffffff14; overflow: hidden; }
+.nv-caja__barra span { display: block; height: 100%; width: 50%; background: var(--color); border-radius: 3px; }
+.nv-caja__cuanto { padding: 2px 8px; border-radius: 999px; border: 1px solid var(--nv-linea); font-size: 11px; font-weight: 700; color: var(--nv-suave); }
+.nv-caja__lista { display: flex; flex-wrap: wrap; gap: 4px; }
+.nv-caja--mas { align-items: center; justify-content: center; font-weight: 700; color: var(--nv-suave); border-style: solid; }
+.nv-cajas--golpes .nv-caja { min-height: 64px; }
+@keyframes nv-cajita-entra { from { transform: scale(0.6); opacity: 0; } }
+
+/* Con una cajita en la mano, las cajas se ofrecen. */
+.nv-cajitas { display: flex; flex-direction: column; gap: 10px; }
+.nv-cajitas--en-mano .nv-caja { border-color: var(--nv-acento); background: #ffb0200d; }
+.nv-cajitas--en-mano .nv-caja:hover { transform: scale(1.02); background: #ffb0201f; }
+.nv-caja--recibe { cursor: pointer; }
+
+/* La bandeja de cajitas. */
+.nv-bandeja {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--nv-s2);
+  border: 1px solid var(--nv-linea);
+  box-shadow: 0 -8px 20px #0007;
+}
+/* Los grupos van seguidos (no uno por línea): la bandeja ocupa poco alto. */
+.nv-bandeja__grupos { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
+.nv-bandeja__grupo { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.nv-bandeja__nombre { font-size: 10.5px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--nv-tenue); margin-right: 2px; }
+.nv-cajita {
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--color) 22%, var(--nv-s1));
+  border: 1px solid color-mix(in srgb, var(--color) 60%, transparent);
+  color: var(--color);
+  font-size: 12.5px;
+  font-weight: 800;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+}
+.nv-cajita--escogida { background: var(--color); color: #0f1117; box-shadow: 0 0 0 3px #fff4, 0 3px 0 #0007; }
+.nv-cajita--fantasma {
+  position: fixed;
+  z-index: 200;
+  pointer-events: none;
+  transform: translate(-50%, -120%) rotate(-4deg);
+  background: var(--color);
+  color: #0f1117;
+  box-shadow: 0 10px 24px #000a;
+}
+
+/* ---------- el azar, que se note ---------- */
+.nv-boton--sorpresa {
+  border: none;
+  background: linear-gradient(135deg, #8b5cf6, #ff5d8f);
+  color: #fff;
+  font-weight: 800;
+  box-shadow: 0 3px 0 #4c1d95, 0 0 18px #b9a6ff55;
+}
+.nv-boton--sorpresa:hover { background: linear-gradient(135deg, #9d74ff, #ff7aa3); }
+.nv-boton--sorpresa:active { transform: translateY(2px); box-shadow: 0 1px 0 #4c1d95; }
+.nv-sorpresa-estilo { flex: none; padding: 0 16px; white-space: nowrap; font-size: 14px; }
+
+/* ---------- los golpes de la imagen, en celdas ---------- */
+.nv-golpes-imagen { display: flex; flex-direction: column; gap: 10px; }
+.nv-celdas--imagen { grid-template-columns: 178px 1fr; }
+.nv-celdas--imagen .nv-celda { height: 26px; }
+.nv-celdas__sonido--quieto { cursor: default; }
+.nv-celdas__sonido--quieto:hover { background: none; }
+
+/* El estilo va debajo de la obra: deja la columna de la izquierda para las fotos y las cajas. */
+.nv-imagen__vista .nv-cajitas__estilos { flex: none; }
+.nv-imagen__vista .nv-sorpresa-estilo { padding: 0 12px; font-size: 13px; }
+/* Debajo de la obra, los estilos en grande (como estaban antes): la obra cede alto para que quepan. */
+.nv-imagen--cajitas .nv-imagen__vista { min-height: 0; }
+.nv-imagen--cajitas .nv-obra { flex: 1; min-height: 220px; aspect-ratio: auto; }
+.nv-imagen__vista .nv-cajitas__estilos { gap: 8px; }
+.nv-imagen__vista .nv-estilo-chico { padding: 6px; gap: 6px; border-radius: 12px; }
+.nv-imagen__vista .nv-estilo-chico .nv-estilo__muestra { height: 44px; border-radius: 8px; }
+.nv-imagen__vista .nv-estilo-chico__nombre { font-size: 12.5px; line-height: 1.2; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.nv-imagen__vista .nv-sorpresa-estilo { padding: 0 16px; font-size: 14px; }
+.nv-imagen__vista .nv-paleta span { width: 16px; height: 26px; }
+
+/* La bandeja de alto fijo: pestañas por grupo y una sola fila que se desliza. */
+.nv-bandeja__cabeza { display: flex; align-items: center; gap: 10px; }
+.nv-bandeja__pestanas { display: flex; gap: 4px; margin-left: auto; }
+.nv-bandeja__pestana {
+  padding: 4px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--nv-linea);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--nv-suave);
+}
+.nv-bandeja__pestana--activa { border-color: var(--color); color: var(--color); background: color-mix(in srgb, var(--color) 16%, transparent); }
+.nv-bandeja__fila {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 2px;
+  scrollbar-width: thin;
+}
+.nv-bandeja__fila .nv-cajita { flex: none; display: inline-flex; align-items: center; gap: 6px; }
+.nv-cajita__mini { width: 20px; height: 20px; border-radius: 5px; background: center / cover no-repeat #2d3244; flex: none; }
+.nv-cajita--nueva-foto:not(:first-child) { margin-left: 10px; }
+
+/* ---------- General: el punto de partida, que se note ---------- */
+.nv-tarjeta-general {
+  width: 230px;
+  border: 2px solid var(--nv-acento);
+  background: linear-gradient(150deg, #ffb02033, #ffb0200a 70%), var(--nv-s1);
+  box-shadow: 0 4px 0 #8a5a00, 0 0 24px #ffb02033;
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+.nv-tarjeta-general:hover { transform: translateY(-2px); box-shadow: 0 6px 0 #8a5a00, 0 0 30px #ffb02055; }
+.nv-tarjeta-general:active { transform: translateY(2px); box-shadow: 0 1px 0 #8a5a00; }
+.nv-tarjeta-general .nv-flecha { color: var(--nv-acento); font-size: 26px; }
+.nv-general__insignia {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--nv-acento);
+  color: #0f1117;
+  font-size: 10.5px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+.nv-general__titulo { font-size: 20px; color: var(--nv-acento); }
+.nv-general__texto { font-size: 12.5px; color: var(--nv-texto); opacity: 0.85; line-height: 1.3; }
+.nv-general__datos { display: flex; flex-direction: column; gap: 2px; font-size: 12px; font-weight: 700; color: var(--nv-suave); }
+
+.nv-riel__item--general {
+  border: 1.5px solid var(--nv-acento);
+  border-left-style: solid;
+  background: linear-gradient(150deg, #ffb02029, #ffb02008), var(--nv-s1);
+  margin-bottom: 2px;
+}
+.nv-riel__item--general .nv-riel__num { background: var(--nv-acento); color: #0f1117; }
+.nv-riel__item--general .nv-riel__texto strong { color: var(--nv-acento); }
+.nv-riel__item--general .nv-riel__texto span { font-size: 11px; color: var(--nv-suave); }
+.nv-riel__separador { margin: 6px 10px 2px; font-size: 10px; font-weight: 800; letter-spacing: 0.1em; color: var(--nv-tenue); }
+.nv-tarjeta-general { gap: 4px; overflow: hidden; }
+.nv-general__titulo { font-size: 19px; line-height: 1.1; }
+.nv-general__datos { flex-direction: row; gap: 10px; white-space: nowrap; overflow: hidden; }
+.nv-general__datos span { overflow: hidden; text-overflow: ellipsis; }
+.nv-tarjeta-general { width: 270px; }

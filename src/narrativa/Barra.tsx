@@ -1,7 +1,8 @@
 // Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * La barra de arriba: los cuatro pasos, el medidor de 2:30, escuchar la
- * pieza y el lab. Es lo único que se queda fijo en toda la app.
+ * pieza, la mezcla y el aviso de que todo se guarda solo. Es lo único que
+ * se queda fijo en toda la app.
  */
 import { motorAudio } from '../audio/motorAudio';
 import { useProyecto } from '../estado/ProyectoContext';
@@ -11,6 +12,8 @@ import type { ReactNode } from 'react';
 import { useReproduccion } from './useReproduccion';
 import { EstadoNube } from '../nube/EstadoNube';
 import { Caras } from '../nube/Caras';
+import { BotonMezcla } from './Mezcla';
+import { Guardado } from './Animo';
 
 export type Paso = 'historia' | 'voz' | 'escenas' | 'funcion';
 
@@ -79,6 +82,8 @@ export function Barra({ paso, alCambiar, enEscena, guia }: Props) {
           {sonando ? '■  Parar' : '▶  Escuchar'}
         </button>
       )}
+      <BotonMezcla />
+      <Guardado />
       {guia}
       <EstadoNube />
     </header>
