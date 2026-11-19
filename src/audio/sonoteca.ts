@@ -2,9 +2,13 @@
 /**
  * La Sonoteca: los sonidos que trae la app, en public/sonoteca/.
  *
- * Se generan por síntesis con scripts/generar-sonoteca.mjs —sin grabaciones
- * de terceros—. Los melódicos dicen en qué nota están afinados, para que
- * la matriz los transporte a cualquier casilla sin desafinar.
+ * La percusión (caja, aro, hi-hats, palmas, clave, cencerro, güiro, shaker,
+ * bongós, conga, tumbadora y güira) son grabaciones reales del Versilian
+ * Community Sample Library (VCSL, CC0: dominio público), recortadas y con el
+ * volumen igualado al de los sintéticos que reemplazaron; el resto se genera
+ * por síntesis con scripts/generar-sonoteca.mjs. Los melódicos dicen en qué
+ * nota están afinados, para que la matriz los transporte a cualquier casilla
+ * sin desafinar.
  *
  * Cuando el equipo grabe los sonidos reales de Medellín, se suman aquí.
  */
@@ -87,6 +91,7 @@ export const SONOTECA: SonidoSonoteca[] = [
   s('bongograve', 'Bongó grave', 'percusion'),
   s('tumbadora', 'Tumbadora', 'percusion'),
   s('caja', 'Caja', 'percusion'),
+  s('aro', 'Aro de la caja', 'percusion'),
   s('hatcerrado', 'Hi-hat cerrado', 'percusion'),
   s('hatabierto', 'Hi-hat abierto', 'percusion'),
   s('palmas', 'Palmas', 'percusion'),

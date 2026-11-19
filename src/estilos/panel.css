@@ -94,3 +94,307 @@
 .pa-obra__video { width: 100%; aspect-ratio: 16 / 9; border-radius: 10px; background: #000; }
 .pa-obra__pie { display: flex; flex-direction: column; gap: 2px; }
 .pa-obra a.nv-boton { color: var(--nv-texto); text-decoration: none; }
+
+/* ---------- Galería: tarjeta que abre el visor ---------- */
+.pa-obra__abrir {
+  position: relative;
+  display: block;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #000;
+  cursor: pointer;
+}
+.pa-obra__abrir .pa-obra__video { display: block; border-radius: 0; pointer-events: none; }
+.pa-obra__play {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  translate: -50% -50%;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  padding-left: 4px;
+  border-radius: 50%;
+  background: #0f1117cc;
+  color: #fff;
+  font-size: 20px;
+  transition: transform 0.15s, background 0.15s;
+}
+.pa-obra__abrir:hover .pa-obra__play { transform: scale(1.08); background: var(--nv-acento); color: #0f1117; }
+.pa-obra__linea { display: flex; align-items: center; gap: 8px; }
+.pa-obra__nota { font-size: 12.5px; font-weight: 700; color: var(--nv-suave); }
+.pa-obra__nota--lista { color: var(--nv-acento); font-size: 14px; font-variant-numeric: tabular-nums; }
+
+/* ---------- el visor ---------- */
+.pa-visor {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #07080cd9;
+  backdrop-filter: blur(6px);
+}
+.pa-visor__caja {
+  width: min(1100px, 100%);
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  background: var(--nv-s1);
+  box-shadow: 0 30px 80px #000a;
+  overflow: hidden;
+}
+.pa-visor__caja--calificando { width: min(1400px, 100%); }
+/* Calificando, el panel necesita alto: el video se centra en negro. */
+.pa-visor__caja--calificando .pa-visor__cuerpo { min-height: min(640px, calc(100vh - 110px)); }
+.pa-visor__cabeza { display: flex; align-items: center; gap: 10px; padding: 12px 14px 12px 20px; }
+.pa-visor__cerrar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: var(--nv-suave);
+  font-size: 15px;
+}
+.pa-visor__cerrar:hover { background: var(--nv-s2); color: var(--nv-texto); }
+.pa-visor__cuerpo { display: flex; min-height: 0; flex: 1; }
+.pa-visor__video {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  max-height: calc(100vh - 120px);
+  aspect-ratio: 16 / 9;
+  background: #000;
+}
+.pa-visor__lado {
+  position: relative;
+  flex: none;
+  width: 380px;
+  border-left: 1px solid var(--nv-linea);
+  animation: pa-entra 0.18s ease-out;
+}
+/* Sin altura propia: la fila la pone el video y el panel se desplaza dentro. */
+.pa-visor__desliza { position: absolute; inset: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--nv-s3) transparent; }
+@keyframes pa-entra { from { opacity: 0; transform: translateX(12px); } }
+@media (max-width: 900px) {
+  .pa-visor { padding: 0; }
+  .pa-visor__caja { border-radius: 0; height: 100%; }
+  .pa-visor__cuerpo { flex-direction: column; overflow-y: auto; }
+  .pa-visor__video { flex: none; }
+  .pa-visor__lado { width: auto; border-left: 0; border-top: 1px solid var(--nv-linea); }
+  .pa-visor__desliza { position: static; }
+}
+
+/* ---------- el formulario de calificar: un criterio a la vez ---------- */
+.cf { --c: var(--nv-acento); display: flex; flex-direction: column; gap: 14px; min-height: 100%; padding: 14px 18px 0; }
+
+/* Los 7 criterios (y el resumen) arriba: ícono y la nota puesta. */
+.cf-pasos { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; scroll-margin-top: 14px; }
+.cf-paso {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 0 5px;
+  border-radius: 10px;
+  border: 1.5px solid transparent;
+  background: var(--nv-s2);
+  color: var(--nv-tenue);
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+.cf-paso:hover { background: var(--nv-s3); }
+.cf-paso:active { transform: translateY(1px); }
+.cf-paso__icono { font-size: 16px; line-height: 1.1; filter: grayscale(1) opacity(0.55); transition: filter 0.15s; }
+.cf-paso__nota { font-size: 11.5px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.cf-paso--lista { background: color-mix(in srgb, var(--c) 14%, var(--nv-s2)); color: var(--c); }
+.cf-paso--lista .cf-paso__icono,
+.cf-paso--actual .cf-paso__icono { filter: none; }
+.cf-paso--actual { border-color: var(--c); background: color-mix(in srgb, var(--c) 20%, var(--nv-s2)); color: var(--c); }
+.cf-paso--actual::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  translate: -50% 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--c);
+}
+.cf-paso--resumen { --c: var(--nv-acento); }
+.cf-paso--resumen .cf-paso__icono { font-weight: 900; color: var(--c); filter: none; opacity: 0.6; }
+.cf-paso--resumen.cf-paso--actual .cf-paso__icono,
+.cf-paso--resumen.cf-paso--lista .cf-paso__icono { opacity: 1; }
+
+/* La tarjeta del criterio. */
+.cf-criterio,
+.cf-resumen { display: flex; flex-direction: column; gap: 14px; animation: cf-entra 0.2s ease-out; }
+@keyframes cf-entra { from { opacity: 0; transform: translateY(6px); } }
+
+.cf-cabeza { display: flex; align-items: center; gap: 12px; }
+.cf-cabeza__icono {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  font-size: 24px;
+  background: color-mix(in srgb, var(--c) 18%, transparent);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--c) 55%, transparent);
+}
+.cf-cabeza__texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cf-cabeza__num { font-size: 10.5px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--nv-tenue); }
+.cf-cabeza__nombre { margin: 0; font-size: 20px; font-weight: 900; line-height: 1.15; color: var(--c); }
+.cf-pregunta { margin: 0; font-size: 14px; line-height: 1.45; color: var(--nv-texto); }
+
+.cf-rotulo { font-size: 10.5px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--nv-suave); }
+
+/* La guía 5 / 3 / 1: tocar una pone esa nota. */
+.cf-guias { display: flex; flex-direction: column; gap: 6px; }
+.cf-guia {
+  --g: var(--nv-suave);
+  display: flex;
+  gap: 11px;
+  align-items: flex-start;
+  padding: 9px 11px;
+  border-radius: 11px;
+  border: 1.5px solid var(--nv-s3);
+  background: var(--nv-s1);
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+}
+.cf-guia--logrado { --g: #04ef77; }
+.cf-guia--parcial { --g: #fce905; }
+.cf-guia--no { --g: #ff4d6d; }
+.cf-guia:hover { border-color: color-mix(in srgb, var(--g) 50%, transparent); background: var(--nv-s2); }
+.cf-guia--puesta { border-color: var(--g); background: color-mix(in srgb, var(--g) 10%, var(--nv-s1)); }
+.cf-guia__nota {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--g);
+  background: color-mix(in srgb, var(--g) 15%, transparent);
+}
+.cf-guia--puesta .cf-guia__nota { background: var(--g); color: #0f1117; }
+.cf-guia__texto { font-size: 12.5px; line-height: 1.4; color: var(--nv-suave); }
+.cf-guia__texto strong { color: var(--g); font-weight: 800; }
+.cf-guia--puesta .cf-guia__texto { color: var(--nv-texto); }
+
+/* Poner la nota y avanzar. */
+.cf-poner { display: flex; align-items: center; gap: 8px; }
+.cf-poner__casilla { display: flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 700; color: var(--nv-suave); }
+.cf-poner__de { font-size: 12px; font-weight: 600; color: var(--nv-tenue); }
+.cf-nota {
+  width: 64px;
+  height: 46px;
+  font: inherit;
+  font-size: 22px;
+  font-weight: 900;
+  text-align: center;
+  color: var(--c);
+  background: var(--nv-fondo);
+  border: 2px solid color-mix(in srgb, var(--c) 45%, var(--nv-linea));
+  border-radius: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.cf-nota::placeholder { color: var(--nv-tenue); }
+.cf-nota:focus { outline: none; border-color: var(--c); box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 18%, transparent); }
+.cf-nota--mala,
+.cf-nota--mala:focus { border-color: var(--nv-rojo); color: var(--nv-rojo); box-shadow: none; }
+.cf-atras { min-width: 40px; font-size: 18px; line-height: 1; }
+.cf-aviso { margin: -6px 0 0; font-size: 12px; color: var(--nv-rojo); }
+
+/* El resumen. */
+.cf-resumen__cabeza { display: flex; flex-direction: column; gap: 2px; }
+.cf-resumen__final { display: flex; align-items: baseline; gap: 6px; }
+.cf-resumen__final strong { font-size: 44px; font-weight: 900; line-height: 1.05; color: var(--nv-acento); font-variant-numeric: tabular-nums; }
+.cf-resumen__final span { font-size: 16px; color: var(--nv-tenue); }
+.cf-resumen__lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.cf-resumen__fila {
+  display: grid;
+  grid-template-columns: 22px 1fr auto 56px 34px;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  padding: 7px 8px;
+  border-radius: 9px;
+  text-align: left;
+  font-size: 13px;
+  color: var(--nv-texto);
+}
+.cf-resumen__fila:hover { background: var(--nv-s2); }
+.cf-resumen__nombre { font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cf-resumen__peso { font-size: 11px; color: var(--nv-tenue); font-variant-numeric: tabular-nums; }
+.cf-resumen__barra { height: 6px; border-radius: 3px; background: var(--nv-s3); overflow: hidden; }
+.cf-resumen__barra span { display: block; height: 100%; border-radius: 3px; background: var(--c); transition: width 0.3s; }
+.cf-resumen__fila strong { text-align: right; font-weight: 900; color: var(--c); font-variant-numeric: tabular-nums; }
+.cf-resumen__fila .cf-resumen__vacia { font-size: 11px; font-weight: 700; color: var(--nv-tenue); }
+
+.cf-comentario { display: flex; flex-direction: column; gap: 6px; }
+.cf-comentario textarea {
+  font: inherit;
+  font-size: 13px;
+  color: var(--nv-texto);
+  background: var(--nv-fondo);
+  border: 1.5px solid var(--nv-linea);
+  border-radius: 10px;
+  padding: 9px 11px;
+  resize: vertical;
+}
+.cf-comentario textarea:focus { outline: none; border-color: var(--nv-acento); }
+.cf-falta { font-size: 12px; color: var(--nv-tenue); }
+.cf-otros { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; font-size: 12.5px; color: var(--nv-suave); }
+.cf-otros .cf-rotulo { width: 100%; }
+.cf-otros__uno b { color: var(--nv-texto); }
+
+/* La nota final, siempre a la vista abajo. */
+.cf-pie {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: auto -18px 0;
+  padding: 12px 18px 14px;
+  border-top: 1px solid var(--nv-linea);
+  background: var(--nv-s1);
+}
+.cf-pie__etiqueta { font-size: 12px; font-weight: 700; color: var(--nv-suave); margin-right: 4px; }
+.cf-pie__nota { font-size: 26px; font-weight: 900; color: var(--nv-acento); font-variant-numeric: tabular-nums; line-height: 1; }
+.cf-pie__de { color: var(--nv-tenue); }
+.cf-estado { font-size: 12px; color: var(--nv-tenue); }
+.cf-estado--ok { color: #04ef77; }
+.cf-estado--error { color: var(--nv-rojo); }
+
+/* La tarjeta de la galería: un punto por criterio calificado. */
+.pa-obra__puntos { display: inline-flex; gap: 3px; margin-right: 6px; vertical-align: middle; }
+.pa-obra__puntos span { width: 6px; height: 6px; border-radius: 50%; background: var(--nv-s3); }
+
+/* ---------- Ranking ---------- */
+.pa-rk { display: flex; flex-direction: column; gap: 16px; padding: 18px; max-width: 1100px; }
+.pa-rk__interruptor { display: flex; align-items: center; gap: 16px; border: 2px solid var(--nv-linea); }
+.pa-rk__interruptor--abierto { border-color: #fce905; }
+.pa-rk__interruptor .nv-sub { margin-top: 4px; }
+.pa-rk__detalle { display: flex; flex-direction: column; gap: 10px; }
+.pa-rk__tabla { display: flex; flex-direction: column; overflow-x: auto; }
+.pa-rk__fila {
+  display: grid;
+  grid-template-columns: 32px minmax(120px, 1.6fr) repeat(7, minmax(62px, 1fr)) 64px 62px;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--nv-linea);
+  font-variant-numeric: tabular-nums;
+  min-width: 860px;
+}
+.pa-rk__fila--cabeza { font-size: 12px; font-weight: 700; color: var(--nv-suave); }

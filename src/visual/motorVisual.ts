@@ -15,7 +15,12 @@
  *  - **La resolución interna no es la de la pantalla.** Se trabaja a un
  *    tamaño acotado y el CSS lo estira: en la tablet del evento eso es la
  *    diferencia entre ir fluido y arrastrarse, y a esta distancia no se
- *    nota.
+ *    nota. (Varios algoritmos miden en píxeles: cambiar este tamaño cambia
+ *    cómo se ven las corrientes, los glifos y las líneas.)
+ *  - **Al exportar el video, el tamaño es fijo** (16:9, el del video) y se
+ *    pinta a 30 cuadros parejos: tras cada cuadro el motor avisa, y la
+ *    exportación lo copia en ese mismo instante (un lienzo WebGL se borra
+ *    después de mostrarse).
  */
 import { analizador, type Bandas } from './analizador';
 import { algoritmoDe } from './algoritmos';
@@ -27,6 +32,30 @@ import { enVivo } from './enVivo';
 /** Lado mayor de la resolución interna. */
 const LADO_TACTIL = 720;
 const LADO_ESCRITORIO = 1100;
+/**
+ * Lo mínimo que puede bajar la calidad automática. Era 0,45 y el visual
+ * terminaba pixelado; con 0,6 la tablet sigue teniendo dónde ahorrar.
+ */
+const CALIDAD_MINIMA = 0.6;
+
+/** Lo que pide la exportación del video mientras graba. */
+export interface ModoExportar {
+  ancho: number;
+  alto: number;
+  /** Cada cuántos milisegundos se pinta un cuadro (33 para 30 por segundo). */
+  cadaMs: number;
+  /** Se llama justo después de pintar cada cuadro. */
+  alPintar: () => void;
+}
+
+/** Cómo se ve la obra entera (los mandos Zoom, Giro, Brillo, Tono y Saturación). */
+export interface EstiloObra {
+  escala: number;
+  /** Grados. */
+  giro: number;
+  /** Filtro CSS, o 'none'. */
+  filtro: string;
+}
 
 const BANDAS_QUIETAS: Bandas = { graves: 0, medios: 0, agudos: 0, amplitud: 0, golpe: 0 };
 
@@ -60,12 +89,24 @@ class MotorVisual {
   private ancho = 1;
   private alto = 1;
   /**
-   * Cuánto de la resolución se usa, de 0.4 a 1. Baja sola si la pantalla va a
-   * tirones (una tablet con poca GPU) y vuelve a subir si le sobra.
+   * Cuánto de la resolución se usa, de CALIDAD_MINIMA a 1. Baja sola si la
+   * pantalla va lenta de forma sostenida (una tablet con poca GPU) y vuelve a
+   * subir si le sobra.
    */
   private calidad = 1;
-  private muestraRendimiento = { desde: 0, cuadros: 0, buenas: 0 };
+  private muestraRendimiento = { desde: 0, tiempos: [] as number[], buenas: 0 };
   private pausado = false;
+  private exportar: ModoExportar | null = null;
+  private ultimoPintado = 0;
+  /** Exportando, cuánto del tamaño pedido se usa (1 a 0,67): baja solo si la tablet no da abasto. */
+  private escalaExportar = 1;
+  private muestraExportar = { desde: 0, cuadros: 0, primera: true };
+
+  /**
+   * El escenario aplica Zoom, Giro y los filtros con CSS sobre el lienzo; aquí
+   * los deja anotados para que el video exportado se vea igual.
+   */
+  obra: EstiloObra = { escala: 1, giro: 0, filtro: 'none' };
 
   /** Si un algoritmo no arranca —WebGL ausente, por ejemplo—, se dice. */
   fallo: string | null = null;
@@ -122,6 +163,18 @@ class MotorVisual {
     return this.cuadro !== null;
   }
 
+  /**
+   * Mientras se exporta el video: lienzo de tamaño fijo, cuadros parejos y un
+   * aviso después de cada uno. Con null vuelve a lo de siempre.
+   */
+  modoExportar(modo: ModoExportar | null): void {
+    this.exportar = modo;
+    this.escalaExportar = 1;
+    this.muestraExportar = { desde: 0, cuadros: 0, primera: true };
+    this.muestraRendimiento.desde = 0;
+    this.medir();
+  }
+
   pausar(pausado: boolean): void {
     this.pausado = pausado;
   }
@@ -175,6 +228,18 @@ class MotorVisual {
     const lienzo = this.lienzo;
     if (!contenedor || !lienzo) return;
 
+    if (this.exportar) {
+      // El tamaño del video: el escenario lo muestra recortado (object-fit: cover).
+      this.ancho = Math.round(this.exportar.ancho * this.escalaExportar);
+      this.alto = Math.round(this.exportar.alto * this.escalaExportar);
+      if (lienzo.width !== this.ancho || lienzo.height !== this.alto) {
+        lienzo.width = this.ancho;
+        lienzo.height = this.alto;
+        this.instancia?.redimensionar(this.ancho, this.alto);
+      }
+      return;
+    }
+
     const caja = contenedor.getBoundingClientRect();
     const anchoCss = Math.max(1, caja.width);
     const altoCss = Math.max(1, caja.height);
@@ -190,15 +255,53 @@ class MotorVisual {
   }
 
   /**
-   * Cada dos segundos mira el promedio de cuadros. Por debajo de ~26 por
-   * segundo baja la resolución un escalón; con holgura sostenida, la sube.
-   * Es lo que permite que el mismo visual corra en el computador y en una
-   * tablet modesta sin que nadie toque nada.
+   * Cada dos segundos mira cuánto tardan los cuadros. Si la MEDIANA pasa de
+   * 38 ms (menos de ~26 por segundo) baja la resolución un escalón; con
+   * holgura sostenida, la sube.
+   *
+   * Es la mediana y no el promedio a propósito: al tocar la pantalla (mover
+   * un deslizador, soltar una cajita) React redibuja y hay tirones sueltos;
+   * con el promedio, cada uno bajaba la calidad y, como subir es más lento
+   * que bajar, el visual terminaba pixelado. Solo la lentitud de verdad
+   * (la mitad de los cuadros lentos) la baja.
    */
   private vigilarRendimiento(ahora: number, real: number): void {
     const m = this.muestraRendimiento;
     // Una pausa, otra pestaña o un cambio de algoritmo no cuentan.
     if (real > 250 || m.desde === 0) {
+      m.desde = ahora;
+      m.tiempos.length = 0;
+      return;
+    }
+    m.tiempos.push(real);
+    if (ahora - m.desde < 2000) return;
+    const orden = m.tiempos.slice().sort((x, y) => x - y);
+    const mediana = orden[Math.floor(orden.length / 2)];
+    m.desde = ahora;
+    m.tiempos.length = 0;
+    if (mediana > 38 && this.calidad > CALIDAD_MINIMA) {
+      this.calidad = Math.max(CALIDAD_MINIMA, this.calidad * 0.85);
+      m.buenas = 0;
+      this.medir();
+    } else if (mediana < 20 && this.calidad < 1) {
+      // Dos muestras seguidas con holgura para subir: si no, oscila.
+      if (++m.buenas >= 2) {
+        this.calidad = Math.min(1, this.calidad * 1.2);
+        m.buenas = 0;
+        this.medir();
+      }
+    } else if (mediana >= 20) m.buenas = 0;
+  }
+
+  /**
+   * Exportando: si en dos segundos no salen ~22 cuadros por segundo, el
+   * visual baja un escalón (nunca de 2/3 del tamaño pedido) para que el video
+   * no salga a saltos. No vuelve a subir: así no oscila en plena grabación.
+   * La primera muestra no cuenta (es el arranque de la grabadora).
+   */
+  private vigilarExportar(ahora: number): void {
+    const m = this.muestraExportar;
+    if (m.desde === 0) {
       m.desde = ahora;
       m.cuadros = 0;
       return;
@@ -208,18 +311,14 @@ class MotorVisual {
     const mediaMs = (ahora - m.desde) / m.cuadros;
     m.desde = ahora;
     m.cuadros = 0;
-    if (mediaMs > 38 && this.calidad > 0.45) {
-      this.calidad = Math.max(0.45, this.calidad * 0.8);
-      m.buenas = 0;
+    if (m.primera) {
+      m.primera = false;
+      return;
+    }
+    if (mediaMs > 45 && this.escalaExportar > 0.7) {
+      this.escalaExportar = Math.max(0.67, this.escalaExportar * 0.85);
       this.medir();
-    } else if (mediaMs < 20 && this.calidad < 1) {
-      // Hace falta holgura sostenida para subir: si no, oscila.
-      if (++m.buenas >= 4) {
-        this.calidad = Math.min(1, this.calidad * 1.2);
-        m.buenas = 0;
-        this.medir();
-      }
-    } else if (mediaMs >= 20) m.buenas = 0;
+    }
   }
 
   private paso = (): void => {
@@ -228,10 +327,15 @@ class MotorVisual {
     if (!instancia || this.pausado) return;
 
     const ahora = performance.now();
+    // Exportando, cuadros parejos (30 por segundo): el video no da tirones y la tablet respira.
+    if (this.exportar && ahora - this.ultimoPintado < this.exportar.cadaMs - 4) return;
+    this.ultimoPintado = ahora;
     const real = ahora - this.ultimo;
     const delta = Math.min(0.05, real / 1000);
     this.ultimo = ahora;
-    this.vigilarRendimiento(ahora, real);
+    // Exportando, la resolución la cuida vigilarExportar (con un piso mucho más alto).
+    if (this.exportar) this.vigilarExportar(ahora);
+    else this.vigilarRendimiento(ahora, real);
 
     const bandas = analizador.conectado ? analizador.medir() : BANDAS_QUIETAS;
     const a = this.ajustes;
@@ -270,7 +374,9 @@ class MotorVisual {
       this.instancia = null;
       this.fallo = error instanceof Error ? error.message : 'El algoritmo falló';
       this.avisarFallo?.(this.fallo);
+      return;
     }
+    this.exportar?.alPintar();
   };
 }
 

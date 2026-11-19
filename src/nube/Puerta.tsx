@@ -11,6 +11,7 @@ import { api, EN_NUBE, ErrorApi, type Equipo, type Sesion } from './api';
 import { ContextoNube, type Persona } from './contexto';
 import { abrirSala, type Sala } from './sala';
 import { instalarBloqueos } from './bloqueos';
+import { PantallaRanking } from './Ranking';
 
 /** El panel se baja solo si entra el admin: las tablets de los equipos no lo cargan. */
 // (Fuera de la nube no existe: así la versión de GitHub Pages ni lo incluye.)
@@ -72,6 +73,7 @@ function Puerta({ children }: { children: ReactNode }) {
   const [abierto, setAbierto] = useState<Sala | null>(null);
   const [falla, setFalla] = useState<string | null>(null);
   const [intento, setIntento] = useState(0);
+  const [viendoRanking, setViendoRanking] = useState(false);
   // La sala se abre con la persona de ese momento; si cambia luego, se le avisa a la sala.
   const personaAlAbrir = useRef(persona);
 
@@ -205,7 +207,10 @@ function Puerta({ children }: { children: ReactNode }) {
     );
   }
   if (equipo === undefined) return <Pantalla cargando />;
-  if (equipo === null) return <Entrada alEntrar={entro} />;
+  if (equipo === null) {
+    if (viendoRanking) return <PantallaRanking alVolver={() => setViendoRanking(false)} />;
+    return <Entrada alEntrar={entro} alVerRanking={() => setViendoRanking(true)} />;
+  }
   const quienEres = (
       <QuienEres
         equipo={equipo}
@@ -254,11 +259,30 @@ function Pantalla({ children, cargando, texto }: { children?: ReactNode; cargand
   );
 }
 
-function Entrada({ alEntrar }: { alEntrar: (sesion: Sesion) => void }) {
+function Entrada({ alEntrar, alVerRanking }: { alEntrar: (sesion: Sesion) => void; alVerRanking: () => void }) {
   const [nombre, setNombre] = useState('');
   const [clave, setClave] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
+  const [hayRanking, setHayRanking] = useState(false);
+
+  // El botón del ranking aparece solo cuando los admins lo abren; se pregunta cada tanto.
+  useEffect(() => {
+    let vigente = true;
+    const preguntar = () =>
+      api
+        .ranking()
+        .then((r) => vigente && setHayRanking(r.activo))
+        .catch(() => {
+          // Sin conexión, el botón queda como estaba.
+        });
+    void preguntar();
+    const reloj = window.setInterval(preguntar, 15_000);
+    return () => {
+      vigente = false;
+      window.clearInterval(reloj);
+    };
+  }, []);
 
   const entrar = (ev: FormEvent) => {
     ev.preventDefault();
@@ -299,6 +323,11 @@ function Entrada({ alEntrar }: { alEntrar: (sesion: Sesion) => void }) {
           {enviando ? 'Entrando…' : 'Entrar'}
         </button>
       </form>
+      {hayRanking && (
+        <button type="button" className="nv-boton nu-ranking" onClick={alVerRanking}>
+          🏆 Ver el ranking
+        </button>
+      )}
     </Pantalla>
   );
 }

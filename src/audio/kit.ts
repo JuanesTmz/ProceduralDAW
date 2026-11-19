@@ -1,6 +1,9 @@
 // Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
- * Kit de percusión sintetizado con Tone.js — sonidos propios, sin muestras de terceros.
+ * Kit de percusión. El bombo y el tom se sintetizan con Tone.js (en los géneros
+ * urbanos el bombo electrónico es el que se espera); la caja, el hi-hat, la
+ * palma y el aro son grabaciones reales de la Sonoteca, del Versilian
+ * Community Sample Library (VCSL, CC0: dominio público).
  * Cada voz expone disparar(tiempo, velocidad) para que el secuenciador la agende
  * en el reloj del Transport, no en el reloj de JavaScript.
  */
@@ -41,86 +44,6 @@ function crearBombo(): VozPercusion {
   };
 }
 
-function crearRedoblante(): VozPercusion {
-  const salida = new Tone.Gain(1);
-  // Cuerpo afinado + ruido: así suena a tambor y no a "shhh".
-  const filtro = new Tone.Filter({ type: 'bandpass', frequency: 1800, Q: 0.9 }).connect(salida);
-  const ruido = new Tone.NoiseSynth({
-    noise: { type: 'white' },
-    envelope: { attack: 0.001, decay: 0.16, sustain: 0 },
-  }).connect(filtro);
-  const cuerpo = new Tone.MembraneSynth({
-    pitchDecay: 0.02,
-    octaves: 3,
-    envelope: { attack: 0.001, decay: 0.12, sustain: 0, release: 0.1 },
-  }).connect(salida);
-  cuerpo.volume.value = -10;
-
-  return {
-    tipo: 'redoblante',
-    salida,
-    disparar: (tiempo, velocidad) => {
-      ruido.triggerAttackRelease('16n', tiempo, velocidad);
-      cuerpo.triggerAttackRelease('E2', '32n', tiempo, velocidad * 0.7);
-    },
-    liberar: () => {
-      ruido.dispose();
-      cuerpo.dispose();
-      filtro.dispose();
-      salida.dispose();
-    },
-  };
-}
-
-function crearHihat(): VozPercusion {
-  const salida = new Tone.Gain(1);
-  const filtro = new Tone.Filter({ type: 'highpass', frequency: 7000 }).connect(salida);
-  const metal = new Tone.MetalSynth({
-    envelope: { attack: 0.001, decay: 0.055, release: 0.01 },
-    harmonicity: 5.1,
-    modulationIndex: 32,
-    resonance: 5000,
-    octaves: 1.5,
-  }).connect(filtro);
-  metal.volume.value = -22;
-
-  return {
-    tipo: 'hihat',
-    salida,
-    disparar: (tiempo, velocidad) => metal.triggerAttackRelease('32n', tiempo, velocidad),
-    liberar: () => {
-      metal.dispose();
-      filtro.dispose();
-      salida.dispose();
-    },
-  };
-}
-
-function crearPalma(): VozPercusion {
-  const salida = new Tone.Gain(1);
-  // Una palma real son varios golpes muy juntos: tres ráfagas cortas.
-  const filtro = new Tone.Filter({ type: 'bandpass', frequency: 1200, Q: 1.6 }).connect(salida);
-  const ruido = new Tone.NoiseSynth({
-    noise: { type: 'pink' },
-    envelope: { attack: 0.001, decay: 0.12, sustain: 0 },
-  }).connect(filtro);
-
-  return {
-    tipo: 'palma',
-    salida,
-    disparar: (tiempo, velocidad) => {
-      ruido.triggerAttackRelease('32n', tiempo, velocidad * 0.6);
-      ruido.triggerAttackRelease('32n', tiempo + 0.011, velocidad * 0.8);
-      ruido.triggerAttackRelease('16n', tiempo + 0.023, velocidad);
-    },
-    liberar: () => {
-      ruido.dispose();
-      filtro.dispose();
-      salida.dispose();
-    },
-  };
-}
-
 function crearTom(): VozPercusion {
   const salida = new Tone.Gain(1);
   const synth = new Tone.MembraneSynth({
@@ -141,26 +64,34 @@ function crearTom(): VozPercusion {
   };
 }
 
-function crearAro(): VozPercusion {
-  const salida = new Tone.Gain(1);
-  const metal = new Tone.MetalSynth({
-    envelope: { attack: 0.001, decay: 0.09, release: 0.01 },
-    harmonicity: 12,
-    modulationIndex: 18,
-    resonance: 3200,
-    octaves: 0.8,
-  }).connect(salida);
-  metal.volume.value = -24;
+// ------------------------------------------------------------ grabaciones
 
-  return {
-    tipo: 'aro',
-    salida,
-    disparar: (tiempo, velocidad) => metal.triggerAttackRelease('32n', tiempo, velocidad),
-    liberar: () => {
-      metal.dispose();
-      salida.dispose();
-    },
-  };
+/** Las voces de la batería que suenan con una grabación de la Sonoteca. */
+const GRABACIONES: Partial<Record<TipoSonido, string>> = {
+  redoblante: 'caja',
+  hihat: 'hatcerrado',
+  palma: 'palmas',
+  aro: 'aro',
+};
+
+/** Un solo búfer por grabación, compartido por todas las pistas y nunca liberado. */
+const buffersGrabados = new Map<string, Tone.ToneAudioBuffer>();
+function bufferGrabado(archivo: string): Tone.ToneAudioBuffer {
+  let buffer = buffersGrabados.get(archivo);
+  if (!buffer) {
+    buffer = new Tone.ToneAudioBuffer(`${import.meta.env.BASE_URL}sonoteca/${archivo}.wav`);
+    buffersGrabados.set(archivo, buffer);
+  }
+  return buffer;
+}
+
+/**
+ * Carga de una vez las grabaciones de la batería. Se llama al arrancar el
+ * audio: así el primer golpe (o la primera escucha al elegir un sonido) ya
+ * suena, en vez de quedar mudo mientras baja el archivo.
+ */
+export function precargarBateria(): void {
+  for (const archivo of Object.values(GRABACIONES)) if (archivo) bufferGrabado(archivo);
 }
 
 /**
@@ -172,12 +103,17 @@ function crearAro(): VozPercusion {
  * seguidos de la misma celda se oían unos más fuertes que otros.
  */
 export function crearVozSample(url: string, alCargar?: () => void): VozPercusion {
-  const salida = new Tone.Gain(1);
   const buffer = url ? new Tone.ToneAudioBuffer(url, alCargar) : new Tone.ToneAudioBuffer();
+  return vozDeBuffer('sample', buffer, true);
+}
+
+/** La voz de un búfer. `propio`: el búfer es solo de esta voz y se libera con ella. */
+function vozDeBuffer(tipo: TipoSonido, buffer: Tone.ToneAudioBuffer, propio: boolean): VozPercusion {
+  const salida = new Tone.Gain(1);
   const activos = new Set<Tone.ToneBufferSource>();
 
   return {
-    tipo: 'sample',
+    tipo,
     salida,
     disparar: (tiempo, velocidad, maxDuracion, semitonos = 0) => {
       if (!buffer.loaded) return;
@@ -204,7 +140,7 @@ export function crearVozSample(url: string, alCargar?: () => void): VozPercusion
     liberar: () => {
       for (const f of activos) f.dispose();
       activos.clear();
-      buffer.dispose();
+      if (propio) buffer.dispose();
       salida.dispose();
     },
   };
@@ -215,15 +151,12 @@ export function crearVoz(tipo: TipoSonido, sampleUrl?: string): VozPercusion {
     case 'bombo':
       return crearBombo();
     case 'redoblante':
-      return crearRedoblante();
     case 'hihat':
-      return crearHihat();
     case 'palma':
-      return crearPalma();
+    case 'aro':
+      return vozDeBuffer(tipo, bufferGrabado(GRABACIONES[tipo]!), false);
     case 'tom':
       return crearTom();
-    case 'aro':
-      return crearAro();
     case 'sample':
       return crearVozSample(sampleUrl ?? '');
   }

@@ -19,7 +19,9 @@ self.addEventListener('install', (ev) => {
   ev.waitUntil(
     caches
       .open(APP)
-      .then((c) => c.addAll(PRECARGA))
+      // Directo del servidor, sin la caché HTTP: si un archivo cambió con el mismo
+      // nombre (los sonidos de la Sonoteca), la versión nueva no guarda el viejo.
+      .then((c) => c.addAll(PRECARGA.map((url) => new Request(url, { cache: 'reload' }))))
       .then(() => self.skipWaiting()),
   );
 });

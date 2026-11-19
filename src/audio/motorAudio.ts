@@ -12,7 +12,7 @@
  * el cambio al instante, sin reprogramar nada ni cortar el audio.
  */
 import * as Tone from 'tone';
-import { crearVoz, type VozPercusion } from './kit';
+import { crearVoz, precargarBateria, type VozPercusion } from './kit';
 import { vistaPrevia } from './vistaPrevia';
 import { renderizarPieza } from '../generativo/renderPieza';
 import { notaTone, semitonoDeGrado } from '../generativo/escalas';
@@ -406,6 +406,8 @@ class MotorAudio {
     // El visual escucha la salida final: lo mismo que oye el estudiante.
     analizador.conectar();
     this.iniciado = true;
+    // La caja, el hi-hat, la palma y el aro son grabaciones: que bajen ya.
+    precargarBateria();
 
     if (this.proyecto) this.sincronizar(this.proyecto);
   }

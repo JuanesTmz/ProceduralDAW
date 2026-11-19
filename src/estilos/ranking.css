@@ -1,0 +1,84 @@
+/* Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos */
+/* El ranking de piezas: el podio y la lista. Lo usan la entrada y el panel.
+   Usa los colores de .nv; todo va con el prefijo rk-. */
+
+/* El botón de la entrada. */
+.nu-ranking {
+  justify-content: center;
+  margin-top: 6px;
+  min-height: 48px;
+  font-size: 15px;
+  border-color: #fce90566;
+  color: #fce905;
+  background: #fce9050f;
+}
+
+.rk-tarjeta { width: min(760px, 100%); }
+.rk-volver { align-self: center; margin-top: 8px; }
+.rk-vacio { text-align: center; padding: 24px 0; }
+
+.rk { display: flex; flex-direction: column; gap: 22px; margin-top: 10px; }
+
+/* ---------- el podio ---------- */
+.rk-podio {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 12px;
+  padding-top: 8px;
+}
+.rk-escalon {
+  flex: 1 1 0;
+  max-width: 210px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+.rk-medalla { font-size: 34px; line-height: 1; }
+.rk-escalon__nombre {
+  font-size: 16px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.rk-escalon__total { font-size: 28px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.rk-escalon__base {
+  width: 100%;
+  margin-top: 6px;
+  padding-top: 10px;
+  border-radius: 12px 12px 4px 4px;
+  font-size: 20px;
+  font-weight: 900;
+  color: #0f1117;
+}
+.rk-escalon--1 .rk-escalon__base { height: 120px; background: #fce905; box-shadow: 0 0 40px #fce90544; }
+.rk-escalon--2 .rk-escalon__base { height: 84px; background: #c9d1e3; }
+.rk-escalon--3 .rk-escalon__base { height: 60px; background: #ff6a12; }
+.rk-escalon--1 .rk-escalon__total { color: #fce905; }
+
+/* ---------- el resto ---------- */
+.rk-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.rk-fila {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) minmax(60px, 34%) 52px;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--nv-s2);
+}
+.rk-fila__puesto { color: var(--nv-suave); font-weight: 800; }
+.rk-fila__nombre { overflow-wrap: anywhere; }
+.rk-fila__barra { height: 8px; border-radius: 99px; background: var(--nv-s3); overflow: hidden; }
+.rk-fila__barra span { display: block; height: 100%; background: var(--nv-marca); background-size: 300px 100%; }
+.rk-fila__total { text-align: right; font-weight: 900; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 560px) {
+  .rk-podio { gap: 6px; }
+  .rk-escalon__total { font-size: 22px; }
+  .rk-escalon__nombre { font-size: 14px; }
+  .rk-fila { grid-template-columns: 36px minmax(0, 1fr) 48px; }
+  .rk-fila__barra { display: none; }
+}

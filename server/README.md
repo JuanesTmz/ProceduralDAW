@@ -20,7 +20,7 @@ para el plan C: el servidor en un portátil en el lugar del evento).
 ## Pruebas automáticas
 
 ```bash
-npm --prefix server run prueba     # 22 pruebas: entrar, equipos, admins, archivos, galería, sala en vivo, edición cerrada
+npm --prefix server run prueba     # 23 pruebas: entrar, equipos, admins, archivos, galería, sala en vivo, edición cerrada, calificar y ranking
 npm --prefix server run estres     # estrés: 5 equipos × 8 tablets editando a la vez durante 20 s
 npm --prefix server run estres -- --equipos 10 --tablets 10 --segundos 60 --ritmo 5
 ```

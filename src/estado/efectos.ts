@@ -99,15 +99,31 @@ export const PARAMETROS_OBRA: ParametroObra[] = [
   { id: 'saturacion', etiqueta: 'Saturación', neutro: 0.5 },
 ];
 
-/** Cómo se ve la obra entera con esos valores (0..1 cada uno). */
-export function estiloDeObra(v: Record<string, number>): { transform: string; filter: string } {
+/**
+ * Cómo se ve la obra entera con esos valores (0..1 cada uno). `escala`, `giro`
+ * y `filtroVideo` (sin los filtros que no cambian nada, o 'none') son para
+ * pintar lo mismo en el video exportado.
+ */
+export function estiloDeObra(v: Record<string, number>): {
+  transform: string;
+  filter: string;
+  escala: number;
+  giro: number;
+  filtroVideo: string;
+} {
   const val = (id: string) => v[id] ?? PARAMETROS_OBRA.find((x) => x.id === id)!.neutro;
   const escala = 1 + 0.4 * val('zoom');
   const giro = (val('giro') - 0.5) * 30;
-  const filtros = [
-    `brightness(${(0.35 + 1.3 * val('brillo')).toFixed(2)})`,
-    `saturate(${(2 * val('saturacion')).toFixed(2)})`,
-    `hue-rotate(${Math.round(360 * val('tono'))}deg)`,
-  ];
-  return { transform: `scale(${escala.toFixed(3)}) rotate(${giro.toFixed(1)}deg)`, filter: filtros.join(' ') };
+  const brillo = (0.35 + 1.3 * val('brillo')).toFixed(2);
+  const saturacion = (2 * val('saturacion')).toFixed(2);
+  const tono = Math.round(360 * val('tono'));
+  const filtros = [`brightness(${brillo})`, `saturate(${saturacion})`, `hue-rotate(${tono}deg)`];
+  const cambian = [brillo !== '1.00' && filtros[0], saturacion !== '1.00' && filtros[1], tono % 360 !== 0 && filtros[2]].filter(Boolean);
+  return {
+    transform: `scale(${escala.toFixed(3)}) rotate(${giro.toFixed(1)}deg)`,
+    filter: filtros.join(' '),
+    escala,
+    giro,
+    filtroVideo: cambian.length ? cambian.join(' ') : 'none',
+  };
 }

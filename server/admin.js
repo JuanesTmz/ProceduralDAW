@@ -9,6 +9,7 @@
  */
 import express from 'express';
 import { NOMBRE_ADMIN, claveValida, hashClave, leerCookie, normalizarNombre } from './seguridad.js';
+import { armarRanking, limpiarNotas } from './compartido/rubrica.js';
 
 export const COOKIE_ADMIN = 'sonora_admin';
 
@@ -31,6 +32,21 @@ export async function adminVigente(req, sesiones, datos) {
 
 /** El nombre como se muestra: sin espacios de más, pero con sus mayúsculas y tildes. */
 const limpiarNombre = (nombre) => String(nombre ?? '').trim().replace(/\s+/g, ' ').slice(0, 80);
+
+/** Con qué se reconoce a cada jurado en sus calificaciones: «admin» (la maestra) o «admin:<id>». */
+const juezDe = (admin) => (admin.id === null ? 'admin' : `admin:${admin.id}`);
+
+/** Si el ranking se ve desde la entrada (lo deciden los admins). */
+export const AJUSTE_RANKING = 'ranking-publico';
+export async function rankingPublico(datos) {
+  return (await datos.leerAjuste(AJUSTE_RANKING)) === 'si';
+}
+
+/** El ranking con los equipos que existen hoy. */
+export async function rankingActual(datos) {
+  const [equipos, calificaciones] = await Promise.all([datos.listarEquipos(), datos.listarCalificaciones()]);
+  return armarRanking(equipos, calificaciones);
+}
 
 export function crearAdmin({ datos, salas, almacen, sesiones, registrar }) {
   const rutas = express.Router();
@@ -202,6 +218,39 @@ export function crearAdmin({ datos, salas, almacen, sesiones, registrar }) {
     await datos.borrarAdmin(id);
     void registrar(null, 'admin-borrado', `${actual.nombre} (por ${req.admin.nombre})`);
     res.json({ ok: true, eraYo: req.admin.id === id });
+  });
+
+  // ---------- calificar ----------
+
+  /** Todas las calificaciones, el ranking y si está a la vista. */
+  rutas.get('/calificaciones', async (req, res) => {
+    const [calificaciones, ranking, publico] = await Promise.all([
+      datos.listarCalificaciones(),
+      rankingActual(datos),
+      rankingPublico(datos),
+    ]);
+    res.json({ yo: juezDe(req.admin), calificaciones, ranking, publico });
+  });
+
+  /** Guarda la calificación de este admin a un equipo (se reemplaza cada vez). */
+  rutas.put('/equipos/:id/calificacion', async (req, res) => {
+    const id = idDe(req);
+    if (!(await datos.equipoPorId(id))) return res.status(404).json({ error: 'Ese equipo ya no existe.' });
+    await datos.guardarCalificacion({
+      equipoId: id,
+      juez: juezDe(req.admin),
+      juezNombre: req.admin.nombre,
+      notas: limpiarNotas(req.body?.notas),
+      comentario: String(req.body?.comentario ?? '').slice(0, 2000),
+    });
+    res.json({ ok: true });
+  });
+
+  rutas.post('/ranking', async (req, res) => {
+    const valor = Boolean(req.body?.publico);
+    await datos.guardarAjuste(AJUSTE_RANKING, valor ? 'si' : 'no');
+    void registrar(null, valor ? 'ranking-abierto' : 'ranking-cerrado', req.admin.nombre);
+    res.json({ ok: true });
   });
 
   rutas.delete('/videos/:id', async (req, res) => {

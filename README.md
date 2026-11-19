@@ -32,7 +32,7 @@ por paso, ritmos euclidianos y mutación.
 | **Historia** | Qué vas a contar y por qué es Medellín. |
 | **Monólogo** | Editor con contador de ~100 palabras, grabadora de voz (o subir audio), y reparto del texto entre las secciones. |
 | **Arco** | La curva del relato. Cada punto escribe la intensidad y las capas de una sección. |
-| **Patrón** | Grilla de 16/32/64 pasos, kit de percusión sintetizado, subir sample, matriz tonal de 16 notas con acordes y escalas, reverb/eco/filtro. |
+| **Patrón** | Grilla de 16/32/64 pasos, kit de percusión (grabaciones reales y síntesis), subir sample, matriz tonal de 16 notas con acordes y escalas, reverb/eco/filtro. |
 | **Motor** | Semilla, Variar, Mutar, reglas euclidianas y probabilísticas por fila, candado, probabilidad por paso, y un mapa de reglas legible. |
 | **Secciones** | Capas, intensidad, tempo, semilla y desvanecido por sección. |
 | **Visual** | Tres presets procedurales reactivos al FFT, imagen propia como fuente, y texto cinético sincronizado con la narración. |
@@ -70,8 +70,11 @@ barra espaciadora.
 
 El modelo de interacción del secuenciador se inspira en las cajas de ritmos por
 pasos, y el de la matriz tonal en ToneMatrix. **La implementación es original**:
-no se usa código, sonidos ni marca de terceros. Toda la percusión está
-sintetizada con Tone.js.
+no se usa código ni marca de terceros. La percusión (caja, aro, hi-hats,
+palmas y percusión latina) son grabaciones reales del Versilian Community
+Sample Library (VCSL, licencia CC0, dominio público:
+https://github.com/sgossner/VCSL); el bombo, el tom y los demás sonidos se
+sintetizan con Tone.js o con `scripts/generar-sonoteca.mjs`.
 
 ## Créditos
 

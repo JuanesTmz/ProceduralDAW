@@ -85,6 +85,7 @@ export async function abrirArchivo(carpeta) {
       const rutas = [...archivos, ...videos].filter((a) => a.equipoId === id).map((a) => a.ruta);
       await escribir('archivos.json', archivos.filter((a) => a.equipoId !== id));
       await escribir('videos.json', videos.filter((a) => a.equipoId !== id));
+      await escribir('calificaciones.json', (await leer('calificaciones.json', [])).filter((c) => c.equipoId !== id));
       await escribir('equipos.json', (await equipos()).filter((e) => e.id !== id));
       for (const sobra of [path.join('proyectos', `${id}.json`), path.join('proyectos', `${id}.yjs`), path.join('versiones', String(id))]) {
         await fs.rm(ruta(sobra), { recursive: true, force: true });
@@ -125,6 +126,26 @@ export async function abrirArchivo(carpeta) {
 
     async borrarAdmin(id) {
       await escribir('admins.json', (await leer('admins.json', [])).filter((a) => a.id !== id));
+    },
+
+    async listarCalificaciones() {
+      return leer('calificaciones.json', []);
+    },
+
+    async guardarCalificacion({ equipoId, juez, juezNombre, notas, comentario }) {
+      const lista = (await leer('calificaciones.json', [])).filter((c) => !(c.equipoId === equipoId && c.juez === juez));
+      lista.push({ equipoId, juez, juezNombre, notas, comentario: comentario || null, actualizado: new Date().toISOString() });
+      await escribir('calificaciones.json', lista);
+    },
+
+    async leerAjuste(clave) {
+      return (await leer('ajustes.json', {}))[clave] ?? null;
+    },
+
+    async guardarAjuste(clave, valor) {
+      const ajustes = await leer('ajustes.json', {});
+      ajustes[clave] = String(valor);
+      await escribir('ajustes.json', ajustes);
     },
 
     async registrarVideo(video) {

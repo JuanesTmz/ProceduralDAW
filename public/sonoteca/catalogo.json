@@ -133,6 +133,11 @@
     "grupo": "percusion"
   },
   {
+    "id": "aro",
+    "nombre": "Aro de la caja",
+    "grupo": "percusion"
+  },
+  {
     "id": "hatcerrado",
     "nombre": "Hi-hat cerrado",
     "grupo": "percusion"

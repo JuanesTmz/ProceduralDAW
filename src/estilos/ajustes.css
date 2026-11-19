@@ -304,6 +304,12 @@
   line-height: 1;
 }
 .nv-foto-chica--subir { cursor: pointer; }
+/* La foto de fondo: el primer recuadro, siempre a la vista. */
+.nv-foto-fondo { cursor: pointer; }
+.nv-foto-fondo .nv-foto-chica__imagen { width: 92px; height: 58px; border: 2px dashed #ffb02099; background-color: #ffb0200f; color: var(--nv-acento); cursor: pointer; }
+.nv-foto-fondo--puesta .nv-foto-chica__imagen { border: 2px solid var(--nv-acento); background-color: #2d3244; }
+.nv-foto-fondo .nv-foto-chica__nombre { color: var(--nv-acento); }
+.nv-fotos__separa { align-self: stretch; width: 1px; margin: 4px 4px; background: var(--nv-linea); }
 .nv-foto-chica--subir .nv-foto-chica__imagen { border: 2px dashed #8fe35a88; background: #8fe35a0d; color: #8fe35a; }
 
 /* Las cajas: una por parámetro (o por golpe). */

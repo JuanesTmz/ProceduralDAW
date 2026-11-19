@@ -3,12 +3,14 @@
  * El panel de administración. Se abre desde la misma entrada que los equipos:
  * con el nombre «Admin» y la contraseña del panel, en vez de la app.
  *
- * Tres pestañas:
+ * Cuatro pestañas:
  * - Equipos: crear, editar y borrar equipos; ver en vivo quién está conectado
  *   y dónde; abrir el proyecto de un equipo para mirarlo en tiempo real;
  *   guardar y restaurar versiones; soltar bloqueos atascados; descargar la
  *   copia y el video final; cerrar y abrir la edición.
- * - Galería: los videos finales que los equipos mandan desde Función.
+ * - Ranking: el promedio de los jurados y si se muestra en la entrada.
+ * - Galería: los videos finales que los equipos mandan desde Función. Al abrir
+ *   uno, «Calificar» muestra el formulario de la rúbrica al lado del video.
  * - Admins: las cuentas que entran al panel (además de «Admin», la maestra).
  *
  * Lo vivo se pregunta al servidor cada 2 s.
@@ -16,6 +18,17 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { descargarCopia } from '../copias';
+import { CRITERIOS, leerNota, notaFinal } from '../../../server/compartido/rubrica.js';
+import {
+  COLOR_CRITERIO,
+  FormularioCalificar,
+  RankingAdmin,
+  cuantos,
+  nota5,
+  useCalificaciones,
+  type Calificacion,
+  type DatosCalificar,
+} from './Calificar';
 import type { Proyecto } from '../../estado/tipos';
 import '../../estilos/panel.css';
 
@@ -106,7 +119,7 @@ function dondeEsta(p: Presente, escenas: Record<string, string>): string {
 }
 
 export function PanelAdmin({ alSalir }: { alSalir: () => void }) {
-  const [pestana, setPestana] = useState<'equipos' | 'galeria' | 'admins'>('equipos');
+  const [pestana, setPestana] = useState<'equipos' | 'ranking' | 'galeria' | 'admins'>('equipos');
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [yo, setYo] = useState<{ id: number | null; nombre: string } | null>(null);
   const [equipos, setEquipos] = useState<Equipo[]>([]);
@@ -160,6 +173,9 @@ export function PanelAdmin({ alSalir }: { alSalir: () => void }) {
         <nav className="nv-pasos" aria-label="Panel">
           <button type="button" className={`nv-paso ${pestana === 'equipos' ? 'nv-paso--activo' : ''}`} onClick={() => setPestana('equipos')}>
             Equipos <span className="pa-cuenta">{equipos.length}</span>
+          </button>
+          <button type="button" className={`nv-paso ${pestana === 'ranking' ? 'nv-paso--activo' : ''}`} onClick={() => setPestana('ranking')}>
+            Ranking
           </button>
           <button type="button" className={`nv-paso ${pestana === 'galeria' ? 'nv-paso--activo' : ''}`} onClick={() => setPestana('galeria')}>
             Galería <span className="pa-cuenta">{videos.length}</span>
@@ -215,6 +231,8 @@ export function PanelAdmin({ alSalir }: { alSalir: () => void }) {
             ))}
           </section>
         </main>
+      ) : pestana === 'ranking' ? (
+        <RankingAdmin equipos={equipos} />
       ) : pestana === 'galeria' ? (
         <Galeria videos={videos} hacer={hacer} />
       ) : (
@@ -495,6 +513,10 @@ function TarjetaEquipo({
 
 function Galeria({ videos, hacer }: { videos: Video[]; hacer: Hacer }) {
   const [porBorrar, setPorBorrar] = useState<string | null>(null);
+  const [abierto, setAbierto] = useState<Video | null>(null);
+  const { datos, refrescar } = useCalificaciones();
+  const mia = (equipoId: number) => datos?.calificaciones.find((c) => c.equipoId === equipoId && c.juez === datos.yo) ?? null;
+
   if (videos.length === 0) {
     return (
       <main className="pa-galeria pa-galeria--vacia">
@@ -504,46 +526,148 @@ function Galeria({ videos, hacer }: { videos: Video[]; hacer: Hacer }) {
   }
   return (
     <main className="pa-galeria">
-      {videos.map((v) => (
-        <article key={v.id} className="nv-tarjeta pa-obra">
-          <video className="pa-obra__video" src={urlVideo(v)} controls preload="metadata" playsInline />
-          <div className="pa-obra__pie">
-            <strong>{v.equipo}</strong>
-            <span className="nv-tenue nv-chico">
-              {fecha(v.creado)} · {megas(v.bytes)}
-              {v.persona ? ` · ${v.persona}` : ''}
-            </span>
-          </div>
-          <div className="pa-acciones">
-            <a className="nv-boton nv-boton--chico" href={urlVideo(v, true)}>
-              ⤓ Descargar
-            </a>
-            <span className="nv-espacio" />
-            {porBorrar === v.id ? (
-              <>
-                <button
-                  type="button"
-                  className="nv-boton nv-boton--chico nv-boton--rojo"
-                  onClick={() => {
-                    setPorBorrar(null);
-                    void hacer(() => pedir('DELETE', `videos/${v.id}`), 'Video eliminado.');
-                  }}
-                >
-                  Sí, eliminar
+      {videos.map((v) => {
+        const suya = mia(v.equipoId);
+        const final = suya ? notaFinal(suya.notas) : null;
+        return (
+          <article key={v.id} className="nv-tarjeta pa-obra">
+            <button type="button" className="pa-obra__abrir" onClick={() => setAbierto(v)} aria-label={`Ver y calificar el video de ${v.equipo}`}>
+              <video className="pa-obra__video" src={`${urlVideo(v)}#t=0.5`} preload="metadata" muted playsInline />
+              <span className="pa-obra__play" aria-hidden>
+                ▶
+              </span>
+            </button>
+            <div className="pa-obra__pie">
+              <div className="pa-obra__linea">
+                <strong>{v.equipo}</strong>
+                <span className="nv-espacio" />
+                {datos && (
+                  <span className={`pa-obra__nota ${final !== null ? 'pa-obra__nota--lista' : ''}`}>
+                    {suya && final === null && cuantos(suya.notas) > 0 && (
+                      <span className="pa-obra__puntos" aria-hidden>
+                        {CRITERIOS.map((c) => (
+                          <span key={c.id} style={leerNota(suya.notas[c.id]) !== null ? { background: COLOR_CRITERIO[c.id] } : undefined} />
+                        ))}
+                      </span>
+                    )}
+                    {final !== null ? `${nota5(final)} / 5` : suya && cuantos(suya.notas) > 0 ? `${cuantos(suya.notas)}/7` : 'Sin calificar'}
+                  </span>
+                )}
+              </div>
+              <span className="nv-tenue nv-chico">
+                {fecha(v.creado)} · {megas(v.bytes)}
+                {v.persona ? ` · ${v.persona}` : ''}
+              </span>
+            </div>
+            <div className="pa-acciones">
+              <a className="nv-boton nv-boton--chico" href={urlVideo(v, true)}>
+                ⤓ Descargar
+              </a>
+              <span className="nv-espacio" />
+              {porBorrar === v.id ? (
+                <>
+                  <button
+                    type="button"
+                    className="nv-boton nv-boton--chico nv-boton--rojo"
+                    onClick={() => {
+                      setPorBorrar(null);
+                      void hacer(() => pedir('DELETE', `videos/${v.id}`), 'Video eliminado.');
+                    }}
+                  >
+                    Sí, eliminar
+                  </button>
+                  <button type="button" className="nv-boton nv-boton--chico" onClick={() => setPorBorrar(null)}>
+                    No
+                  </button>
+                </>
+              ) : (
+                <button type="button" className="nv-enlace nv-chico" onClick={() => setPorBorrar(v.id)}>
+                  Eliminar
                 </button>
-                <button type="button" className="nv-boton nv-boton--chico" onClick={() => setPorBorrar(null)}>
-                  No
-                </button>
-              </>
-            ) : (
-              <button type="button" className="nv-enlace nv-chico" onClick={() => setPorBorrar(v.id)}>
-                Eliminar
-              </button>
-            )}
-          </div>
-        </article>
-      ))}
+              )}
+            </div>
+          </article>
+        );
+      })}
+      {abierto && (
+        <Visor
+          video={abierto}
+          datos={datos}
+          mia={mia(abierto.equipoId)}
+          alGuardar={refrescar}
+          alCerrar={() => setAbierto(null)}
+        />
+      )}
     </main>
+  );
+}
+
+/** Un video de la galería en grande; con «Calificar», el formulario se abre al lado. */
+function Visor({
+  video,
+  datos,
+  mia,
+  alGuardar,
+  alCerrar,
+}: {
+  video: Video;
+  datos: DatosCalificar | null;
+  mia: Calificacion | null;
+  alGuardar: () => Promise<void>;
+  alCerrar: () => void;
+}) {
+  const [calificando, setCalificando] = useState(false);
+
+  useEffect(() => {
+    const tecla = (e: KeyboardEvent) => e.key === 'Escape' && alCerrar();
+    window.addEventListener('keydown', tecla);
+    return () => window.removeEventListener('keydown', tecla);
+  }, [alCerrar]);
+
+  return (
+    <div className="pa-visor" role="dialog" aria-modal="true" aria-label={`Video de ${video.equipo}`} onClick={alCerrar}>
+      <div className={`pa-visor__caja ${calificando ? 'pa-visor__caja--calificando' : ''}`} onClick={(e) => e.stopPropagation()}>
+        <header className="pa-visor__cabeza">
+          <span className="nv-tenue">Galería ›</span>
+          <strong>{video.equipo}</strong>
+          <span className="nv-espacio" />
+          <button
+            type="button"
+            className={`nv-boton nv-boton--chico ${calificando ? '' : 'nv-boton--primario'}`}
+            onClick={() => setCalificando((x) => !x)}
+            disabled={!datos}
+          >
+            {calificando ? 'Ocultar calificación' : 'Calificar'}
+          </button>
+          <button type="button" className="pa-visor__cerrar" onClick={alCerrar} aria-label="Cerrar">
+            ✕
+          </button>
+        </header>
+        <div className="pa-visor__cuerpo">
+          <video
+            className="pa-visor__video"
+            src={urlVideo(video)}
+            controls
+            autoPlay
+            playsInline
+          />
+          {calificando && datos && (
+            <aside className="pa-visor__lado">
+              {/* El panel se desplaza por dentro: así cambiar de criterio no cambia el tamaño del video. */}
+              <div className="pa-visor__desliza">
+                <FormularioCalificar
+                  key={video.equipoId}
+                  equipoId={video.equipoId}
+                  mia={mia}
+                  otras={datos.calificaciones.filter((c) => c.equipoId === video.equipoId && c.juez !== datos.yo)}
+                  alGuardar={alGuardar}
+                />
+              </div>
+            </aside>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 

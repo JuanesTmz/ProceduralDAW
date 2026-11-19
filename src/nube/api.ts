@@ -22,6 +22,16 @@ export class ErrorApi extends Error {
   }
 }
 
+/** Una fila del ranking como se ve desde la entrada. */
+export interface FilaPublica {
+  puesto: number;
+  nombre: string;
+  total: number;
+  criterios: Record<string, number>;
+}
+
+export type RespuestaRanking = { activo: false } | { activo: true; ranking: FilaPublica[] };
+
 async function pedir<T>(metodo: string, ruta: string, cuerpo?: string): Promise<T> {
   let respuesta: Response;
   try {
@@ -42,4 +52,6 @@ export const api = {
   sesion: () => pedir<Sesion>('GET', 'sesion'),
   entrar: (equipo: string, clave: string) => pedir<Sesion>('POST', 'entrar', JSON.stringify({ equipo, clave })),
   salir: () => pedir<unknown>('POST', 'salir'),
+  /** El ranking de la entrada; `activo: false` mientras los admins no lo abran. */
+  ranking: () => pedir<RespuestaRanking>('GET', 'ranking'),
 };

@@ -872,7 +872,8 @@
   transition: filter 0.12s;
 }
 .nv-obra__lienzo, .nv-obra__lienzo canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-.nv-obra__lienzo canvas { display: block; }
+/* Al exportar, el lienzo es 16:9 (el del video): se ve recortado, sin estirarse. */
+.nv-obra__lienzo canvas { display: block; object-fit: cover; }
 .nv-obra__destello { position: absolute; inset: 0; pointer-events: none; opacity: 0; }
 .nv-destello--blanco { animation: nv-flash-blanco 0.45s ease-out; }
 .nv-destello--negro { animation: nv-flash-negro 0.35s steps(2, end); }

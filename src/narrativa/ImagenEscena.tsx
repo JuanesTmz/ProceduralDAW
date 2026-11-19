@@ -143,8 +143,13 @@ function fotosDe(p: Proyecto) {
 
 /**
  * Las fotos del proyecto, en fila. Cada una da sus cajitas (luz, color,
- * bordes). Tocar una la pone como material de la obra en esta escena (o en
- * toda la pieza, desde General); la × la quita del proyecto.
+ * bordes). Tocar una la pone de fondo: el material de la obra, que toma su
+ * forma, en esta escena (o en toda la pieza, desde General); la × la quita
+ * del proyecto.
+ *
+ * El primer recuadro, «Fondo», es la foto de fondo a la vista: vacío, se toca
+ * para elegir una foto, que queda de fondo y también entre las fotos (con sus
+ * cajitas); con foto, su × la quita del fondo (sin borrarla del proyecto).
  */
 function Fotos({ escena }: { escena: Escena | null }) {
   const { proyecto, actualizar } = useProyecto();
@@ -152,16 +157,22 @@ function Fotos({ escena }: { escena: Escena | null }) {
   const fotos = fotosDe(proyecto);
   const material = escena ? escena.imagenUrl : proyecto.visual.imagenUrl;
 
-  const subir = async (archivos: FileList | null) => {
+  /** Sube fotos; con `deFondo`, la primera queda además de fondo de la obra. */
+  const subir = async (archivos: FileList | null, deFondo = false) => {
     if (!archivos?.length) return;
     setLeyendo(true);
     try {
-      for (const archivo of Array.from(archivos)) {
+      for (const [i, archivo] of Array.from(archivos).entries()) {
         const datos = await leerArchivoDatos(archivo);
         const url = crearUrl(archivo);
         actualizar((p) => {
           const n = fotosDe(p).length + 1;
           p.archivosDatos.push({ ...datos, nombre: `Foto ${n}`, url });
+          if (deFondo && i === 0) {
+            const e = escena && buscarEscena(p, escena.id);
+            if (e) e.imagenUrl = url;
+            else p.visual.imagenUrl = url;
+          }
         });
       }
     } finally {
@@ -183,8 +194,34 @@ function Fotos({ escena }: { escena: Escena | null }) {
       p.conexionesVisual = p.conexionesVisual.filter((c) => !c.fuente.startsWith(`archivo:${id}`));
     });
 
+  const quitarFondo = () =>
+    actualizar((p) => {
+      const e = escena && buscarEscena(p, escena.id);
+      if (e) e.imagenUrl = undefined;
+      else p.visual.imagenUrl = undefined;
+    });
+
   return (
     <div className="nv-fotos" data-bloqueo="visual:fotos">
+      {material ? (
+        <span className="nv-foto-chica nv-foto-fondo nv-foto-fondo--puesta">
+          <label className="nv-foto-chica__imagen" style={{ backgroundImage: `url(${material})` }} title="Cambiar la foto de fondo">
+            <span className="nv-foto-chica__obra">fondo</span>
+            <input type="file" accept="image/*" hidden onChange={(ev) => void subir(ev.target.files, true)} />
+          </label>
+          <span className="nv-foto-chica__nombre">{escena ? 'Fondo de la escena' : 'Fondo de la pieza'}</span>
+          <button type="button" className="nv-foto-chica__quitar" aria-label="Quitar la foto de fondo" title="Quitar la foto de fondo" onClick={quitarFondo}>
+            ×
+          </button>
+        </span>
+      ) : (
+        <label className="nv-foto-chica nv-foto-fondo" title="La obra toma la forma de esta foto">
+          <span className="nv-foto-chica__imagen">{leyendo ? '…' : '🖼'}</span>
+          <span className="nv-foto-chica__nombre">{leyendo ? 'Leyendo' : 'Foto de fondo'}</span>
+          <input type="file" accept="image/*" hidden onChange={(ev) => void subir(ev.target.files, true)} />
+        </label>
+      )}
+      <span className="nv-fotos__separa" aria-hidden />
       <span className="nv-cajitas__titulo">Fotos</span>
       {fotos.map((f) => (
         <span key={f.id} className={`nv-foto-chica ${f.url && f.url === material ? 'nv-foto-chica--obra' : ''}`}>

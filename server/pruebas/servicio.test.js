@@ -176,3 +176,67 @@ describe('sala en tiempo real', () => {
     b.cerrar();
   });
 });
+
+describe('calificar y ranking', () => {
+  const todo = (nota) => ({ relato: nota, medellin: nota, voz: nota, musica: nota, sonidos: nota, visual: nota, pieza: nota });
+
+  test('el ranking está cerrado hasta que un admin lo abre, y promedia a los jurados', async () => {
+    await pedir(url, 'POST', '/api/admin/equipos', { cookie: admin, cuerpo: { nombre: 'Ranking A', clave: 'clave a' } });
+    await pedir(url, 'POST', '/api/admin/equipos', { cookie: admin, cuerpo: { nombre: 'Ranking B', clave: 'clave b' } });
+    await pedir(url, 'POST', '/api/admin/admins', { cookie: admin, cuerpo: { nombre: 'Jurado Dos', clave: 'jurado' } });
+    const jurado = await entrar(url, 'jurado dos', 'jurado');
+    const { datos } = await pedir(url, 'GET', '/api/admin/estado', { cookie: admin });
+    const a = datos.equipos.find((e) => e.nombre === 'Ranking A').id;
+    const b = datos.equipos.find((e) => e.nombre === 'Ranking B').id;
+
+    assert.deepEqual((await pedir(url, 'GET', '/api/ranking')).datos, { activo: false });
+
+    // Un equipo no puede calificar ni abrir el ranking.
+    const equipo = await entrar(url, 'ranking a', 'clave a');
+    assert.equal((await pedir(url, 'PUT', `/api/admin/equipos/${a}/calificacion`, { cookie: equipo, cuerpo: { notas: todo(5) } })).estado, 401);
+    assert.equal((await pedir(url, 'POST', '/api/admin/ranking', { cookie: equipo, cuerpo: { publico: true } })).estado, 401);
+
+    // A: 5 y 4 → 4,5. B: relato 5 y el resto 3 → 3,5, más una incompleta que no cuenta.
+    await pedir(url, 'PUT', `/api/admin/equipos/${a}/calificacion`, { cookie: admin, cuerpo: { notas: todo(5), comentario: 'Muy bien' } });
+    await pedir(url, 'PUT', `/api/admin/equipos/${a}/calificacion`, { cookie: jurado, cuerpo: { notas: todo('4,0') } });
+    await pedir(url, 'PUT', `/api/admin/equipos/${b}/calificacion`, { cookie: admin, cuerpo: { notas: { ...todo(3), relato: '5' } } });
+    // Notas fuera de rango, con dos decimales o de criterios que no existen se descartan.
+    await pedir(url, 'PUT', `/api/admin/equipos/${b}/calificacion`, {
+      cookie: jurado,
+      cuerpo: { notas: { relato: '4.5', medellin: 6, voz: '0.5', musica: '3,25', inventado: 5 } },
+    });
+
+    const panel = (await pedir(url, 'GET', '/api/admin/calificaciones', { cookie: jurado })).datos;
+    assert.equal(panel.yo.startsWith('admin:'), true);
+    assert.equal(panel.publico, false);
+    const ra = panel.ranking.find((f) => f.equipoId === a);
+    const rb = panel.ranking.find((f) => f.equipoId === b);
+    assert.equal(ra.total, 4.5);
+    assert.equal(ra.jurados, 2);
+    assert.equal(ra.puesto, 1);
+    assert.equal(rb.total, 3.5);
+    assert.equal(rb.jurados, 1);
+    const incompleta = panel.calificaciones.find((c) => c.equipoId === b && c.juez === panel.yo);
+    assert.deepEqual(incompleta.notas, { relato: 4.5 });
+
+    // Recalificar reemplaza, no suma otra.
+    await pedir(url, 'PUT', `/api/admin/equipos/${a}/calificacion`, { cookie: jurado, cuerpo: { notas: todo(5) } });
+    const otra = (await pedir(url, 'GET', '/api/admin/calificaciones', { cookie: admin })).datos;
+    assert.equal(otra.calificaciones.filter((c) => c.equipoId === a).length, 2);
+    assert.equal(otra.ranking.find((f) => f.equipoId === a).total, 5);
+
+    // Abierto: sale sin comentarios ni jurados; cerrado otra vez, no sale.
+    await pedir(url, 'POST', '/api/admin/ranking', { cookie: admin, cuerpo: { publico: true } });
+    const publico = (await pedir(url, 'GET', '/api/ranking')).datos;
+    assert.equal(publico.activo, true);
+    assert.equal(publico.ranking[0].nombre, 'Ranking A');
+    assert.equal(JSON.stringify(publico).includes('Muy bien'), false);
+    await pedir(url, 'POST', '/api/admin/ranking', { cookie: admin, cuerpo: { publico: false } });
+    assert.deepEqual((await pedir(url, 'GET', '/api/ranking')).datos, { activo: false });
+
+    // Al borrar el equipo se van sus calificaciones.
+    await pedir(url, 'DELETE', `/api/admin/equipos/${b}`, { cookie: admin });
+    const sinB = (await pedir(url, 'GET', '/api/admin/calificaciones', { cookie: admin })).datos;
+    assert.equal(sinB.calificaciones.some((c) => c.equipoId === b), false);
+  });
+});

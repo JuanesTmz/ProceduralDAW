@@ -19,7 +19,7 @@ import { Transform } from 'node:stream';
 import { abrirArchivos } from './archivos.js';
 import { abrirDatos } from './datos/index.js';
 import { crearSalas } from './salas.js';
-import { COOKIE_ADMIN, adminVigente, crearAdmin, esAdmin } from './admin.js';
+import { COOKIE_ADMIN, adminVigente, crearAdmin, esAdmin, rankingActual, rankingPublico } from './admin.js';
 import {
   COOKIE,
   DURACION_SESION,
@@ -119,6 +119,17 @@ app.post('/api/entrar', async (req, res) => {
   res.clearCookie(COOKIE_ADMIN, opcionesCookie);
   void registrar(equipo.id, 'entrada', req.ip);
   res.json({ equipo: { id: equipo.id, nombre: equipo.nombre } });
+});
+
+/**
+ * El ranking, para la pantalla de entrada: solo cuando los admins lo abren.
+ * Sale el puesto, el equipo y los puntos; los comentarios de los jurados no.
+ */
+app.get('/api/ranking', async (_req, res) => {
+  res.set('Cache-Control', 'no-store');
+  if (!(await rankingPublico(datos))) return res.json({ activo: false });
+  const ranking = (await rankingActual(datos)).map(({ puesto, nombre, total, criterios }) => ({ puesto, nombre, total, criterios }));
+  res.json({ activo: true, ranking });
 });
 
 app.post('/api/salir', (_req, res) => {

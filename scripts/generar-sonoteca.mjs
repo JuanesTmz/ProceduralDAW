@@ -1,7 +1,28 @@
 // Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
- * Genera la Sonoteca de SONORA: sonidos sintetizados aquí mismo, sin
- * grabaciones de terceros, para que no haya problema de derechos.
+ * Genera la Sonoteca de SONORA: sonidos sintetizados aquí mismo.
+ *
+ * La percusión marcada GRABADO no se sintetiza: son grabaciones reales del
+ * Versilian Community Sample Library (VCSL, CC0, github.com/sgossner/VCSL),
+ * pasadas a mono, recortadas y con el volumen igualado al del sintético que
+ * reemplazaron (RMS máximo en 50 ms; palmas, clave, güira y aro quedaron
+ * 2 a 4 dB más bajos para no aplastar el ataque). Este script solo las
+ * anota en el catálogo; los WAV ya están en public/sonoteca/. De dónde sale
+ * cada una (carpeta de VCSL):
+ *   hatcerrado  Hi-Hat Cymbal/HiHat_HitC_v3_rr1_Mid.wav
+ *   hatabierto  Hi-Hat Cymbal/HiHat_HitO_rr1_Mid.wav
+ *   caja        Snare Drum, Modern 1/Snare2_HitSN_v6_rr1_Mid.wav
+ *   aro         Snare Drum, Modern 1/Snare2_stick_v1_rr1_Mid.wav
+ *   palmas      Claps/Clap_rr1.wav
+ *   clave       Claves/Claves1_Hit_v2_rr1_Mid.wav
+ *   cencerro    Cowbells/Cowbell1_Normal_v3_rr1_Mid.wav
+ *   guiro       Guiro/Guiro_Hit_rr1_Mid.wav
+ *   shaker      Shaker, Small/Mid_ShakerDouble_Down_rr1.wav
+ *   bongo       Bongos/BongoH_Hit1_v2_rr1_Mid.wav
+ *   bongograve  Bongos/BongoL_Hit1_v2_rr1_Mid.wav
+ *   conga       Conga/Conga_HitN_v2_rr1_Sum.wav
+ *   tumbadora   Conga/Tumba_HitFM_v3_rr1_Sum.wav
+ *   guira       Cabasa/Cabasa1_Hit_rr1_Mid.wav (la güira no está; la cabasa es lo más cercano)
  *
  *   node scripts/generar-sonoteca.mjs
  *
@@ -311,128 +332,10 @@ function kalimba(nota) {
 
 // ------------------------------------------------------------ percusión
 
-function shaker() {
-  const x = buffer(0.25);
-  for (let i = 0; i < x.length; i++) x[i] = ruido() * env(i / SR, 0.03, 0.05);
-  return normalizar(biquad(x, 'bp', 6500, 1.2), 0.7);
-}
-
-function conga() {
-  const x = buffer(0.6);
-  let fase = 0;
-  for (let i = 0; i < x.length; i++) {
-    const t = i / SR;
-    fase += (2 * Math.PI * 210 * (1 + 0.4 * Math.exp(-t / 0.02))) / SR;
-    x[i] = Math.sin(fase) * env(t, 0.001, 0.13) + 0.2 * ruido() * env(t, 0.0005, 0.008);
-  }
-  return normalizar(x);
-}
-
-function cencerro() {
-  const x = buffer(0.5);
-  let a = 0, b = 0;
-  for (let i = 0; i < x.length; i++) {
-    a = (a + 545 / SR) % 1;
-    b = (b + 815 / SR) % 1;
-    x[i] = ((a < 0.5 ? 1 : -1) + (b < 0.5 ? 1 : -1)) * env(i / SR, 0.001, 0.09);
-  }
-  return normalizar(biquad(x, 'bp', 1600, 1.5), 0.8);
-}
-
-function clave() {
-  const x = buffer(0.2);
-  for (let i = 0; i < x.length; i++) x[i] = Math.sin(2 * Math.PI * 2450 * (i / SR)) * env(i / SR, 0.0005, 0.025);
-  return normalizar(x, 0.8);
-}
-
-function guiro() {
-  const x = buffer(0.45);
-  for (let i = 0; i < x.length; i++) {
-    const t = i / SR;
-    const raspa = 0.5 + 0.5 * Math.sign(Math.sin(2 * Math.PI * 55 * t));
-    x[i] = ruido() * raspa * Math.min(1, t / 0.02) * Math.min(1, (0.45 - t) / 0.08);
-  }
-  return normalizar(biquad(x, 'bp', 3800, 1.5), 0.75);
-}
-
 function chasquido() {
   const x = buffer(0.18);
   for (let i = 0; i < x.length; i++) x[i] = ruido() * env(i / SR, 0.0005, 0.012);
   return normalizar(biquad(x, 'bp', 2600, 2), 0.85);
-}
-
-/** Güira: raspador de metal, el «chi-ki» de la bachata y el merengue. */
-function guira(largo = 0.11) {
-  const x = buffer(largo + 0.05);
-  for (let i = 0; i < x.length; i++) {
-    const t = i / SR;
-    // Los dientes del raspador: ráfagas muy seguidas.
-    const dientes = 0.55 + 0.45 * Math.sign(Math.sin(2 * Math.PI * 140 * t));
-    x[i] = ruido() * dientes * Math.min(1, t / 0.004) * Math.max(0, Math.min(1, (largo - t) / 0.03));
-  }
-  const metal = biquad(biquad(x, 'hp', 4500), 'bp', 8200, 1.4);
-  const brillo = biquad(x, 'hp', 9000);
-  const y = new Float32Array(x.length);
-  for (let i = 0; i < x.length; i++) y[i] = metal[i] + 0.5 * brillo[i];
-  return normalizar(y, 0.8);
-}
-
-/** Un parche de mano afinado: bongó, tumbadora. `golpe` es cuánto «slap» lleva. */
-function parche(frecuencia, caida, golpe = 0.25) {
-  const x = buffer(caida * 5 + 0.05);
-  let fase = 0;
-  for (let i = 0; i < x.length; i++) {
-    const t = i / SR;
-    fase += (2 * Math.PI * frecuencia * (1 + 0.25 * Math.exp(-t / 0.012))) / SR;
-    x[i] =
-      Math.sin(fase) * env(t, 0.0008, caida) +
-      0.35 * Math.sin(fase * 2.32) * env(t, 0.0008, caida * 0.4) +
-      golpe * ruido() * env(t, 0.0003, 0.006);
-  }
-  return normalizar(biquad(x, 'hp', 60));
-}
-
-/** Caja de batería: el tono del parche y la bordona (el «chas»). */
-function caja() {
-  const x = buffer(0.32);
-  let fase = 0;
-  for (let i = 0; i < x.length; i++) {
-    const t = i / SR;
-    fase += (2 * Math.PI * 185 * (1 + 0.35 * Math.exp(-t / 0.01))) / SR;
-    x[i] = 0.8 * Math.sin(fase) * env(t, 0.0008, 0.05);
-  }
-  const bordona = buffer(0.32);
-  for (let i = 0; i < bordona.length; i++) bordona[i] = ruido() * env(i / SR, 0.0008, 0.09);
-  const b = biquad(biquad(bordona, 'hp', 1800), 'bp', 4200, 0.8);
-  for (let i = 0; i < x.length; i++) x[i] += 1.1 * b[i];
-  return normalizar(x);
-}
-
-/** Hi-hat: placas de metal. Cerrado es un «tss» corto; abierto sigue vibrando. */
-function hatAbierto(caida = 0.16, largo = 0.55) {
-  const x = buffer(largo);
-  // Seis osciladores cuadrados inarmónicos, como los platillos de las cajas de ritmos.
-  const frecuencias = [205.3, 304.4, 369.6, 522.7, 540, 800];
-  for (let i = 0; i < x.length; i++) {
-    const t = i / SR;
-    let v = 0;
-    for (const fr of frecuencias) v += Math.sign(Math.sin(2 * Math.PI * fr * 2.7 * t));
-    x[i] = (v / 6 + 0.5 * ruido()) * env(t, 0.001, caida);
-  }
-  return normalizar(biquad(biquad(x, 'hp', 7000), 'bp', 10000, 0.7), 0.75);
-}
-
-/** Palmas de varias personas: ráfagas un poco desfasadas y una cola de sala. */
-function palmas() {
-  const x = buffer(0.35);
-  for (const desfase of [0, 0.009, 0.017, 0.028]) {
-    const inicio = Math.round(desfase * SR);
-    for (let i = inicio; i < x.length; i++) {
-      const t = (i - inicio) / SR;
-      x[i] += ruido() * env(t, 0.0005, desfase === 0.028 ? 0.07 : 0.008);
-    }
-  }
-  return normalizar(biquad(biquad(x, 'bp', 1300, 1.1), 'hp', 500));
 }
 
 // ------------------------------------------------------------ ciudad
@@ -552,6 +455,9 @@ function moto() {
 
 // ------------------------------------------------------------ catálogo
 
+/** Grabación real ya puesta en public/sonoteca/ (ver arriba): no se sintetiza. */
+const GRABADO = null;
+
 const sonidos = [
   ['marimba', 'Marimba', 'melodico', 'C4', () => marimba('C4')],
   ['piano', 'Piano eléctrico', 'melodico', 'C4', () => pianoElectrico('C4')],
@@ -566,20 +472,21 @@ const sonidos = [
   ['silbido', 'Silbido', 'melodico', 'C5', () => silbido('C5')],
   ['vozah', 'Voz «ah»', 'melodico', 'C3', () => vozAh('C3')],
   ['kalimba', 'Kalimba', 'melodico', 'C5', () => kalimba('C5')],
-  ['shaker', 'Shaker', 'percusion', null, shaker],
-  ['conga', 'Conga', 'percusion', null, conga],
-  ['cencerro', 'Cencerro', 'percusion', null, cencerro],
-  ['clave', 'Clave', 'percusion', null, clave],
-  ['guiro', 'Güiro', 'percusion', null, guiro],
+  ['shaker', 'Shaker', 'percusion', null, GRABADO],
+  ['conga', 'Conga', 'percusion', null, GRABADO],
+  ['cencerro', 'Cencerro', 'percusion', null, GRABADO],
+  ['clave', 'Clave', 'percusion', null, GRABADO],
+  ['guiro', 'Güiro', 'percusion', null, GRABADO],
   ['chasquido', 'Chasquido', 'percusion', null, chasquido],
-  ['guira', 'Güira', 'percusion', null, () => guira()],
-  ['bongo', 'Bongó', 'percusion', null, () => parche(420, 0.07, 0.3)],
-  ['bongograve', 'Bongó grave', 'percusion', null, () => parche(300, 0.09, 0.25)],
-  ['tumbadora', 'Tumbadora', 'percusion', null, () => parche(190, 0.14, 0.15)],
-  ['caja', 'Caja', 'percusion', null, caja],
-  ['hatcerrado', 'Hi-hat cerrado', 'percusion', null, () => hatAbierto(0.03, 0.12)],
-  ['hatabierto', 'Hi-hat abierto', 'percusion', null, () => hatAbierto()],
-  ['palmas', 'Palmas', 'percusion', null, palmas],
+  ['guira', 'Güira', 'percusion', null, GRABADO],
+  ['bongo', 'Bongó', 'percusion', null, GRABADO],
+  ['bongograve', 'Bongó grave', 'percusion', null, GRABADO],
+  ['tumbadora', 'Tumbadora', 'percusion', null, GRABADO],
+  ['caja', 'Caja', 'percusion', null, GRABADO],
+  ['aro', 'Aro de la caja', 'percusion', null, GRABADO],
+  ['hatcerrado', 'Hi-hat cerrado', 'percusion', null, GRABADO],
+  ['hatabierto', 'Hi-hat abierto', 'percusion', null, GRABADO],
+  ['palmas', 'Palmas', 'percusion', null, GRABADO],
   ['lluvia', 'Lluvia', 'ciudad', null, lluvia],
   ['viento', 'Viento en la loma', 'ciudad', null, viento],
   ['trafico', 'Tráfico lejano', 'ciudad', null, trafico],
@@ -591,7 +498,7 @@ const sonidos = [
   ['moto', 'Moto que pasa', 'ciudad', null, moto],
 ];
 
-for (const [id, , , , hacer] of sonidos) escribirWav(id, hacer());
+for (const [id, , , , hacer] of sonidos) if (hacer !== GRABADO) escribirWav(id, hacer());
 const catalogo = sonidos.map(([id, nombre, grupo, nota]) => ({ id, nombre, grupo, ...(nota ? { nota } : {}) }));
 writeFileSync(join(salida, 'catalogo.json'), JSON.stringify(catalogo, null, 2));
 console.log(`${sonidos.length} sonidos en ${salida}`);

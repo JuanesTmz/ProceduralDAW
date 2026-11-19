@@ -105,6 +105,8 @@ function EscenarioVivo({ escenaFija, texto = true }: Props) {
     const toque: { x: number; y: number } | null = null;
     let reveladasPrevias = 0;
     let escenaPrevia = '';
+    let transformPuesto = '';
+    let filtroPuesto = '';
 
     const paso = () => {
       cuadro = requestAnimationFrame(paso);
@@ -160,8 +162,14 @@ function EscenarioVivo({ escenaFija, texto = true }: Props) {
         reaccion = VALOR_REACCION[escena.reaccion ?? 'bombo'];
         const estilo = estiloDeObra(obra);
         const l = lienzo.current;
-        if (l && l.style.transform !== estilo.transform) l.style.transform = estilo.transform;
-        if (l && l.style.filter !== estilo.filter) l.style.filter = estilo.filter;
+        // Solo si cambian algo: un filtro sobre el lienzo, aunque sea neutro, le cuesta
+        // a la tablet en cada cuadro, y la calidad automática termina bajando.
+        const transform = estilo.escala !== 1 || estilo.giro !== 0 ? estilo.transform : '';
+        const filtro = estilo.filtroVideo === 'none' ? '' : estilo.filtroVideo;
+        if (l && transform !== transformPuesto) l.style.transform = transformPuesto = transform;
+        if (l && filtro !== filtroPuesto) l.style.filter = filtroPuesto = filtro;
+        // El video exportado no ve el CSS: se le cuenta cómo va la obra.
+        motorVisual.obra = { escala: estilo.escala, giro: estilo.giro, filtro: estilo.filtroVideo };
       }
 
       // Crece, acelera y se retuerce: un empujón que se apaga solo, sobre los mandos del estilo.

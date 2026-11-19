@@ -89,6 +89,24 @@ IF OBJECT_ID('dbo.archivos') IS NULL
     persona NVARCHAR(40) NULL,
     creado DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
   );
+-- La calificación de cada jurado (admin) a cada equipo, con la rúbrica de compartido/rubrica.js.
+IF OBJECT_ID('dbo.calificaciones') IS NULL
+  CREATE TABLE dbo.calificaciones (
+    id INT IDENTITY PRIMARY KEY,
+    equipo_id INT NOT NULL REFERENCES dbo.equipos(id),
+    juez NVARCHAR(40) NOT NULL,
+    juez_nombre NVARCHAR(80) NOT NULL,
+    notas NVARCHAR(1000) NOT NULL,
+    comentario NVARCHAR(2000) NULL,
+    actualizado DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT uq_calificaciones UNIQUE (equipo_id, juez)
+  );
+-- Ajustes sueltos del panel (por ahora: si el ranking se ve desde la entrada).
+IF OBJECT_ID('dbo.ajustes') IS NULL
+  CREATE TABLE dbo.ajustes (
+    clave NVARCHAR(40) PRIMARY KEY,
+    valor NVARCHAR(400) NOT NULL
+  );
 IF OBJECT_ID('dbo.actividad') IS NULL
   CREATE TABLE dbo.actividad (
     id BIGINT IDENTITY PRIMARY KEY,
@@ -201,6 +219,7 @@ export async function abrirSql({ servidor, base, clientId }) {
                  DELETE FROM dbo.archivos WHERE equipo_id = @e;
                  DELETE FROM dbo.videos WHERE equipo_id = @e;
                  DELETE FROM dbo.actividad WHERE equipo_id = @e;
+                 DELETE FROM dbo.calificaciones WHERE equipo_id = @e;
                  DELETE FROM dbo.equipos WHERE id = @e;`);
         await t.commit();
         return rutas;
@@ -250,6 +269,43 @@ export async function abrirSql({ servidor, base, clientId }) {
 
     async borrarAdmin(id) {
       await (await pedir()).input('id', sql.Int, id).query('DELETE FROM dbo.admins WHERE id = @id');
+    },
+
+    // ---------- calificaciones y ranking ----------
+
+    async listarCalificaciones() {
+      const r = await (await pedir()).query(`
+        SELECT equipo_id AS equipoId, juez, juez_nombre AS juezNombre, notas, comentario, actualizado
+        FROM dbo.calificaciones ORDER BY actualizado`);
+      return r.recordset.map((c) => ({ ...c, notas: JSON.parse(c.notas) }));
+    },
+
+    /** Crea o reemplaza la calificación de ese jurado a ese equipo. */
+    async guardarCalificacion({ equipoId, juez, juezNombre, notas, comentario }) {
+      await (await pedir())
+        .input('e', sql.Int, equipoId)
+        .input('j', sql.NVarChar(40), juez)
+        .input('jn', sql.NVarChar(80), juezNombre)
+        .input('n', sql.NVarChar(1000), JSON.stringify(notas))
+        .input('c', sql.NVarChar(2000), comentario || null).query(`
+          MERGE dbo.calificaciones WITH (HOLDLOCK) AS t
+          USING (SELECT @e AS equipo_id, @j AS juez) AS s ON t.equipo_id = s.equipo_id AND t.juez = s.juez
+          WHEN MATCHED THEN UPDATE SET juez_nombre = @jn, notas = @n, comentario = @c, actualizado = SYSUTCDATETIME()
+          WHEN NOT MATCHED THEN INSERT (equipo_id, juez, juez_nombre, notas, comentario) VALUES (@e, @j, @jn, @n, @c);`);
+    },
+
+    async leerAjuste(clave) {
+      const r = await (await pedir()).input('k', sql.NVarChar(40), clave).query('SELECT valor FROM dbo.ajustes WHERE clave = @k');
+      return r.recordset[0]?.valor ?? null;
+    },
+
+    async guardarAjuste(clave, valor) {
+      await (await pedir())
+        .input('k', sql.NVarChar(40), clave)
+        .input('v', sql.NVarChar(400), String(valor)).query(`
+          MERGE dbo.ajustes WITH (HOLDLOCK) AS t USING (SELECT @k AS clave) AS s ON t.clave = s.clave
+          WHEN MATCHED THEN UPDATE SET valor = @v
+          WHEN NOT MATCHED THEN INSERT (clave, valor) VALUES (@k, @v);`);
     },
 
     // ---------- la galería ----------
