@@ -23,6 +23,7 @@ import type { AporteHistoria, OportunidadHistoria, PersonaHistoria, Proyecto } f
 import { useGrabadora } from '../hooks/useGrabadora';
 import { Icono } from './Icono';
 import { Inicial, Pie, useAutor, useEquipo } from './LeccionHistoria';
+import { BotonPista, PistaMano, usePista } from './PistaMano';
 
 // ------------------------------------------------------------ datos
 
@@ -124,15 +125,27 @@ export function MapaEstaciones({ alEntrar, alSeguir }: { alEntrar: (i: number) =
   const hechas = estados.filter((e) => e.estado === 'hecha').length;
   const curso = estados.findIndex((e) => e.estado === 'curso');
   const siguiente = curso >= 0 ? curso : estados.findIndex((e) => e.estado !== 'hecha');
+  // La primera vez, la mano toca la estación que sigue: se entra tocándola.
+  const pista = usePista('recorrido', false, 1, '.nv-his-nodo', siguiente >= 0);
 
   return (
     <div className="nv-his-mapa">
+      {pista.visible && (
+        <PistaMano
+          modo="tocar"
+          texto="Toca una estación para entrar y anotar lo que vivieron allá. Pueden ir en el orden que quieran."
+          origen={() => null}
+          destinos={() => [document.querySelector('.nv-his-nodo--sigue .nv-his-nodo__circulo')].filter((e): e is Element => !!e)}
+          alCerrar={pista.cerrar}
+        />
+      )}
       <div className="nv-his-cabeza">
         <div>
           <h1 className="nv-his-cabeza__titulo">Tu recorrido</h1>
           <p className="nv-his-cabeza__sub">Toquen una estación para entrar. Pueden ir en el orden que quieran.</p>
         </div>
         <span className="nv-espacio" />
+        <BotonPista clave="recorrido" />
         <div className="nv-his-mapa__cuenta">
           <span>
             <strong>{hechas} de 6</strong> estaciones

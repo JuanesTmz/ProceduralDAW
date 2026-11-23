@@ -285,6 +285,8 @@ function Emociones({ i: indice, setI, alTerminar }: { i: number; setI: (i: numbe
   const escenas = proyecto.escenas;
   const i = Math.min(indice, Math.max(0, escenas.length - 1));
   const escena: Escena | undefined = escenas[i];
+  // La primera vez, la mano toca tres emociones: así se ve que la música y la imagen cambian con cada una.
+  const pista = usePista('emociones', false, 1, '.nv-his-emocion', Boolean(escena));
 
   if (!escena) {
     return (
@@ -309,6 +311,15 @@ function Emociones({ i: indice, setI, alTerminar }: { i: number; setI: (i: numbe
 
   return (
     <div className="nv-his-emo" style={{ ['--color' as string]: perfil.color }}>
+      {pista.visible && (
+        <PistaMano
+          modo="tocar"
+          texto="Toca la emoción que siente esta escena. Cada una cambia cómo suena la música y cómo se ve la imagen."
+          origen={() => null}
+          destinos={() => [...document.querySelectorAll('.nv-his-emocion:not(.nv-his-emocion--on)')].slice(0, 3)}
+          alCerrar={pista.cerrar}
+        />
+      )}
       <div className="nv-his-emo__globo">
         <span className="nv-his-emo__nav">
           <button type="button" onClick={() => setI(Math.max(0, i - 1))} disabled={i === 0} aria-label="Escena anterior">
@@ -322,6 +333,8 @@ function Emociones({ i: indice, setI, alTerminar }: { i: number; setI: (i: numbe
           <h1>¿Qué siente la escena {i + 1}?</h1>
           <p>La emoción cambia cómo suena la música y cómo se ve la imagen de esta escena.</p>
         </div>
+        <span className="nv-espacio" />
+        <BotonPista clave="emociones" />
       </div>
       <div className="nv-his-emo__cuerpo">
         <article className="nv-his-emo__escena">

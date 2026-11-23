@@ -90,7 +90,7 @@ function marcarVisto(clave: string): void {
 }
 
 /** Las pantallas que enseñan con pistas animadas en vez de abrir un video. */
-const CON_PISTAS = new Set<string>(['historia', 'escena-musica', 'escena-visual']);
+const CON_PISTAS = new Set<string>(['historia', 'voz', 'escena-musica', 'escena-visual', 'funcion']);
 
 export function Guia({ pantalla }: { pantalla: Pantalla }) {
   const videos = videosDe(pantalla);

@@ -556,6 +556,8 @@ function PasoEstilo({ escena }: { escena: Escena | null }) {
   const { proyecto, actualizar } = useProyecto();
   const v = proyecto.visual;
   const actual = escena?.algoritmo ?? v.algoritmo;
+  // La primera vez, la mano toca tres estilos: cada uno se ve en el escenario de la derecha.
+  const pista = usePista('estilo-visual', false, 2, '[data-bloqueo="visual:estilo"] .nv-eleccion');
 
   const elegir = (a: (typeof ORDEN_ESTILOS)[number]) =>
     actualizar((p) => {
@@ -576,6 +578,15 @@ function PasoEstilo({ escena }: { escena: Escena | null }) {
 
   return (
     <>
+      {pista.visible && (
+        <PistaMano
+          modo="tocar"
+          texto="Toca un estilo y míralo en el escenario de la derecha. Prueben varios antes de quedarse con uno."
+          origen={() => null}
+          destinos={() => [...document.querySelectorAll('[data-bloqueo="visual:estilo"] .nv-eleccion:not(.nv-eleccion--activa):not(.nv-eleccion--sorpresa)')].slice(0, 3)}
+          alCerrar={pista.cerrar}
+        />
+      )}
       <FotoDeFondo escena={escena} />
       <div className="nv-receta__encabezado">
         <h2 className="nv-receta__titulo">{escena ? '¿Con qué estilo se dibuja esta escena?' : '¿Con qué estilo se dibuja la obra?'}</h2>
@@ -741,6 +752,7 @@ function PasoColores({ escena }: { escena: Escena | null }) {
   const sugerida = escena ? SUGERIDA[escena.emocion] : null;
   const actual = escena?.paleta ?? (v.paletaPropia ? null : v.paleta);
   const cajita = proyecto.conexionesVisual.some((c) => c.destino === 'paleta');
+  const pista = usePista('colores-visual', false, 2, '[data-bloqueo="visual:paleta"] .nv-eleccion');
   // La foto que se ve aquí: la de la escena, o la de toda la obra.
   const foto = escena ? (escena.imagenUrl ?? v.imagenUrl) : v.imagenUrl;
   const deFoto = actual === PALETA_FOTO;
@@ -760,6 +772,15 @@ function PasoColores({ escena }: { escena: Escena | null }) {
 
   return (
     <>
+      {pista.visible && (
+        <PistaMano
+          modo="tocar"
+          texto="Toca una paleta: la imagen se pinta con esos colores. Si pusieron una foto de fondo, «Colores de la foto» usa los suyos."
+          origen={() => null}
+          destinos={() => [...document.querySelectorAll('[data-bloqueo="visual:paleta"] .nv-eleccion:not(.nv-eleccion--activa):not(.nv-eleccion--sorpresa):not(:disabled)')].slice(0, 3)}
+          alCerrar={pista.cerrar}
+        />
+      )}
       <div className="nv-receta__encabezado">
         <h2 className="nv-receta__titulo">{escena ? '¿Con qué colores va esta escena?' : '¿Con qué colores va la obra?'}</h2>
         <span className="nv-receta__nota">

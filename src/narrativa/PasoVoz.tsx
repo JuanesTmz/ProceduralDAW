@@ -19,6 +19,7 @@ import { formatearReloj } from '../estado/proyecto';
 import { EMOCIONES, vozDesactualizada } from '../estado/escenas';
 import { useGrabadora } from '../hooks/useGrabadora';
 import { Onda } from './VozEscena';
+import { BotonPista, PistaMano, usePista } from './PistaMano';
 
 export function PasoVoz({ alSeguir }: { alSeguir: () => void }) {
   const { proyecto, actualizar } = useProyecto();
@@ -52,6 +53,9 @@ export function PasoVoz({ alSeguir }: { alSeguir: () => void }) {
     [claveVoz],
   );
 
+  // La primera vez, la mano toca el botón rojo; grabar la primera escena la cierra.
+  const pista = usePista('grabar-voz', escenas.some((e) => e.vozUrl), 1, '.nv-grabar', Boolean(escena));
+
   if (!escena) {
     return (
       <div className="nv-pagina nv-vacio">
@@ -74,12 +78,22 @@ export function PasoVoz({ alSeguir }: { alSeguir: () => void }) {
 
   return (
     <div className="nv-pagina nv-pagina--fija nv-pagina--voz">
+      {pista.visible && (
+        <PistaMano
+          modo="tocar"
+          texto="Toca el botón rojo y lee la escena en voz alta. Tócalo otra vez para parar; después la escuchas y, si no te gusta, la grabas de nuevo."
+          origen={() => null}
+          destinos={() => [document.querySelector('.nv-grabar')].filter((e): e is Element => !!e)}
+          alCerrar={pista.cerrar}
+        />
+      )}
       <div className="nv-cabeza">
         <div>
           <h1 className="nv-titulo">Graba tu voz</h1>
           <p className="nv-sub">Una escena a la vez. Léela despacio: se dice, no se canta.</p>
         </div>
         <span className="nv-espacio" />
+        <BotonPista clave="grabar-voz" />
         <span className="nv-tenue">
           {grabadas} de {escenas.length} grabadas
         </span>

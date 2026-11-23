@@ -16,6 +16,7 @@ import { Escenario } from './Escenario';
 import { descargar, exportarVideo, type Exportacion } from './exportarVideo';
 import { useReproduccion } from './useReproduccion';
 import { useCuadro } from './useCuadro';
+import { PistaMano, usePista } from './PistaMano';
 import { useNube } from '../nube/contexto';
 import { enviarVideo } from '../nube/galeria';
 
@@ -72,6 +73,8 @@ export function PasoFuncion() {
   const [sinMusica, setSinMusica] = useState(motorAudio.musicaSilenciada);
   const lista = recorrido(proyecto);
   const actual = lista[seccion] ?? lista[0];
+  // La primera vez: ver la pieza entera y, cuando esté lista, exportarla y mandarla a la galería.
+  const pista = usePista('funcion', false, 1, '.nv-pie .nv-boton', lista.length > 0);
 
   if (!actual) {
     return (
@@ -98,6 +101,15 @@ export function PasoFuncion() {
 
   return (
     <div className="nv-pagina nv-pagina--fija">
+      {pista.visible && (
+        <PistaMano
+          modo="tocar"
+          texto="«Ver la pieza» la toca entera, como en la presentación. Cuando esté lista, «Exportar video» la graba y la mandan a la galería: eso es lo que reciben los jurados."
+          origen={() => null}
+          destinos={() => [document.querySelector('.nv-pie .nv-boton--primario'), document.querySelector('[data-tour="exportar"]')].filter((e): e is Element => !!e)}
+          alCerrar={pista.cerrar}
+        />
+      )}
       <div className="nv-escenario">
         <Escenario escenaFija={lista[0]?.id} />
         <span className="nv-etiqueta nv-escenario__nombre" style={{ color: EMOCIONES[actual.emocion].color }}>
