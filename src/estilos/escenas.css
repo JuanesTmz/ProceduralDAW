@@ -1374,7 +1374,8 @@ input.nv-mesa__nombre { width: 12ch; }
 .nv-estante__foto .nv-cajita { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; margin: 0; }
 
 /* ---- fotos del estante: cada foto es una cajita entera (miniatura y nombre), como en Figma ---- */
-.nv-estante__fotos { align-items: flex-start; flex-wrap: wrap; overflow-x: visible; gap: 8px 6px; }
+.nv-estante__fotos { align-items: flex-start; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; gap: 6px; padding-bottom: 6px; scroll-snap-type: x proximity; }
+.nv-estante__fotos > * { flex: none; scroll-snap-align: start; }
 .nv-cajita--foto-entera {
   flex: none;
   display: flex;
@@ -1408,3 +1409,298 @@ input.nv-mesa__nombre { width: 12ch; }
   padding: 1px 2px;
   cursor: pointer;
 }
+
+/* =========================================================== PRUEBA DE PANTALLAS (23 nov)
+   Lo que faltaba para el celular acostado (844×390, 740×360) y las pantallas
+   bajas. Va al final para mandar sobre lo de arriba. */
+
+/* Barras de desplazamiento oscuras (en Windows salían blancas). */
+.nv,
+.nv * { scrollbar-color: #2d3244 transparent; scrollbar-width: thin; }
+
+/* Encabezado angosto: el reloj de la duración no se monta sobre los pasos. */
+@media (max-width: 1100px) {
+  .nv-camino { gap: 8px; padding-inline: 10px; }
+  .nv-camino .nv-logo { font-size: 15px; }
+  .nv-camino .nv-guardado { display: none; }
+  .nv-camino .nv-medidor__pista { width: 64px; }
+  .nv-camino__escuchar-texto { display: none; }
+  .nv-camino__escuchar { padding-inline: 14px; }
+  .nv-receta__num { flex: none; }
+}
+
+/* Pantallas bajas (celular acostado). */
+@media (max-height: 500px) {
+  /* Voz: la página crece con su contenido y se desplaza, en vez de recortar la tarjeta. */
+  .nv-pagina--voz { height: auto; min-height: 100%; }
+  .nv-pagina--voz > * { flex-shrink: 0; }
+  /* Visuales: la cinta de escenas se achica para dejarle alto a la receta. */
+  .nv-pelicula { padding: 3px 10px 5px; gap: 8px; }
+  .nv-pelicula::before,
+  .nv-pelicula::after { display: none; }
+  .nv-cinta { padding: 4px 2px 2px; }
+  .nv-cinta__reglas { height: 15px; }
+  .nv-cinta__hora { top: 1px; font-size: 9.5px; }
+  .nv-cinta__escena { height: 34px; }
+  .nv-cinta__nombre { top: 6px; }
+  .nv-cinta__pie { display: none; }
+  .nv-cinta__obra { min-height: 0; padding: 2px 8px; }
+  .nv-pelicula__resumen strong { font-size: 14px; }
+  .nv-pelicula__resumen > span:last-child { display: none; }
+  .nv-paso-visual__arriba { padding: 6px 10px; gap: 8px; }
+  .nv-cinta__obra { width: 78px; gap: 2px; }
+  .nv-cinta__obra > svg,
+  .nv-cinta__obra .nv-cinta__pasos { display: none; }
+  .nv-cinta__obra strong { font-size: 11px; line-height: 1.1; }
+  .nv-receta__pie { padding-top: 4px; }
+  .nv-receta__cuantos { display: none; }
+  .nv-receta__listo { min-height: 36px; padding: 0 14px; font-size: 13px; }
+  .nv-paso-visual:not(.nv-paso-visual--ancha) { --lado: 40%; }
+  .nv-paso-visual--ancha { --lado: 24%; }
+}
+
+/* Angosto (celular acostado, tablet chica): las cajas de Movimiento y las filas de Golpes, más angostas. */
+@media (max-width: 1100px) {
+  .nv-receta .nv-cajitas { grid-template-columns: 205px minmax(0, 1fr); }
+  .nv-receta .nv-caja { grid-template-columns: 104px minmax(0, 1fr); }
+  .nv-receta .nv-celdas--imagen { grid-template-columns: 152px 1fr; }
+}
+/* Muy angosto: el título de cada caja va sobre su control. */
+@media (max-width: 900px) {
+  .nv-receta .nv-caja { grid-template-columns: minmax(0, 1fr); row-gap: 6px; }
+}
+
+/* Música en el celular acostado: la cuadrícula de golpes manda. */
+@media (max-height: 500px) {
+  .nv-paso-musica { gap: 6px; padding: 6px 10px 8px; }
+  .nv-linea { min-height: 46px; }
+  .nv-linea__onda { display: none; }
+  .nv-plantillas { padding: 6px 8px; gap: 0; }
+  .nv-plantillas__cabeza { display: none; }
+  .nv-mesa { --celda: 34px; padding: 8px 10px 10px; }
+  .nv-mesa .nv-celdas { row-gap: 5px; }
+}
+
+/* Visuales en el celular acostado: fuera títulos y explicaciones de cada paso; quedan las casillas y las cajas. */
+@media (max-height: 500px) {
+  .nv-receta__encabezado { display: none; }
+  .nv-receta__cuerpo { gap: 6px; }
+  .nv-golpes-imagen > .nv-campo__fila > .nv-tenue { display: none; }
+  .nv-golpes-imagen > .nv-campo__fila .nv-boton { min-height: 34px; padding: 0 12px; }
+  .nv-receta__aviso { font-size: 11.5px; padding: 4px 8px; }
+}
+
+/* Ventanas en el celular acostado: lo que se toca (la lista, las casillas) se lleva el alto. */
+@media (max-height: 500px) {
+  .ventana__cabecera { padding-block: 8px; }
+  .ventana__nota { display: none; }
+  .ventana__titulo { font-size: 17px; }
+  .nv-grabalo { padding: 6px 10px; }
+  .nv-grabalo__textos span:not(:first-child),
+  .nv-grabalo__textos > :not(:first-child) { display: none; }
+  .nv-grabalo__icono { width: 32px; height: 32px; }
+  .nv-grabalo .nv-boton { min-height: 38px; }
+  .nv-biblio__pie { padding-block: 4px; min-height: 0; }
+  .nv-ficha-son { min-height: 46px; }
+}
+
+/* El nombre de la escena, si no cabe, termina en «…» en vez de cortarse en seco. */
+.nv-mesa__nombre { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Voz en el celular acostado: el texto a la izquierda y el botón de grabar siempre a la vista. */
+@media (max-height: 500px) {
+  .nv-pagina--voz { padding: 10px 16px; gap: 10px; }
+  .nv-pagina--voz .nv-sub { display: none; }
+  .nv-pagina--voz .nv-titulo { font-size: 20px; }
+  .nv-apuntador {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: 'etiqueta control' 'texto control';
+    align-items: start;
+    column-gap: 18px;
+    row-gap: 6px;
+    padding: 12px 18px;
+  }
+  .nv-apuntador__etiqueta { grid-area: etiqueta; }
+  .nv-apuntador__texto { grid-area: texto; font-size: 22px; line-height: 1.4; max-height: 170px; overflow-y: auto; margin: 0; }
+  .nv-apuntador__control { grid-area: control; flex-direction: column; align-self: center; text-align: center; max-width: 150px; gap: 6px; }
+}
+
+/* Tarjetas de escena en Música: en angosto, el nombre antes que la duración. */
+@media (max-width: 1100px) { .nv-linea__dura { display: none; } }
+
+/* Visuales › Estilo en el celular acostado: la foto de fondo en una fila; los estilos se ven sin bajar. */
+@media (max-height: 500px) {
+  .nv-fondo { padding: 6px 10px; gap: 6px; }
+  .nv-fondo__cabeza .nv-tenue { display: none; }
+  .nv-fondo__fotos { flex-wrap: nowrap; overflow-x: auto; padding-top: 6px; }
+  .nv-fondo__foto,
+  .nv-fondo__sin,
+  .nv-fondo__subir { flex: none; }
+  .nv-fondo__imagen { width: 50px; height: 36px; }
+  .nv-fondo__sin,
+  .nv-fondo__subir { min-height: 36px; height: 36px; padding: 0 10px; }
+  .nv-cinta__reglas { display: none; }
+}
+
+/* Visuales con una escena abierta, en el celular acostado: la columna de la vista previa no se monta sobre la cinta. */
+@media (max-height: 500px) {
+  .nv-paso-visual__lado { min-height: 0; overflow-y: auto; }
+  .nv-paso-visual__lado .nv-emo { display: none; }
+}
+
+/* Función en el celular acostado: la obra se lleva el alto. */
+@media (max-height: 500px) {
+  .nv-pagina--fija:not(.nv-pagina--voz) { padding: 8px 14px; gap: 8px; }
+  .nv-escenario { align-items: stretch; }
+  .nv-escenario > .nv-obra { flex: 1; min-height: 0; height: auto; }
+  .nv-pagina > .nv-pie { padding-top: 6px; }
+  .nv-pagina > .nv-pie .nv-boton { min-height: 40px; padding-block: 0; }
+}
+
+/* =========================================================== TAMAÑO LEGIBLE EN EL CELULAR
+   En el celular acostado la interfaz se reduce entre 80 % y 100 % (ver vista.ts).
+   Las etiquetas auxiliares, pensadas a 11–12 px para la tablet, quedaban por
+   debajo de lo legible: aquí ninguna baja de 13 px de diseño (~11 px reales). */
+@media (max-height: 500px) {
+  .nv-camino__textos > span,
+  .nv-etiqueta,
+  .nv-mono,
+  .nv-chico,
+  .nv-linea__base-rotulo,
+  .nv-plantilla strong,
+  .nv-plantilla,
+  .nv-cinta__obra strong,
+  .nv-cinta__texto,
+  .nv-pelicula__reloj,
+  .nv-eleccion__falta,
+  .nv-eleccion__obra,
+  .nv-eleccion__sugiere,
+  .nv-caja__vacia,
+  .nv-caja__nota,
+  .nv-caja__dato,
+  .nv-estante__titulo,
+  .nv-estante__subir,
+  .nv-cajita,
+  .nv-cajita__pie-foto,
+  .nv-receta__nota,
+  .nv-receta__de-obra { font-size: 13px; }
+  .nv-cinta__num { width: 22px; height: 22px; font-size: 13px; }
+  .nv-pelicula .nv-pelicula__reloj { font-size: 13px; }
+  .nv-vista__chip,
+  .nv-vista__chip strong,
+  .nv-vista__emo { font-size: 13px; }
+  .nv-receta .nv-caja { padding: 6px 10px; min-height: 0; row-gap: 2px; }
+  .nv-cinta__obra { width: 96px; }
+  .nv-receta .nv-caja:has(.nv-caja__mano) .nv-caja__vacia { display: none; }
+  .nv-caja__cuanto { font-size: 13px; }
+}
+
+/* =========================================================== MÚSICA EN EL CELULAR (2.ª vuelta)
+   La cuadrícula manda: lo de alrededor se achica y los botones de abajo quedan fijos. */
+@media (max-height: 500px) {
+  .nv-paso-musica { gap: 5px; padding: 5px 10px 0; }
+  .nv-linea { min-height: 40px; }
+  .nv-linea__play { width: 36px; height: 36px; }
+  .nv-linea__escena,
+  .nv-linea__base { padding-block: 4px; }
+  .nv-plantillas { padding: 4px 6px; }
+  .nv-plantilla { min-height: 30px; padding-block: 2px; }
+  .nv-mesa { --celda: 34px; gap: 4px; padding: 4px 10px 0; }
+  .nv-mesa__cabeza { min-height: 0; }
+  .nv-mesa__cabeza .nv-boton { min-height: 30px; padding-block: 0; }
+  .nv-mesa .nv-celdas { row-gap: 2px; }
+  .nv-paso-musica .nv-linea { min-height: 36px; }
+  /* Los botones de abajo, siempre a la vista mientras se ve la cuadrícula. */
+  .nv-mesa__pie {
+    position: sticky;
+    bottom: 0;
+    z-index: 3;
+    margin: 0 -10px;
+    padding: 5px 10px 6px;
+    background: var(--nv-s1);
+    border-top: 1px solid var(--nv-s3);
+    justify-content: flex-end;
+  }
+  .nv-mesa__pie .nv-herr__boton { min-height: 36px; padding: 2px 12px 2px 4px; }
+  .nv-mesa__pie .nv-herr__icono { width: 28px; height: 28px; }
+  /* En una escena el pie lleva también la emoción: todo en una sola fila para que ocupe poco. */
+  .nv-mesa__pie { flex-wrap: nowrap; align-items: center; gap: 8px; }
+  .nv-mesa__pie .nv-espacio { min-width: 0; }
+  .nv-mesa__pie .nv-emo { flex: 0 1 auto; min-width: 0; padding: 4px 8px; min-height: 0; }
+  .nv-mesa__pie .nv-emo__icono { width: 30px; height: 30px; }
+  .nv-mesa__pie .nv-emo__circulo { width: 26px; height: 26px; }
+  .nv-mesa__pie .nv-herr { flex: none; gap: 6px; }
+  .nv-mesa__pie .nv-herr__textos strong { font-size: 13px; }
+  .nv-emo__rotulo,
+  .nv-palabras__leyenda,
+  .nv-palabras__leyenda * { font-size: 12.5px; }
+}
+
+/* =========================================================== VISUALES EN EL CELULAR (2.ª vuelta) */
+@media (max-height: 500px) {
+  /* La línea de tiempo: escenas más altas y legibles. */
+  .nv-pelicula { padding: 4px 10px 6px; }
+  .nv-cinta__escena { height: 46px; }
+  .nv-cinta__nombre { top: 50%; translate: 0 -50%; }
+  .nv-cinta__texto { font-size: 14px; }
+  .nv-cinta__num { width: 24px; height: 24px; font-size: 13px; }
+  .nv-cinta__obra { height: 46px; width: 104px; }
+  .nv-cinta__obra strong { font-size: 13px; }
+
+  /* Movimiento: las cajas en dos columnas, cada una en una sola línea (nombre y control). */
+  .nv-receta .nv-cajitas { grid-template-columns: 205px minmax(0, 1fr); gap: 8px; }
+  .nv-receta .nv-cajitas > .nv-cajas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; align-content: start; }
+  .nv-receta .nv-caja { grid-template-columns: 78px minmax(0, 1fr); align-items: center; min-height: 40px; padding: 4px 8px; }
+  .nv-receta .nv-caja__titulo { font-size: 13px; }
+  .nv-receta .nv-caja__vacia,
+  .nv-receta .nv-caja__nota { font-size: 12.5px; }
+  .nv-receta .nv-caja__puesta { padding: 3px 4px 3px 8px; font-size: 12.5px; }
+  .nv-receta .nv-caja__pie { margin-top: 2px; }
+  /* El estante: cajitas chicas, varias por fila. */
+  .nv-estante { padding: 6px 8px; gap: 6px; }
+  .nv-estante__titulo { font-size: 12.5px; }
+  .nv-estante__cajitas { gap: 4px; }
+  .nv-estante .nv-cajita { padding: 3px 7px; font-size: 13px; }
+  .nv-cajita--foto-entera { width: 50px; gap: 2px; }
+  .nv-cajita--foto-entera .nv-cajita__foto { width: 40px; height: 28px; border-radius: 6px; }
+  .nv-cajita__pie-foto { font-size: 12.5px; }
+  .nv-estante__fotos { gap: 6px 4px; }
+  /* Cada caja: el nombre a la izquierda (hasta dos líneas) y, a la derecha, lo puesto y su barra. */
+  .nv-receta .nv-caja { grid-template-columns: 84px minmax(0, 1fr); grid-auto-rows: auto; row-gap: 3px; height: auto; }
+  .nv-receta .nv-caja > .nv-caja__titulo { grid-column: 1; grid-row: 1 / span 2; line-height: 1.15; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .nv-receta .nv-caja > :not(.nv-caja__titulo) { grid-column: 2; }
+  .nv-receta .nv-caja__nota { display: none; }
+  /* El estante: tres fotos por fila, con su nombre completo. */
+  .nv-cajita--foto-entera { width: auto; min-width: 44px; }
+  .nv-cajita__pie-foto { overflow: visible; max-width: none; }
+  .nv-estante__fotos { gap: 6px 6px; }
+  .nv-receta .nv-cajitas > .nv-cajas { grid-template-rows: none; grid-auto-rows: auto; }
+  .nv-receta .nv-caja { min-height: 40px; }
+  .nv-estante__titulo,
+  .nv-cajita__pie-foto,
+  .nv-receta .nv-caja__vacia { font-size: 13px; }
+  /* Caja con cajita puesta: todo en una línea (nombre · cajita · cuánto); la barra en vivo, fuera. */
+  .nv-receta .nv-caja:has(.nv-caja__puesta) { grid-template-columns: 84px minmax(0, 1fr) auto; column-gap: 6px; }
+  .nv-receta .nv-caja:has(.nv-caja__puesta) > .nv-caja__titulo { grid-row: 1; }
+  .nv-receta .nv-caja:has(.nv-caja__puesta) > .nv-caja__puesta { grid-column: 2; grid-row: 1; align-self: center; }
+  .nv-receta .nv-caja:has(.nv-caja__puesta) > .nv-caja__pie { grid-column: 3; grid-row: 1; margin: 0; align-self: center; }
+  .nv-receta .nv-caja__barra { display: none; }
+}
+
+/* Teléfonos más bajos: la cuadrícula de Música se ajusta para que sus cinco filas quepan sobre la barra fija. */
+@media (max-height: 460px) {
+  .nv-mesa { --celda: 30px; }
+  .nv-mesa .nv-celdas__fila, .nv-mesa .nv-celdas__pasos { padding-block: 2px; }
+  .nv-plantillas { padding-block: 3px; }
+  .nv-plantilla { min-height: 28px; }
+}
+
+@media (max-height: 500px) {
+  .nv-receta .nv-caja:has(.nv-caja__puesta) > .nv-caja__puesta { min-width: 0; max-width: 100%; overflow: hidden; }
+  .nv-receta .nv-caja__puesta .nv-caja__dato { min-width: 0; }
+}
+@media (max-height: 500px) and (max-width: 900px) {
+  .nv-receta .nv-caja:has(.nv-caja__puesta) { grid-template-columns: 70px minmax(0, 1fr) auto; }
+}
+@media (max-height: 500px) { .nv-receta .nv-caja__vacia { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; } }

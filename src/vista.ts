@@ -1,17 +1,20 @@
 // Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
- * Ajusta la vista a la tablet.
+ * Ajusta el tamaño de la interfaz a la pantalla táctil.
  *
- * Desde nov. 2026 la interfaz es responsive en horizontal: se acomoda sola
- * desde unos 1180 × 520 px CSS (la tablet Lenovo, de 1280 × 800, se ve a
- * tamaño real). En una pantalla más chica —un celular acostado— el navegador
- * móvil trabaja con una «ventana virtual» de esa medida y la encoge para que
- * quepa. Aquí se calcula cuánto hay que encoger y se le dice al navegador
- * con la etiqueta viewport. En computador o con la pantalla en vertical no
- * se toca nada.
+ * La interfaz está pensada para la tablet (1280 × 800, se ve a tamaño real).
+ * En un celular acostado no sirve ni el tamaño completo (todo sale gigante y
+ * hay que bajar con scroll) ni encogerla al mínimo (sale diminuta). Aquí se
+ * reduce en proporción a la pantalla: la interfaz trabaja sobre una «ventana
+ * virtual» de unos 1000 × 465 px CSS y el navegador la encoge para que quepa,
+ * nunca por debajo del 82 %. Un celular de 844 × 390 queda al 84 %.
+ * Encima, las reglas de pantalla baja (max-height: 500px, en escenas.css e
+ * historia.css) acomodan cada paso para que la mecánica se vea sin bajar.
+ * En computador o con la pantalla en vertical no se toca nada.
  */
-const ANCHO_BASE = 1180;
-const ALTO_BASE = 520;
+const ANCHO_BASE = 1000;
+const ALTO_BASE = 465;
+const ESCALA_MINIMA = 0.82;
 
 export function ajustarVista(): void {
   const meta = document.querySelector<HTMLMetaElement>('meta[name="viewport"]');
@@ -24,7 +27,7 @@ export function ajustarVista(): void {
     const nativoAncho = window.innerWidth * escalaActual;
     const nativoAlto = window.innerHeight * escalaActual;
     const vertical = nativoAlto > nativoAncho;
-    const escala = vertical ? 1 : Math.min(1, nativoAncho / ANCHO_BASE, nativoAlto / ALTO_BASE);
+    const escala = vertical ? 1 : Math.min(1, Math.max(ESCALA_MINIMA, Math.min(nativoAncho / ANCHO_BASE, nativoAlto / ALTO_BASE)));
     const redondeada = Math.round(escala * 100) / 100;
     if (Math.abs(redondeada - escalaActual) < 0.015) return;
     escalaActual = redondeada;

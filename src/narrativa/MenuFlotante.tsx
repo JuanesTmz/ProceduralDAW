@@ -23,7 +23,7 @@ interface Props {
 
 export function MenuFlotante({ ancla, alCerrar, className = '', children }: Props) {
   const caja = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
+  const [pos, setPos] = useState<{ left: number; top: number; alto: number } | null>(null);
   const cerrar = useRef(alCerrar);
   cerrar.current = alCerrar;
 
@@ -34,10 +34,14 @@ export function MenuFlotante({ ancla, alCerrar, className = '', children }: Prop
     const m = menu.getBoundingClientRect();
     const vw = window.innerWidth;
     const vh = window.innerHeight;
+    // Nunca sube sobre el encabezado de los pasos: en una pantalla baja taparía «Escuchar».
+    const techo = Math.max(BORDE, (document.querySelector('.nv-camino')?.getBoundingClientRect().bottom ?? 0) + BORDE);
     const cabeAbajo = a.bottom + AIRE + m.height <= vh - BORDE;
-    const top = cabeAbajo ? a.bottom + AIRE : Math.max(BORDE, a.top - AIRE - m.height);
+    const top = cabeAbajo ? a.bottom + AIRE : Math.max(techo, a.top - AIRE - m.height);
     const left = Math.min(Math.max(BORDE, a.left), vw - m.width - BORDE);
-    setPos((p) => (p && p.left === left && p.top === top ? p : { left, top }));
+    // Si no cabe entero, se desplaza por dentro.
+    const alto = Math.max(160, vh - top - BORDE);
+    setPos((p) => (p && p.left === left && p.top === top && p.alto === alto ? p : { left, top, alto }));
   };
 
   // Se mide antes de pintar, y otra vez si cambia el contenido (otro submenú).
@@ -68,7 +72,7 @@ export function MenuFlotante({ ancla, alCerrar, className = '', children }: Prop
 
   return createPortal(
     <div className="nv nv--incrustado nv-flotante" style={{ left: pos?.left ?? -9999, top: pos?.top ?? 0, visibility: pos ? 'visible' : 'hidden' }}>
-      <div ref={caja} className={`nv-lista-flotante ${className}`}>
+      <div ref={caja} className={`nv-lista-flotante ${className}`} style={pos ? { maxHeight: pos.alto, overflowY: 'auto' } : undefined}>
         {children}
       </div>
     </div>,

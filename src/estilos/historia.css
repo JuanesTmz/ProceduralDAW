@@ -390,3 +390,54 @@
 .nv-his-mono__campo { flex: 1; min-height: 120px; width: 100%; box-sizing: border-box; padding: 0 4px 0 0; border: 0; background: none; color: var(--l-texto); font: inherit; font-size: 16px; font-weight: 600; line-height: 1.7; resize: none; outline: none; }
 .nv-his-mono__campo::placeholder { color: var(--l-tenue); }
 .nv-his-mono .nv-his-mono__texto { flex: 1; }
+
+/* Celular acostado: la mecánica primero. Fuera lo que se repite y lo que solo explica. */
+@media (max-height: 500px) {
+  .nv-lec__paso { display: none; }
+  .nv-lec__cabeza { min-height: 0; padding: 4px 12px 2px; }
+  .nv-his-cabeza__sub,
+  .nv-his-mapa__cuenta { display: none; }
+  .nv-his-cabeza__titulo { font-size: 17px; }
+  .nv-lec__pie { min-height: 0; padding: 6px 12px; }
+  .nv-lec__pie .nv-boton { min-height: 40px; padding: 0 16px; }
+  .nv-lec__mensaje { font-size: 13px; }
+  .nv-lec__cuerpo { padding: 6px 16px; }
+  .nv-lec__cuerpo--recorrido .nv-his-mapa { flex: 1; min-height: 0; }
+  .nv-lec__cuerpo--recorrido .nv-ajustado { min-height: 0; }
+  .nv-lec__cuerpo--recorrido .nv-his-cabeza { display: none; }
+  .nv-his-emo__globo p { display: none; }
+  .nv-his-emo__globo { padding-block: 8px; }
+}
+
+/* El mapa se dibuja a 1136×456 y en el celular acostado se reduce a la mitad:
+   los textos de las estaciones se agrandan para que se lean a tamaño de dedo. */
+@media (max-height: 500px) {
+  .nv-his-nodo__etiqueta { width: 330px; }
+  .nv-his-nodo__etiqueta strong { font-size: 27px; line-height: 1.15; }
+  .nv-his-nodo__etiqueta > span:not(.nv-his-nodo__estado) { display: none; }
+  .nv-his-nodo__estado { font-size: 20px; }
+  .nv-his-nodo__seguir { font-size: 20px; padding: 8px 18px; }
+  .nv-his-nodo .nv-his-nodo__etiqueta { width: 270px; text-align: center; }
+  .nv-his-nodo .nv-his-nodo__etiqueta strong { font-size: 22px; white-space: nowrap; }
+  .nv-his-nodo .nv-his-nodo__estado { font-size: 17px; gap: 6px; }
+  .nv-his-nodo .nv-his-nodo__punto { width: 10px; height: 10px; }
+}
+
+/* Mínimo legible en el celular (ver escenas.css, «TAMAÑO LEGIBLE»). */
+@media (max-height: 500px) {
+  .nv-lec__nombre,
+  .nv-his-mono__rotulo,
+  .nv-his-mono__cuenta,
+  .nv-his-mono__segundos,
+  .nv-his-emo__rotulo,
+  .nv-his-emo__pastilla,
+  .nv-his-cabeza ~ * .nv-etiqueta { font-size: 13px; }
+  /* Dentro del mapa (que además se reduce a ~0,66): en proporción. */
+  .nv-his-nodo .nv-his-nodo__etiqueta strong { font-size: 24px; }
+  .nv-his-nodo .nv-his-nodo__estado { font-size: 22px; }
+  .nv-his-nodo .nv-his-nodo__seguir { font-size: 22px; }
+  .nv-his-mapa__despues { font-size: 22px; height: auto; padding: 8px 16px; white-space: nowrap; left: auto; right: 24px; }
+  .nv-his-mapa__lienzo .nv-his-nodo:last-of-type .nv-his-nodo__etiqueta { translate: -36px 0; }
+  .nv-his-mono__escala span,
+  .nv-his-contador span { font-size: 13px; }
+}

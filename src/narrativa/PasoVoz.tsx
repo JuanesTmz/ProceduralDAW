@@ -73,7 +73,7 @@ export function PasoVoz({ alSeguir }: { alSeguir: () => void }) {
   };
 
   return (
-    <div className="nv-pagina nv-pagina--fija">
+    <div className="nv-pagina nv-pagina--fija nv-pagina--voz">
       <div className="nv-cabeza">
         <div>
           <h1 className="nv-titulo">Graba tu voz</h1>

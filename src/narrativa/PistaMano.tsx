@@ -10,7 +10,7 @@
  * toque «Entendido» (queda guardado por navegador). Si en la pantalla hay varias, sale
  * una a la vez, en orden. El botón «¿Cómo se hace?» la vuelve a mostrar.
  */
-import { useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import { Icono } from './Icono';
 
@@ -128,8 +128,27 @@ interface Props {
   alCerrar: () => void;
 }
 
+/** Debajo del objetivo si cabe; si no, encima; y siempre dentro de la pantalla. */
+function lugarDelGlobo(ult: Punto, tam: { w: number; h: number }): { left: number; top: number } {
+  const margen = 8;
+  const abajo = ult.y + ult.h / 2 + 14;
+  const arriba = ult.y - ult.h / 2 - 14 - tam.h;
+  const top = abajo + tam.h <= window.innerHeight - margen ? abajo : arriba >= margen ? arriba : window.innerHeight - margen - tam.h;
+  const left = Math.min(Math.max(margen, ult.x), window.innerWidth - margen - tam.w);
+  return { left, top: Math.max(margen, top) };
+}
+
 export function PistaMano({ modo, origen, destinos, texto, etiqueta, alCerrar }: Props) {
   const [m, setM] = useState<{ o: Punto | null; d: Punto[] }>({ o: null, d: [] });
+  const globo = useRef<HTMLDivElement>(null);
+  const [tamGlobo, setTamGlobo] = useState({ w: 230, h: 110 });
+  // El globo se mide a sí mismo: así nunca se sale de la pantalla (en un celular acostado no cabe debajo).
+  useLayoutEffect(() => {
+    const g = globo.current;
+    if (!g) return;
+    const { width, height } = g.getBoundingClientRect();
+    if (Math.abs(width - tamGlobo.w) > 1 || Math.abs(height - tamGlobo.h) > 1) setTamGlobo({ w: width, h: height });
+  });
 
   // Se vuelve a medir de vez en cuando: la lista puede moverse o desplazarse.
   useLayoutEffect(() => {
@@ -177,7 +196,7 @@ export function PistaMano({ modo, origen, destinos, texto, etiqueta, alCerrar }:
           </span>
         </>
       )}
-      <div className="nv-pista__globo" style={{ left: Math.min(ult.x, window.innerWidth - 230), top: Math.min(ult.y + ult.h / 2 + 14, window.innerHeight - 110) }}>
+      <div ref={globo} className="nv-pista__globo" style={lugarDelGlobo(ult, tamGlobo)}>
         <span>{texto}</span>
         <button type="button" onClick={alCerrar}>
           Entendido

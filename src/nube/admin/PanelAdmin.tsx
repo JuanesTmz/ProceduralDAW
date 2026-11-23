@@ -221,6 +221,8 @@ export function PanelAdmin({ alSalir }: { alSalir: () => void }) {
               type="button"
               className={`pa-pestana ${pestana === p.id ? 'pa-pestana--activa' : ''}`}
               aria-current={pestana === p.id ? 'page' : undefined}
+              aria-label={p.nombre}
+              title={p.nombre}
               onClick={() => setPestana(p.id)}
             >
               <span className="pa-pestana__icono">

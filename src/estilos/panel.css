@@ -1008,3 +1008,25 @@
 .eq .pa-confirmar { border-radius: 10px; }
 .eq .pa-gordo { min-height: 34px; padding: 0 12px; border-width: 1px; border-radius: 8px; box-shadow: none; font-size: 12px; letter-spacing: 0; text-transform: none; }
 .eq .pa-gordo:active { transform: none; }
+
+/* ---------- el encabezado siempre cabe (prueba de pantallas, 23 nov) ---------- */
+.pa-barra { min-width: 0; }
+.pa-pestanas { min-width: 0; }
+@media (max-width: 1365px) {
+  .pa-solo-ancho { display: none; }
+  .pa-barra .pa-gordo--chico { width: 42px; padding: 0; }
+}
+@media (min-width: 761px) and (max-width: 1100px) {
+  .pa-barra { gap: 10px; padding-inline: 14px; }
+  .pa-pestanas { gap: 4px; margin-left: 0; }
+  .pa-pestana { padding: 0 12px; }
+  .pa-pestana:not(.pa-pestana--activa) .pa-pestana__nombre { display: none; }
+}
+/* La barra de progreso de la lección: el tramo se ve delgado pero se toca con todo el dedo. */
+.lc-progreso__tramo { position: relative; }
+.lc-progreso__tramo::after { content: ''; position: absolute; inset: -12px 0; }
+@media (max-width: 760px) {
+  .eq .pa-menu__boton { width: 42px; height: 42px; }
+  .eq-boton { min-height: 44px; }
+  .eq-acciones .eq-boton { flex: 1; }
+}
