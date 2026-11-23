@@ -437,7 +437,64 @@
   .nv-his-nodo .nv-his-nodo__estado { font-size: 22px; }
   .nv-his-nodo .nv-his-nodo__seguir { font-size: 22px; }
   .nv-his-mapa__despues { font-size: 22px; height: auto; padding: 8px 16px; white-space: nowrap; left: auto; right: 24px; }
-  .nv-his-mapa__lienzo .nv-his-nodo:last-of-type .nv-his-nodo__etiqueta { translate: -36px 0; }
+  /* Los títulos, al lado de su círculo y en dos líneas si hace falta: así usan
+     el hueco del zigzag y no tapan la estación de abajo ni la de al lado. */
+  .nv-his-mapa__lienzo .nv-his-nodo .nv-his-nodo__etiqueta {
+    left: 148px;
+    top: 36px;
+    transform: translateY(-50%);
+    width: max-content;
+    max-width: 225px;
+    padding: 4px 8px;
+    align-items: flex-start;
+    text-align: left;
+    white-space: normal;
+  }
+  .nv-his-mapa__lienzo .nv-his-nodo .nv-his-nodo__etiqueta strong { white-space: normal; line-height: 1.1; }
+  .nv-his-mapa__lienzo .nv-his-nodo .nv-his-nodo__seguir { top: 82px; }
+  /* La 6 está contra el borde: su título va debajo, angosto, para no llegar a la 5. */
+  .nv-his-mapa__lienzo .nv-his-nodo:last-of-type .nv-his-nodo__etiqueta {
+    left: 50%;
+    top: 92px;
+    transform: translateX(-50%);
+    max-width: 180px;
+    align-items: center;
+    text-align: center;
+  }
+  .nv-his-mapa__lienzo .nv-his-nodo:last-of-type .nv-his-nodo__seguir { top: -42px; }
+  /* La 5 queda justo debajo de la 6: su título va debajo de su círculo, en una línea. */
+  .nv-his-mapa__lienzo .nv-his-nodo:nth-of-type(5) .nv-his-nodo__etiqueta {
+    left: 50%;
+    top: 92px;
+    transform: translateX(-50%);
+    max-width: none;
+    align-items: center;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .nv-his-mapa__lienzo .nv-his-nodo:nth-of-type(5) .nv-his-nodo__etiqueta strong { white-space: nowrap; }
+  .nv-his-mapa__lienzo .nv-his-nodo:nth-of-type(5) .nv-his-nodo__seguir { top: 162px; }
+  .nv-his-mapa__lienzo .nv-his-mapa__despues { top: 402px; }
   .nv-his-mono__escala span,
   .nv-his-contador span { font-size: 13px; }
+}
+
+/* Celular acostado, dentro de una estación (23 nov): la fila de «Agregar»
+   (escribir, grabar, fotos) quedaba debajo del pie. La cabecera va en una
+   línea y las columnas se ajustan al alto que hay, sin mínimo fijo. */
+@media (max-height: 500px) {
+  .nv-his-est { gap: 6px; }
+  .nv-his-est__cabeza { gap: 10px; }
+  .nv-his-est__icono { width: 34px; height: 34px; border-radius: 10px; }
+  .nv-his-est__icono svg { width: 18px; height: 18px; }
+  .nv-his-est__titulos { display: flex; align-items: baseline; gap: 10px; flex-wrap: nowrap; min-width: 0; }
+  .nv-his-est__titulos h1 { margin: 0; font-size: 17px; white-space: nowrap; }
+  .nv-his-est__miga { white-space: nowrap; flex: none; }
+  .nv-his-est__titulos p { min-width: 0; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .nv-his-tablero, .nv-his-tablero--bajo { min-height: 0; }
+  .nv-his-col { padding: 8px 10px; gap: 6px; min-width: 210px; }
+  .nv-his-col__pregunta { font-size: 13px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .nv-his-col__aportes { min-height: 22px; }
+  .nv-his-col__vacio { padding: 2px; font-size: 13px; }
+  .nv-his-agregar { min-height: 36px; padding-block: 3px; }
 }

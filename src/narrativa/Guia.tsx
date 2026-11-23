@@ -24,43 +24,47 @@ const CLAVE = 'sonora-videos-vistos';
 const NOMBRES: Record<string, string> = {
   historia: 'Escribe tu historia',
   voz: 'Graba tu voz',
-  musica: 'La música: base y golpes',
-  sonidos: 'Cambiar y grabar sonidos',
-  mezcla: 'La mezcla',
+  musica: 'La música: base y escenas',
+  sonidos: 'Añadir y grabar sonidos',
+  visuales: 'Visuales: estilo, colores y movimiento',
+  funcion: 'Función: verla y mandarla',
   narrativa: '¿Qué es narrativa sonora?',
   respiros: 'Los respiros',
   emocion: 'La emoción cambia la música',
-  cajitas: 'Las cajitas',
+  cajitas: 'Sonidos en una palabra',
   golpes: 'Las celdas de golpes',
   matriz: 'La matriz y las escalas',
   instrumento: 'Tu sonido se vuelve instrumento',
-  visuales: 'Visuales: fotos y cajitas',
-  visual: 'El visual reacciona',
 };
 
-/** Qué tutoriales tocan en cada pantalla. El primero se abre solo la primera vez. */
+/**
+ * Qué tutoriales tocan en cada pantalla, en el orden en que se encuentran
+ * sus partes (el primero es el de la pantalla). En las cinco pantallas
+ * principales enseñan las pistas de la mano; los videos se abren solos solo
+ * en las ventanas (la melodía y los sonidos).
+ */
 function videosDe(pantalla: Pantalla): string[] {
   switch (pantalla) {
     case 'historia':
-      return ['historia', 'narrativa'];
+      return ['historia', 'narrativa', 'emocion'];
     case 'voz':
       return ['voz'];
-    case 'escenas':
-      return ['emocion', 'respiros'];
     case 'escena-musica':
-      return ['musica', 'sonidos', 'mezcla', 'matriz', 'cajitas'];
+      // Las casillas, Añadir capa, las palabras, la melodía, los respiros de la línea y la emoción.
+      return ['musica', 'golpes', 'sonidos', 'cajitas', 'matriz', 'respiros', 'emocion'];
     case 'escena-visual':
-      return ['visuales', 'visual', 'cajitas'];
+      return ['visuales'];
+    case 'funcion':
+      // Antes de mandarla: lo que se va a juzgar.
+      return ['funcion', 'narrativa'];
     case 'ventana-golpes':
       return ['golpes'];
     case 'ventana-matriz':
       return ['matriz', 'instrumento'];
     case 'ventana-sonidos':
       return ['sonidos', 'instrumento'];
-    case 'ventana-datos':
-      return ['visual'];
-    case 'ventana-mezcla':
-      return ['mezcla'];
+    case 'ventana-grabar':
+      return ['instrumento', 'sonidos'];
     default:
       return [];
   }
@@ -74,9 +78,9 @@ function leerVistos(): Set<string> {
   }
 }
 
-/** Solo los pasos cuyo elemento está en pantalla (o que no señalan nada). */
+/** Solo los pasos de la parte que está en pantalla y cuyo elemento se ve (o que no señalan nada). */
 function visibles(pasos: PasoTour[]): PasoTour[] {
-  return pasos.filter((p) => !p.objetivo || document.querySelector(p.objetivo));
+  return pasos.filter((p) => (!p.si || document.querySelector(p.si)) && (!p.objetivo || document.querySelector(p.objetivo)));
 }
 
 function marcarVisto(clave: string): void {
@@ -89,8 +93,11 @@ function marcarVisto(clave: string): void {
   }
 }
 
-/** Las pantallas que enseñan con pistas animadas en vez de abrir un video. */
-const CON_PISTAS = new Set<string>(['historia', 'voz', 'escena-musica', 'escena-visual', 'funcion']);
+/**
+ * Donde el video no se abre solo: las pantallas que enseñan con pistas animadas
+ * y la grabadora (se abre para grabar rápido; sus videos siguen en el «?»).
+ */
+const CON_PISTAS = new Set<string>(['historia', 'voz', 'escena-musica', 'escena-visual', 'funcion', 'ventana-grabar']);
 
 export function Guia({ pantalla }: { pantalla: Pantalla }) {
   const videos = videosDe(pantalla);

@@ -208,6 +208,9 @@ function MesaEscena({
         </button>
       </header>
 
+      {/* Las palabras van arriba: en el celular, debajo de la cuadrícula no se notaban. */}
+      {!escena.respiro && <PalabrasEscena escena={escena} indice={indice} alGrabar={alGrabarPalabra} />}
+
       <div className="nv-mesa__golpes">
         <div className="nv-mesa__titulo">
           <strong className="nv-mesa__rotulo">Golpes</strong>
@@ -227,8 +230,6 @@ function MesaEscena({
           alSolo={solo.alternar}
         />
       </div>
-
-      {!escena.respiro && <PalabrasEscena escena={escena} indice={indice} alGrabar={alGrabarPalabra} />}
 
       <footer className="nv-mesa__pie">
         <PanelEmocion escena={escena} para="musica" />

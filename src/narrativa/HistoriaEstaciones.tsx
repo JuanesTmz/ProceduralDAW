@@ -136,6 +136,7 @@ export function MapaEstaciones({ alEntrar, alSeguir }: { alEntrar: (i: number) =
           texto="Toca una estación para entrar y anotar lo que vivieron allá. Pueden ir en el orden que quieran."
           origen={() => null}
           destinos={() => [document.querySelector('.nv-his-nodo--sigue .nv-his-nodo__circulo')].filter((e): e is Element => !!e)}
+          ancla={() => document.querySelector('.nv-his-nodo--sigue')}
           alCerrar={pista.cerrar}
         />
       )}

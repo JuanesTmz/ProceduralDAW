@@ -1,6 +1,6 @@
 // Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
- * Las palabras de la escena, debajo de los golpes de la Música.
+ * Las palabras de la escena, encima de los golpes de la Música.
  *
  * Cada palabra puede llevar un sonido (suena una vez, justo cuando la voz
  * la dice) o un silencio (la música se calla en ese instante). Tocar una
@@ -10,7 +10,7 @@
  * Las cajitas de imagen (golpes de imagen en una palabra) se ponen en
  * Visuales: aquí no se ven ni se tocan.
  */
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motorAudio } from '../audio/motorAudio';
 import { vistaPrevia } from '../audio/vistaPrevia';
 import { SONOTECA } from '../audio/sonoteca';
@@ -21,6 +21,7 @@ import { inicioPalabra, palabrasDichas } from '../estado/ritmoVoz';
 import type { Cajita, Escena } from '../estado/tipos';
 import { Icono } from './Icono';
 import { MenuFlotante } from './MenuFlotante';
+import { BotonPista, PistaMano, usePista } from './PistaMano';
 import { useCuadro } from './useCuadro';
 
 const TIPOS: Cajita['tipo'][] = ['sonido', 'silencio'];
@@ -36,11 +37,14 @@ export function PalabrasEscena({ escena, indice, alGrabar }: Props) {
   const { proyecto, actualizar } = useProyecto();
   const [abierta, setAbierta] = useState<{ i: number; ancla: HTMLElement } | null>(null);
   const [dichas, setDichas] = useState(-1);
+  const caja = useRef<HTMLParagraphElement>(null);
   const palabras = palabrasDe(escena.texto);
   const cajitas = (escena.cajitas ?? []).filter((c) => TIPOS.includes(c.tipo));
   const deLaPalabra = (i: number) => cajitas.find((c) => c.palabra === i);
   const seccion = proyecto.secciones[indice];
   const total = seccion ? duracionSeccion(proyecto, seccion) : 1;
+  // La mano señala una palabra; se va cuando le ponen algo (o tocan una palabra).
+  const pista = usePista('palabras', cajitas.length > 0, 4, '.nv-palabra', palabras.length > 0);
 
   // La palabra que se está diciendo, mientras suena esta escena (sola o dentro de la obra).
   useCuadro(() => {
@@ -48,6 +52,18 @@ export function PalabrasEscena({ escena, indice, alGrabar }: Props) {
     const n = pos && pos.indice === indice ? palabrasDichas(escena, pos.segundos) : -1;
     setDichas(n);
   });
+
+  // La palabra que se dice, siempre a la vista dentro de su caja (en el celular
+  // las palabras van en una franja que se desliza de lado). Solo mueve la caja, no la página.
+  useEffect(() => {
+    const c = caja.current;
+    const p = dichas > 0 ? (c?.children[dichas - 1] as HTMLElement | undefined) : undefined;
+    if (!c || !p) return;
+    const dx = p.offsetLeft; // la caja es su offsetParent (position: relative)
+    const dy = p.offsetTop;
+    if (dx < c.scrollLeft || dx + p.offsetWidth > c.scrollLeft + c.clientWidth - 28) c.scrollLeft = dx - c.clientWidth / 3;
+    if (dy < c.scrollTop || dy + p.offsetHeight > c.scrollTop + c.clientHeight) c.scrollTop = dy - 4;
+  }, [dichas]);
 
   const poner = (palabra: number, datos: Omit<Cajita, 'id' | 'palabra'> | null) =>
     actualizar((p) => {
@@ -78,8 +94,23 @@ export function PalabrasEscena({ escena, indice, alGrabar }: Props) {
         <span className="nv-palabras__leyenda nv-palabras__leyenda--silencio">
           <Icono n="speaker-slash-fill" tam={12} /> Silencio
         </span>
+        <BotonPista clave="palabras" corto />
       </div>
-      <p className="nv-palabras__texto">
+      {pista.visible && (
+        <PistaMano
+          modo="tocar"
+          texto="Toca una palabra: ponle un sonido que suene justo cuando la dicen, o un silencio para que la música se calle ahí."
+          origen={() => null}
+          destinos={() => {
+            // Una palabra con cuerpo (no «y», «el»…), de las primeras.
+            const todas = [...document.querySelectorAll('.nv-palabras .nv-palabra')];
+            const larga = todas.find((p, i) => i >= 2 && (p.textContent ?? '').length >= 6) ?? todas[0];
+            return larga ? [larga] : [];
+          }}
+          alCerrar={pista.cerrar}
+        />
+      )}
+      <p className="nv-palabras__texto" ref={caja}>
         {palabras.map((palabra, i) => {
           const c = deLaPalabra(i);
           const dicha = dichas >= 0 && i === dichas - 1;
@@ -98,7 +129,7 @@ export function PalabrasEscena({ escena, indice, alGrabar }: Props) {
         })}
       </p>
       {abierta && (
-        <MenuFlotante ancla={abierta.ancla} className="nv-ventanita" alCerrar={() => setAbierta(null)}>
+        <MenuFlotante ancla={abierta.ancla} className="nv-ventanita" alLado alCerrar={() => setAbierta(null)}>
           <Ventanita
             palabra={palabras[abierta.i]}
             cajita={deLaPalabra(abierta.i)}

@@ -255,6 +255,7 @@ input.nv-mesa__nombre { width: 12ch; }
 .nv-palabras__leyenda--sonido { color: var(--nv-cian); border: 1px solid #5ce1ff66; background: #5ce1ff12; }
 .nv-palabras__leyenda--silencio { color: var(--nv-suave); border: 1px dashed var(--nv-linea); }
 .nv-palabras__texto {
+  position: relative;
   margin: 0;
   padding: 8px 10px;
   border-radius: 14px;
@@ -286,8 +287,16 @@ input.nv-mesa__nombre { width: 12ch; }
 .nv-palabra--dicha svg { color: #0f1117; }
 
 /* ventanita de una palabra (sobre el menú flotante) */
-.nv-flotante .nv-lista-flotante.nv-ventanita { max-height: min(480px, calc(100vh - 20px)); padding: 0; width: min(560px, calc(100vw - 24px)); }
-.nv-ventanita__caja { display: flex; flex-direction: column; gap: 10px; padding: 14px; }
+/* Si no cabe entera, solo se desplaza la lista de sonidos: la cabeza, los modos y el pie quedan a la vista. */
+.nv-flotante .nv-lista-flotante.nv-ventanita {
+  max-height: min(480px, calc(100vh - 20px));
+  padding: 0;
+  width: min(560px, calc(100vw - 24px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden !important;
+}
+.nv-ventanita__caja { display: flex; flex-direction: column; gap: 10px; padding: 14px; flex: 1 1 auto; min-height: 0; }
 .nv-ventanita__cabeza { display: flex; align-items: center; gap: 8px; font-size: 13px; }
 .nv-ventanita__palabra { padding: 3px 10px; border-radius: 8px; background: var(--nv-s3); font-size: 15px; }
 .nv-ventanita__modos { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 12px; background: var(--nv-fondo); }
@@ -295,7 +304,7 @@ input.nv-mesa__nombre { width: 12ch; }
 .nv-ventanita .nv-ventanita__modo--activo { color: var(--nv-cian); background: #5ce1ff17; border-color: #5ce1ff88; }
 .nv-ventanita .nv-ventanita__modo--silencio.nv-ventanita__modo--activo { color: var(--nv-texto); background: var(--nv-s3); border-color: var(--nv-suave); }
 .nv-ventanita__nota { font-size: 12px; color: var(--nv-suave); }
-.nv-ventanita__sonidos { display: flex; flex-direction: column; gap: 10px; max-height: 236px; overflow: auto; padding-right: 2px; }
+.nv-ventanita__sonidos { display: flex; flex-direction: column; gap: 10px; max-height: 236px; min-height: 76px; flex: 1 1 auto; overflow: auto; padding-right: 2px; }
 .nv-ventanita__grupo { display: flex; flex-direction: column; gap: 6px; }
 .nv-ventanita__grupo-titulo { font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--nv-tenue); }
 .nv-ventanita__rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px; }
@@ -318,7 +327,7 @@ input.nv-mesa__nombre { width: 12ch; }
 .nv-ventanita .nv-ventanita__sonido--puesto { border-color: var(--nv-cian); background: #5ce1ff17; }
 .nv-ventanita .nv-ventanita__sonido--grabar { background: #ff4d6d1a; border-color: #ff4d6d66; }
 .nv-ventanita .nv-ventanita__sonido--grabar svg { color: var(--nv-rojo); }
-.nv-ventanita__pie { display: flex; align-items: center; gap: 8px; }
+.nv-ventanita__pie { display: flex; align-items: center; gap: 8px; flex: none; }
 .nv-ventanita .nv-ventanita__pie .nv-boton { padding: 9px 14px; min-height: 40px; font-size: 14px; border-radius: 10px; }
 .nv-ventanita .nv-ventanita__pie .nv-boton--primario:hover { background: var(--nv-acento); }
 
@@ -1635,6 +1644,13 @@ input.nv-mesa__nombre { width: 12ch; }
   .nv-emo__rotulo,
   .nv-palabras__leyenda,
   .nv-palabras__leyenda * { font-size: 12.5px; }
+  /* El menú de una palabra, más apretado y angosto: entero, y que quepa al lado de la palabra. */
+  .nv-flotante .nv-lista-flotante.nv-ventanita { width: min(440px, calc(100vw - 24px)); }
+  .nv-ventanita__caja { gap: 7px; padding: 10px 12px; }
+  .nv-ventanita .nv-ventanita__modo { padding: 6px 10px; }
+  .nv-ventanita__nota { display: none; }
+  .nv-ventanita .nv-ventanita__sonido { min-height: 0; padding-block: 6px; }
+  .nv-ventanita .nv-ventanita__pie .nv-boton { min-height: 34px; padding-block: 5px; }
 }
 
 /* =========================================================== VISUALES EN EL CELULAR (2.ª vuelta) */
@@ -1704,3 +1720,72 @@ input.nv-mesa__nombre { width: 12ch; }
   .nv-receta .nv-caja:has(.nv-caja__puesta) { grid-template-columns: 70px minmax(0, 1fr) auto; }
 }
 @media (max-height: 500px) { .nv-receta .nv-caja__vacia { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; } }
+
+/* ---------- pistas (23 nov): un objetivo grande (tarjeta, botón) se resalta con borde y fondo suave, sin taparlo */
+.nv-pista__casilla--grande { background: rgba(255, 176, 32, 0.16); border: 3px solid var(--nv-acento); border-radius: 12px; }
+
+/* =========================================================== LA BARRA SE APRIETA SOLA (23 nov)
+   Barra.tsx sube `data-apretado` hasta que los cinco pasos caben: con mucha
+   gente conectada, el medidor a la vista o una pantalla angosta, la barra ya
+   no se monta sobre Escuchar ni sobre el estado. Cada nivel suma al anterior. */
+.nv-camino[data-apretado='1'] .nu-persona__texto,
+.nv-camino[data-apretado='2'] .nu-persona__texto,
+.nv-camino[data-apretado='3'] .nu-persona__texto,
+.nv-camino[data-apretado='4'] .nu-persona__texto,
+.nv-camino[data-apretado='5'] .nu-persona__texto { display: none; }
+.nv-camino:is([data-apretado='1'], [data-apretado='2'], [data-apretado='3'], [data-apretado='4'], [data-apretado='5']) .nu-persona { padding-right: 4px; }
+.nv-camino:is([data-apretado='1'], [data-apretado='2'], [data-apretado='3'], [data-apretado='4'], [data-apretado='5']) .nu-guardado { font-size: 0; }
+.nv-camino:is([data-apretado='1'], [data-apretado='2'], [data-apretado='3'], [data-apretado='4'], [data-apretado='5']) .nu-guardado::before { margin-right: 0; }
+.nv-camino:is([data-apretado='2'], [data-apretado='3'], [data-apretado='4'], [data-apretado='5']) .nv-camino__paso:not(.nv-camino__paso--actual) .nv-camino__textos { display: none; }
+.nv-camino:is([data-apretado='2'], [data-apretado='3'], [data-apretado='4'], [data-apretado='5']) .nv-camino__paso:not(.nv-camino__paso--actual) { padding-right: 5px; }
+.nv-camino:is([data-apretado='3'], [data-apretado='4'], [data-apretado='5']) .nu-estado > .nu-caras { display: none; }
+.nv-camino:is([data-apretado='3'], [data-apretado='4'], [data-apretado='5']) .nv-camino__textos > span { display: none; }
+.nv-camino:is([data-apretado='4'], [data-apretado='5']) .nv-medidor .nv-mono { display: none; }
+.nv-camino:is([data-apretado='4'], [data-apretado='5']) .nv-medidor__pista { width: 56px; }
+.nv-camino:is([data-apretado='4'], [data-apretado='5']) .nv-camino__escuchar-texto { display: none; }
+.nv-camino:is([data-apretado='4'], [data-apretado='5']) .nv-camino__escuchar { padding-inline: 14px; }
+.nv-camino:is([data-apretado='4'], [data-apretado='5']) .nv-camino__union { width: 6px; }
+.nv-camino[data-apretado='5'] .nv-camino__textos { display: none; }
+.nv-camino[data-apretado='5'] .nv-camino__paso { padding-right: 5px; }
+.nv-camino[data-apretado='5'] .nv-logo { font-size: 13px; letter-spacing: 0.06em; }
+
+/* =========================================================== CELULAR ACOSTADO: AJUSTES DEL 23 NOV
+   La emoción elegida no se encoge a cero (su nombre se montaba sobre las demás):
+   en el pie de Música del celular queda solo su ícono (el nombre va en el título). */
+.nv-emo__elegida { flex: none; }
+@media (max-height: 500px) {
+  .nv-mesa__pie .nv-emo { gap: 8px; }
+  .nv-mesa__pie .nv-emo__textos,
+  .nv-mesa__pie .nv-emo__separa { display: none; }
+  .nv-mesa__pie .nv-emo__otra { min-width: 34px; padding-inline: 1px; }
+
+  /* La matriz de la melodía va al lado de su panel, no debajo (antes la
+     rejilla quedaba con alto cero). El panel se hace angosto y se desplaza. */
+  .matriz-ventana { gap: 10px; }
+  .matriz-lado { flex: 0 0 210px; gap: 8px; overflow-y: auto; }
+  .matriz-escalas { gap: 4px; }
+  .matriz-escala { padding: 7px 10px; }
+  .matriz-escala span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .matriz-volumen { margin-top: 4px; }
+}
+
+/* Panel de emoción en pantallas medianas (≤1240, 23 nov): los nombres de las
+   otras emociones bajaban a 9,5 px y en Visuales el nivel «Fuerte» se cortaba
+   contra el borde. Nombres a 10,5 px; el espacio sale de separadores y huecos. */
+@media (max-width: 1240px) {
+  .nv-emo { gap: 8px; }
+  .nv-emo__separa { display: none; }
+  .nv-emo__otras { gap: 2px; }
+  .nv-emo__nombre { font-size: 10.5px; }
+}
+
+/* Caja con cajita puesta en el celular (23 nov): en una sola línea, en los
+   teléfonos más angostos a la cajita le quedaban 2 px (no se veía su nombre y
+   la × quedaba debajo de «algo»). Ahora el título va arriba y, debajo, la
+   cajita con su nombre y su ×, al lado de poco/algo/mucho. */
+@media (max-height: 500px) {
+  .nv-receta .nv-caja:has(.nv-caja__puesta) { grid-template-columns: minmax(0, 1fr) auto; row-gap: 3px; }
+  .nv-receta .nv-caja:has(.nv-caja__puesta) > .nv-caja__titulo { grid-column: 1 / -1; grid-row: 1; -webkit-line-clamp: 1; }
+  .nv-receta .nv-caja:has(.nv-caja__puesta) > .nv-caja__puesta { grid-column: 1; grid-row: 2; }
+  .nv-receta .nv-caja:has(.nv-caja__puesta) > .nv-caja__pie { grid-column: 2; grid-row: 2; }
+}

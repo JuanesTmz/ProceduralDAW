@@ -24,19 +24,23 @@ export function ajustarVista(): void {
   let escalaActual = 1;
 
   const ajustar = () => {
-    const nativoAncho = window.innerWidth * escalaActual;
-    const nativoAlto = window.innerHeight * escalaActual;
+    // La pantalla de verdad: la ventana CSS por la escala que el navegador aplicó.
+    // (Con la escala supuesta, si la pantalla cambiaba de ancho pero la escala
+    // daba igual, el ancho se quedaba viejo y las reglas de pantalla baja no aplicaban.)
+    const escalaReal = window.visualViewport?.scale || escalaActual;
+    const nativoAncho = window.innerWidth * escalaReal;
+    const nativoAlto = window.innerHeight * escalaReal;
     const vertical = nativoAlto > nativoAncho;
     const escala = vertical ? 1 : Math.min(1, Math.max(ESCALA_MINIMA, Math.min(nativoAncho / ANCHO_BASE, nativoAlto / ALTO_BASE)));
     const redondeada = Math.round(escala * 100) / 100;
-    if (Math.abs(redondeada - escalaActual) < 0.015) return;
+    const contenido =
+      redondeada >= 0.99 ? 'width=device-width, initial-scale=1.0' : `width=${Math.round(nativoAncho / redondeada)}, user-scalable=no`;
+    const ancho = (c: string | null) => Number(/width=(\d+)/.exec(c ?? '')?.[1]);
+    const actual = meta.getAttribute('content');
+    // Igual que ahora (con dos píxeles de tolerancia por el redondeo): nada que hacer.
+    if (actual === contenido || (Math.abs(redondeada - escalaActual) < 0.015 && Math.abs(ancho(actual) - ancho(contenido)) <= 2)) return;
     escalaActual = redondeada;
-    meta.setAttribute(
-      'content',
-      redondeada >= 0.99
-        ? 'width=device-width, initial-scale=1.0'
-        : `width=${Math.round(nativoAncho / redondeada)}, user-scalable=no`,
-    );
+    meta.setAttribute('content', contenido);
   };
 
   // Al cambiar la etiqueta, el navegador manda varios «resize» seguidos con

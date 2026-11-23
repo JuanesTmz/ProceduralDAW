@@ -56,7 +56,7 @@ export function PanelEmocion({ escena, para }: Props) {
 
   return (
     <div className="nv-emo" style={{ ['--color' as string]: perfil.color }} data-bloqueo={`escena:${escena.id}:sentir`}>
-      <div className="nv-emo__elegida">
+      <div className="nv-emo__elegida" title={`${perfil.etiqueta}: ${(para === 'musica' ? COMO_SUENA : COMO_SE_VE)[escena.emocion]}`}>
         <span className="nv-emo__icono">
           <Icono n={ICONO_EMOCION[escena.emocion]} tam={22} />
         </span>

@@ -2125,3 +2125,12 @@ html, body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent
 .nv-video:hover { background: #ffb02029; }
 .nv-video__icono { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: #ffb020; color: #14161f; font-size: 10px; }
 .ventana__cabecera .nv-video { align-self: center; }
+
+/* La galería de tutoriales se desplaza dentro de su ventana (23 nov): en el
+   celular solo se veían 6 de los 13 y no había cómo bajar a los demás. */
+.tu-ventana { overflow-y: auto; }
+
+/* El contenido de una ventana se desplaza si no cabe (23 nov): heredaba el
+   overflow: hidden de .nv y en el celular cortaba lo último (por ejemplo
+   «Tu sonido está en», en «¿Con qué suena la melodía?»). */
+.ventana__cuerpo > .nv.nv--incrustado { min-height: 0; overflow-y: auto; }

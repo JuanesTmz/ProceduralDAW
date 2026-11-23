@@ -1,11 +1,11 @@
 // Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
- * Tutorial: la emoción y la intensidad cambian la música.
+ * Tutorial: la emoción y su fuerza cambian la música.
  *
- * Los mismos sonidos de General se reparten en dos escenas: en Calma
+ * Los mismos sonidos de la Base se reparten en dos escenas: en Calma
  * suenan lentos y en una escala tranquila; en Euforia, rápidos y en una
  * escala brillante. Suenan todas las capas que no se callaron a mano.
- * Al final, la intensidad decide qué tan fuerte golpean.
+ * Al final, la fuerza (Suave, Media, Fuerte) decide qué tan duro golpean.
  */
 import { EMOCIONES } from '../estado/escenas';
 import { claves, interpolar, resorte, useFotograma, type Composicion, type Golpe } from './motor';
@@ -14,9 +14,9 @@ import { C, Etiqueta, Fondo, Fundido, Pos, Rotulos, TINTA } from './piezas';
 const DURA = 600;
 const CAPAS = [
   { nombre: 'Bombo', color: C.amarillo },
-  { nombre: 'Redoblante', color: C.rosa },
+  { nombre: 'Caja', color: C.rosa },
   { nombre: 'Hi-hat', color: C.verde },
-  { nombre: 'Shaker', color: C.lila },
+  { nombre: 'Bajo', color: C.lila },
   { nombre: 'Melodía', color: C.cian },
 ];
 const CALMA: [number, number] = [190, 350];
@@ -71,7 +71,7 @@ function Panel({ emo, activo, fuerza, cada, x, f, desde }: { emo: 'calma' | 'euf
       </svg>
       <div className="tu-panel__capas">
         {CAPAS.map((c, i) => {
-          // Suenan todas; la intensidad cambia qué tan fuerte golpean (y cuánto saltan).
+          // Suenan todas; la fuerza cambia qué tan fuerte golpean (y cuánto saltan).
           return (
             <span
               key={c.nombre}
@@ -96,13 +96,13 @@ function Dibujo() {
     <>
       <Fondo tono={C.cian} acento={C.naranja} />
       <Pos x={190} y={60} escala={resorte(f, 0)}>
-        <Etiqueta color={C.naranja}>EMOCIÓN E INTENSIDAD</Etiqueta>
+        <Etiqueta color={C.naranja}>EMOCIÓN Y FUERZA</Etiqueta>
       </Pos>
 
       {f < 150 && (
         <Pos x={640} y={320} escala={resorte(f, 8) * (1 - separa)}>
           <div className="tu-general">
-            <b>General · los sonidos de la pieza</b>
+            <b>Base · los sonidos de la obra</b>
             <div className="tu-panel__capas">
               {CAPAS.map((c, i) => (
                 <span key={c.nombre} className="tu-chip" style={{ background: c.color, transform: `scale(${resorte(f, 20 + i * 6, 260, 13)})` }}>
@@ -135,11 +135,11 @@ function Dibujo() {
 
       <Rotulos
         lista={[
-          [0, 110, 'Los mismos sonidos de *General…'],
+          [0, 110, 'Los mismos sonidos de la *Base…'],
           [110, 190, '…suenan distinto según la *emoción de la escena'],
           [190, 350, '*Calma: lenta y en una escala *tranquila'],
           [350, 510, '*Euforia: rápida y en una escala *brillante'],
-          [510, 600, 'Y la *intensidad decide qué tan *fuerte golpean'],
+          [510, 600, 'Y su *fuerza decide qué tan *duro golpean'],
         ]}
       />
       <Fundido duracion={DURA} />

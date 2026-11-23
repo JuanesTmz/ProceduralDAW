@@ -70,7 +70,7 @@ export function VentanaGrabar({ destino, archivo, alCerrar }: Props) {
   };
 
   return (
-    <Ventana titulo="Graba tu sonido" nota="Grábalo, recorta lo que sobra y ponle nombre." alCerrar={alCerrar} ancha>
+    <Ventana titulo="Graba tu sonido" nota="Grábalo, recorta lo que sobra y ponle nombre." alCerrar={alCerrar} ancha guia="ventana-grabar">
       <div className="nv nv--incrustado nv-grabadora">
         {!cruda ? (
           <div className="nv-grabadora__micro">

@@ -22,8 +22,8 @@ const AYUDA: Record<EstadoConexion, string> = {
   'sin-conexion': 'Tus cambios se guardan aquí y se juntan con los demás al volver la conexión',
 };
 
-/** Cuántas caras se muestran antes del «+N». */
-const MAXIMO_CARAS = 5;
+/** Cuántas caras se muestran antes del «+N» (cada paso del camino muestra además quién está ahí). */
+const MAXIMO_CARAS = 3;
 
 export function EstadoNube() {
   const nube = useNube();

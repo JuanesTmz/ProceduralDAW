@@ -848,6 +848,9 @@
 
   /* El mazo: la carta arriba, los dos botones debajo y la lección a continuación. */
   .mz {
+    /* Crece con su contenido (23 nov): con flex: 1 se encogía al alto de la
+       pantalla y lo de abajo (la nota a mano) quedaba bajo la franja pegada. */
+    flex: none;
     height: auto;
     min-height: 0;
     grid-template-columns: minmax(0, 1fr);

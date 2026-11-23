@@ -1,30 +1,33 @@
 // Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos
 /**
  * Los tutoriales principales, hechos con la interfaz de verdad: Historia,
- * Voz, Música, Sonidos y Mezcla. Son los que se abren solos la primera vez
+ * Voz, Música, Sonidos, Visuales y Función (rehechos el 23 nov 2026 para la
+ * interfaz de cinco pasos). Son los que se abren solos la primera vez
  * que se entra a cada parte (reemplazan al recorrido guiado, que en la
  * prueba nadie leía).
  *
  * Cada uno es una pantalla real de la app con un proyecto de demostración,
  * un guion de toques y unos rótulos cortos. Ver `real.tsx`.
  */
+import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useProyecto } from '../estado/ProyectoContext';
 import { crearProyectoInicial } from '../estado/proyecto';
-import { aplicarPreset, nuevaConexion, ponerSonido, sincronizarReglas } from '../estado/musica';
-import { cargarEjemplo, sincronizarEscenas, TEXTO_EJEMPLO } from '../estado/escenas';
+import { aplicarPreset, nuevaConexion, sincronizarReglas } from '../estado/musica';
+import { cargarEjemplo } from '../estado/escenas';
 import { ponerGolpe } from '../estado/patronEscena';
 import { ponerPasoEfecto } from '../estado/efectos';
 import type { ArchivoDatos, GolpeVisual, Proyecto } from '../estado/tipos';
 import { PasoHistoria } from '../narrativa/PasoHistoria';
 import { PasoVoz } from '../narrativa/PasoVoz';
-import { MusicaEscena } from '../narrativa/MusicaEscena';
-import { VentanaSonidosPistas } from '../narrativa/VentanaSonidosPistas';
-import { VentanaMezcla } from '../narrativa/Mezcla';
-import { ImagenEscena } from '../narrativa/ImagenEscena';
+import { PasoMusica } from '../narrativa/PasoMusica';
+import { PasoVisuales } from '../narrativa/PasoVisuales';
+import { PasoFuncion } from '../narrativa/PasoFuncion';
+import { VentanaSonidosCapa } from '../narrativa/VentanaSonidosCapa';
+import { PISTA_NUEVA } from '../narrativa/VentanaSonidosPistas';
 import type { ApiDemo } from '../estado/ProyectoContext';
 import type { Composicion } from './motor';
-import { Fundido, Rotulos, SONOTECA_URL } from './piezas';
+import { Fundido, Rotulos } from './piezas';
 import { FondoReal, Halo, ManoReal, PantallaReal, useGuion, type Movimiento } from './real';
 
 // ------------------------------------------------------------ proyectos de demostración
@@ -61,26 +64,6 @@ const golpe = (nombre: string, paso: number, on = true) => (api: ApiDemo) =>
   });
 
 const celda = (nombre: string, paso: number) => `button[aria-label="${nombre}, paso ${paso}"]`;
-
-/** Escribe un texto poco a poco (t de 0 a 1), sin repetir si no cambió nada. */
-function escribir(leer: (p: Proyecto) => string, poner: (p: Proyecto, texto: string) => void, texto: string) {
-  return (api: ApiDemo, t: number) => {
-    const parte = texto.slice(0, Math.round(t * texto.length));
-    if (leer(api.proyecto()) === parte) return;
-    api.actualizar((p) => poner(p, parte));
-  };
-}
-
-const estacion = (i: number, texto: string) =>
-  escribir(
-    (p) => p.historia.estaciones?.[i] ?? '',
-    (p, x) => {
-      const lista = [...(p.historia.estaciones ?? ['', '', '', '', ''])];
-      lista[i] = x;
-      p.historia.estaciones = lista;
-    },
-    texto,
-  );
 
 // ------------------------------------------------------------ marco común
 
@@ -148,57 +131,36 @@ function PantallaHistoria() {
   );
 }
 
-const MONOLOGO = TEXTO_EJEMPLO;
-const ESTACIONES_EJEMPLO = [
-  'Una chiva vieja parqueada, con el motor tosiendo.',
-  'La gente sube apretada y la radio suena un tango.',
-  'Arriba pasan las cabinas del metrocable.',
-  'Don Arturo, que madruga aunque no tenga ruta.',
-  'Que lo viejo no se va del todo: se queda esperando.',
-];
-const campoEstacion = (i: number) => `[data-bloqueo="historia:estacion:${i}"] textarea`;
+const tramo = (nombre: string) => `.nv-lec__tramo::${nombre}`;
 
 export const tutorialHistoria = crearTutorial({
   id: 'historia',
   titulo: 'Escribe tu historia',
-  descripcion: 'Las estaciones, el monólogo final y las escenas.',
-  duracion: 930,
+  descripcion: 'El recorrido, el monólogo, las escenas y sus emociones.',
+  duracion: 960,
   Pantalla: PantallaHistoria,
   inicial: proyectoNuevo,
   guion: [
-    { f: 50, en: campoEstacion(0) },
-    { f: 56, hasta: 120, en: campoEstacion(0), tramo: estacion(0, ESTACIONES_EJEMPLO[0]) },
-    { f: 150, en: campoEstacion(1) },
-    { f: 156, hasta: 215, en: campoEstacion(1), tramo: estacion(1, ESTACIONES_EJEMPLO[1]) },
-    {
-      f: 250,
-      en: campoEstacion(4),
-      hacer: (api) => api.actualizar((p) => (p.historia.estaciones = [...ESTACIONES_EJEMPLO])),
-    },
-    { f: 360, en: 'textarea[placeholder^="Unas 100"]' },
-    {
-      f: 366,
-      hasta: 560,
-      en: 'textarea[placeholder^="Unas 100"]',
-      tramo: escribir(
-        (p) => p.narracion.texto,
-        (p, x) => {
-          p.narracion.texto = x;
-          sincronizarEscenas(p);
-        },
-        MONOLOGO,
-      ),
-    },
-    { f: 620, en: 'button[aria-label="Más escenas"]', clic: true },
-    { f: 670, en: 'button[aria-label="Más escenas"]', clic: true },
-    { f: 720, en: 'button[aria-label="Más escenas"]', clic: true },
-    { f: 830, en: '.nv-pie .nv-boton--primario', senalar: true },
+    { f: 45, en: '.nv-his-nodo--sigue .nv-his-nodo__circulo', senalar: true },
+    { f: 150, en: tramo('MONÓLOGO'), clic: true },
+    { f: 215, en: '.nv-his-boton::Usar un ejemplo', clic: true },
+    { f: 300, en: '.nv-his-mono__escala', senalar: true },
+    { f: 380, en: tramo('RECORTE'), clic: true },
+    { f: 440, en: 'button[aria-label="Más escenas"]', clic: true },
+    { f: 490, en: 'button[aria-label="Más escenas"]', clic: true },
+    { f: 560, en: tramo('EMOCIONES'), clic: true },
+    { f: 620, en: '.nv-his-emocion::Tensión', clic: true },
+    { f: 680, en: '.nv-his-emo__fuerza button::Fuerte', clic: true },
+    { f: 740, en: 'button[aria-label="Escena siguiente"]', clic: true },
+    { f: 790, en: '.nv-his-emocion::Alegría', clic: true },
+    { f: 870, en: '.nv-lec__pie .nv-lec__seguir', senalar: true },
   ],
   rotulos: [
-    [10, 330, 'Anota lo que encontraste en cada *estación'],
-    [330, 590, 'Con eso escribe tu *monólogo final'],
-    [590, 790, 'Pártelo en *escenas: toca + para sumar una'],
-    [790, 930, 'Todo se *guarda solo. Luego, *Seguir a Voz'],
+    [10, 140, 'Toca una *estación y anota lo que viviste'],
+    [140, 370, 'Escribe tu *monólogo: unas 100 palabras'],
+    [370, 550, 'Pártelo en *escenas con + y −'],
+    [550, 850, 'Dale a cada escena su *emoción y su fuerza'],
+    [850, 960, 'Todo *se guarda solo. Luego, a la *Voz'],
   ],
 });
 
@@ -264,141 +226,90 @@ export const tutorialVoz = crearTutorial({
 
 // ------------------------------------------------------------ 3. Música
 
+/** Abre una escena (o la base, con -1) en las pantallas que la reciben por props: el guion manda un evento. */
+const abrirEscena = (i: number) => () => window.dispatchEvent(new CustomEvent('tu-abrir', { detail: i }));
+function useAbierta(): [string, (id: string) => void] {
+  const { proyecto } = useProyecto();
+  const [abierta, setAbierta] = useState('general');
+  useEffect(() => {
+    const oir = (ev: Event) => {
+      const i = (ev as CustomEvent<number>).detail;
+      setAbierta(i < 0 ? 'general' : (proyecto.escenas[i]?.id ?? 'general'));
+    };
+    window.addEventListener('tu-abrir', oir);
+    return () => window.removeEventListener('tu-abrir', oir);
+  }, [proyecto.escenas]);
+  return [abierta, setAbierta];
+}
+
 function PantallaMusica() {
+  const [abierta, setAbierta] = useAbierta();
   return (
-    <div className="nv-editor__cuerpo tu-real__editor">
-      <MusicaEscena escena={null} indice={-1} />
-    </div>
+    <main className="nv-contenido">
+      <PasoMusica abierta={abierta} alIr={setAbierta} />
+    </main>
   );
 }
 
 export const tutorialMusica = crearTutorial({
   id: 'musica',
-  titulo: 'La música: base y golpes',
-  descripcion: 'Elegir una base, tocar las casillas y sumar una capa.',
-  duracion: 990,
+  titulo: 'La música: base y escenas',
+  descripcion: 'Un género para arrancar, las casillas y la música de cada escena.',
+  duracion: 900,
   Pantalla: PantallaMusica,
   inicial: proyectoEjemplo,
-  marco: { ancho: 1280, alto: 600, escala: 0.9 },
+  marco: { ancho: 1280, alto: 640, escala: 0.88 },
   guion: [
-    { f: 50, en: '.nv-base::Trap', clic: true },
-    { f: 120, en: '.nv-base::Cumbia', clic: true },
-    { f: 240, en: celda('Bombo', 5), hacer: golpe('Bombo', 5) },
-    { f: 275, en: celda('Bombo', 13), hacer: golpe('Bombo', 13) },
-    { f: 310, en: celda('Bongó grave', 1), hacer: golpe('Bongó grave', 1) },
-    { f: 360, en: celda('Güira', 3), hacer: golpe('Güira', 3, false) },
-    { f: 470, en: '.nv-pie-herr__boton--agregar', clic: true },
-    { f: 540, en: '.nv-sonido__elegir::Cencerro', clic: true },
-    { f: 600, en: '.nv-guardar-sonido__boton', clic: true },
-    { f: 680, en: '.ventana__cerrar', clic: true },
-    { f: 740, en: celda('Cencerro', 1), hacer: golpe('Cencerro', 1) },
-    { f: 770, en: celda('Cencerro', 7), hacer: golpe('Cencerro', 7) },
-    { f: 800, en: celda('Cencerro', 11), hacer: golpe('Cencerro', 11) },
-    { f: 880, en: '.nv-musica .nv-subtitulo', senalar: true },
+    { f: 45, en: '.nv-plantilla::Trap', clic: true },
+    { f: 110, en: '.nv-plantilla::Reggaetón', clic: true },
+    { f: 210, en: celda('Bombo', 5), hacer: golpe('Bombo', 5) },
+    { f: 240, en: celda('Bombo', 13), hacer: golpe('Bombo', 13) },
+    { f: 270, en: celda('Caja', 3), hacer: golpe('Caja', 3) },
+    { f: 300, en: celda('Caja', 3), hacer: golpe('Caja', 3, false) },
+    { f: 380, en: '.nv-mesa__velocidad', senalar: true },
+    { f: 470, en: '.nv-linea__escena', hacer: abrirEscena(0) },
+    { f: 560, en: '.nv-mesa__pie .nv-emo', senalar: true },
+    { f: 640, en: '.nv-herr', senalar: true },
+    { f: 740, en: '.nv-mesa__lista', clic: true },
   ],
   rotulos: [
-    [10, 210, 'Elige una *base: reggaetón, trap, cumbia…'],
-    [210, 440, '*Toca una casilla para poner o quitar un golpe'],
-    [440, 700, '¿Otro sonido? *Añadir capa, escoge y *Guardar'],
-    [700, 860, 'Toca sus casillas para que *suene'],
-    [860, 990, 'Dentro de una escena, sus golpes son *solo de ella'],
+    [10, 190, 'Elige un *género para arrancar'],
+    [190, 360, '*Toca una casilla para poner o quitar un golpe'],
+    [360, 450, 'La *velocidad de toda la obra'],
+    [450, 620, 'Entra a una *escena: su emoción cambia la música'],
+    [620, 720, '*Graba tus sonidos o añade capas'],
+    [720, 900, 'Cuando suene como quieres, *márcala lista'],
   ],
 });
 
 // ------------------------------------------------------------ 4. Sonidos
 
 function PantallaSonidos() {
-  const { proyecto } = useProyecto();
-  return <VentanaSonidosPistas pista={proyecto.patron.filas[0]?.id} alCerrar={() => {}} />;
+  return <VentanaSonidosCapa pista={PISTA_NUEVA} alCerrar={() => {}} alGrabar={() => {}} />;
 }
 
 export const tutorialSonidos = crearTutorial({
   id: 'sonidos',
-  titulo: 'Cambiar y grabar sonidos',
-  descripcion: 'Escuchar, guardar el que te gusta y grabar uno tuyo.',
-  duracion: 810,
+  titulo: 'Añadir y grabar sonidos',
+  descripcion: 'Escuchar la Sonoteca, guardar una capa y grabar uno propio.',
+  duracion: 720,
   Pantalla: PantallaSonidos,
   inicial: proyectoNuevo,
   marco: { ancho: 1100, alto: 640, escala: 0.86 },
   guion: [
-    { f: 60, en: '.nv-sonido__elegir::Conga', clic: true },
-    { f: 120, en: '.nv-sonido__elegir::Clave', clic: true },
-    { f: 250, en: '.nv-guardar-sonido__boton', clic: true },
-    { f: 400, en: '.nv-boton--rojo::Grabar un efecto' },
-    {
-      f: 490,
-      en: '.nv-boton--rojo::Grabar un efecto',
-      hacer: (api) =>
-        api.actualizar((p) => {
-          p.sonidos.push({ id: 'demo-olla', nombre: 'Olla', url: SONOTECA_URL('cencerro'), duracion: 0.6 });
-          const capa = p.patron.filas[0];
-          if (capa) ponerSonido(p, capa.id, 'propio:demo-olla');
-        }),
-    },
-    { f: 620, en: '.nv-sonido--activo', senalar: true },
+    { f: 50, en: '.nv-biblio__grupo::Ciudad', clic: true },
+    { f: 110, en: '.nv-ficha-son::Bocina', clic: true },
+    { f: 180, en: '.nv-ficha-son::Metro', clic: true },
+    { f: 270, en: '.nv-biblio__pie .nv-boton--primario', clic: true },
+    { f: 400, en: '.nv-grabalo .nv-boton--rojo', senalar: true },
+    { f: 540, en: '.nv-grabalo label.nv-boton', senalar: true },
   ],
-  halos: [{ en: '.nv-boton--rojo::Grabar un efecto', desde: 404, hasta: 490 }],
+  halos: [{ en: '.nv-grabalo .nv-boton--rojo', desde: 405, hasta: 520 }],
   rotulos: [
-    [10, 220, 'Toca un sonido para *oírlo'],
-    [220, 370, '¿Te gusta? *Guardar sonido'],
-    [370, 580, '¿No está? *Grábalo: una olla, una reja…'],
-    [580, 810, 'Lo recortas y queda *sonando en tu capa'],
-  ],
-});
-
-// ------------------------------------------------------------ 5. Mezcla
-
-function PantallaMezcla() {
-  return <VentanaMezcla alCerrar={() => {}} />;
-}
-
-const MAXIMO_VOZ = 1.6;
-const volumen = (nombre: string, de: number, a: number) => (api: ApiDemo, t: number) =>
-  api.actualizar((p) => {
-    const v = de + (a - de) * t;
-    if (nombre === 'Voz') p.narracion.volumen = v;
-    else {
-      const f = filaPorNombre(p, nombre);
-      if (f) f.volumen = v;
-    }
-  });
-
-export const tutorialMezcla = crearTutorial({
-  id: 'mezcla',
-  titulo: 'La mezcla',
-  descripcion: 'Subir la voz y bajar lo que la tapa.',
-  duracion: 570,
-  Pantalla: PantallaMezcla,
-  inicial: proyectoEjemplo,
-  marco: { ancho: 900, alto: 640, escala: 0.86 },
-  guion: [
-    {
-      f: 70,
-      hasta: 150,
-      en: 'input[aria-label="Volumen de Voz"]',
-      tramo: volumen('Voz', 1, 1.45),
-      fxDe: (t) => (1 + 0.45 * t) / MAXIMO_VOZ,
-    },
-    {
-      f: 230,
-      hasta: 300,
-      en: 'input[aria-label="Volumen de Bombo"]',
-      tramo: volumen('Bombo', 0.9, 0.45),
-      fxDe: (t) => 0.9 - 0.45 * t,
-    },
-    {
-      f: 330,
-      hasta: 390,
-      en: 'input[aria-label="Volumen de Shaker"]',
-      tramo: volumen('Shaker', 0.45, 0.15),
-      fxDe: (t) => 0.45 - 0.3 * t,
-    },
-    { f: 460, en: '.nv-mezcla__pie .nv-boton--primario', senalar: true },
-  ],
-  rotulos: [
-    [10, 200, 'En *Mezcla subes o bajas cada sonido'],
-    [200, 420, 'Baja lo que tape la *voz'],
-    [420, 570, 'Dale *▶ y mueve mientras escuchas'],
+    [10, 250, 'Toca un sonido para *oírlo'],
+    [250, 380, '¿Te gusta? *Guárdalo: queda como capa nueva'],
+    [380, 530, '¿No está? *Grábalo: una reja, una olla, un pito…'],
+    [530, 720, 'O *sube un audio de tu celular'],
   ],
 });
 
@@ -452,13 +363,13 @@ function archivoDeMuestra(): ArchivoDatos {
   };
 }
 
-/** Visuales dentro de la primera escena: los golpes son de cada escena. */
+/** Visuales: toda la obra, y luego una escena. */
 function PantallaVisuales() {
-  const { proyecto } = useProyecto();
+  const [abierta, setAbierta] = useAbierta();
   return (
-    <div className="nv-editor__cuerpo tu-real__editor">
-      <ImagenEscena escena={proyecto.escenas[0] ?? null} indice={0} />
-    </div>
+    <main className="nv-contenido">
+      <PasoVisuales abierta={abierta} alIr={setAbierta} />
+    </main>
   );
 }
 
@@ -467,7 +378,7 @@ function proyectoVisuales(): Proyecto {
   p.visual.algoritmo = 'flujo';
   p.visual.imagenUrl = undefined;
   p.conexionesVisual = [];
-  p.archivosDatos = [];
+  p.archivosDatos = [archivoDeMuestra()];
   return p;
 }
 
@@ -484,45 +395,68 @@ const ponerCajita = (fuente: string, destino: string) => (api: ApiDemo) =>
 const golpeEn = (efecto: GolpeVisual, paso: number) => (api: ApiDemo) =>
   api.actualizar((p) => ponerPasoEfecto(p, null, efecto, paso, true));
 
+const paso = (nombre: string) => `.nv-receta__paso::${nombre}`;
+
 export const tutorialVisuales = crearTutorial({
   id: 'visuales',
-  titulo: 'Visuales: fotos y cajitas',
-  descripcion: 'El estilo, tus fotos y las cajitas que mueven la imagen.',
-  duracion: 960,
+  titulo: 'Visuales: estilo, colores y movimiento',
+  descripcion: 'Los cuatro pasos de la imagen y cómo darle a una escena la suya.',
+  duracion: 990,
   Pantalla: PantallaVisuales,
   inicial: proyectoVisuales,
   marco: { ancho: 1280, alto: 680, escala: 0.84 },
   guion: [
-    { f: 40, en: '.nv-estilo-chico::Nebulosa', clic: true },
-    {
-      f: 140,
-      en: '.nv-foto-chica--subir',
-      hacer: (api) => api.actualizar((p) => p.archivosDatos.push(archivoDeMuestra())),
-    },
-    { f: 220, en: '.nv-foto-chica__imagen', clic: true },
+    { f: 45, en: '.nv-eleccion::Caleidoscopio', clic: true },
+    { f: 110, en: '.nv-eleccion::Ondas', clic: true },
+    { f: 190, en: paso('Colores'), clic: true },
+    { f: 250, en: '.nv-eleccion::Magma', clic: true },
+    { f: 320, en: paso('Movimiento'), clic: true },
     // La mano toma la cajita y la lleva a la caja (en la app se arrastra; aquí la pone el guion).
-    { f: 285, en: '.nv-bandeja__pestana::Instrumentos', clic: true },
-    { f: 310, en: '.nv-cajita::Bombo' },
-    { f: 350, en: '[data-caja="velocidad"]', hacer: ponerCajita('golpe:bombo', 'velocidad') },
-    { f: 400, en: '.nv-bandeja__pestana::Fotos', clic: true },
-    { f: 425, en: '.nv-cajita::Luz' },
-    { f: 470, en: '[data-caja="tamano"]', hacer: ponerCajita('archivo:demo-foto:luz', 'tamano') },
-    { f: 540, en: '.nv-caja__cuanto', clic: true },
-    { f: 590, en: '.nv-bandeja__pestana::Relato', clic: true },
-    { f: 615, en: '.nv-cajita::Emoción' },
-    { f: 660, en: '[data-caja="paleta"]', hacer: ponerCajita('emocion', 'paleta') },
-    { f: 730, en: '.nv-selector__op::Golpes', clic: true },
-    { f: 780, en: 'button[aria-label="Zoom, paso 1"]', hacer: golpeEn('zoom', 0) },
-    { f: 810, en: 'button[aria-label="Zoom, paso 9"]', hacer: golpeEn('zoom', 8) },
-    { f: 845, en: 'button[aria-label="Destello, paso 5"]', hacer: golpeEn('destello', 4) },
-    { f: 875, en: 'button[aria-label="Destello, paso 13"]', hacer: golpeEn('destello', 12) },
-    { f: 915, en: 'button[aria-label="Probar Giro"]', clic: true },
+    { f: 370, en: '.nv-cajita::Voz' },
+    { f: 420, en: '[data-caja="obra:zoom"]', hacer: ponerCajita('voz', 'obra:zoom') },
+    { f: 470, en: '.nv-cajita--foto-entera' },
+    { f: 520, en: '[data-caja="obra:brillo"]', hacer: ponerCajita('archivo:demo-foto:luz', 'obra:brillo') },
+    { f: 600, en: paso('Golpes'), clic: true },
+    { f: 650, en: 'button[aria-label="Destello, paso 1"]', hacer: golpeEn('destello', 0) },
+    { f: 680, en: 'button[aria-label="Destello, paso 9"]', hacer: golpeEn('destello', 8) },
+    { f: 710, en: 'button[aria-label="Zoom, paso 5"]', hacer: golpeEn('zoom', 4) },
+    { f: 810, en: '.nv-cinta__escena', hacer: abrirEscena(0) },
+    { f: 880, en: '.nv-cinta__obra', senalar: true },
   ],
   rotulos: [
-    [10, 110, 'Elige un *estilo'],
-    [110, 290, 'Sube tus *fotos: cada una trae sus cajitas'],
-    [290, 590, 'Pon una *cajita en una caja: ese dato la mueve'],
-    [590, 710, '*Colores: la emoción pinta la obra'],
-    [710, 960, 'En *Golpes, como en la música: toca las casillas'],
+    [10, 180, 'Elige un *estilo para dibujar la obra'],
+    [180, 310, 'Sus *colores'],
+    [310, 590, 'Pon una *cajita en una caja: eso mueve la imagen'],
+    [590, 790, 'En *Golpes, toca las casillas: destellos a tiempo'],
+    [790, 990, 'Toca una *escena para darle su propia imagen'],
+  ],
+});
+
+// ------------------------------------------------------------ 7. Función
+
+function PantallaFuncion() {
+  return (
+    <main className="nv-contenido">
+      <PasoFuncion />
+    </main>
+  );
+}
+
+export const tutorialFuncion = crearTutorial({
+  id: 'funcion',
+  titulo: 'Función: verla y mandarla',
+  descripcion: 'Ver la pieza entera, exportarla y enviarla a la galería.',
+  duracion: 480,
+  Pantalla: PantallaFuncion,
+  inicial: proyectoEjemplo,
+  guion: [
+    { f: 50, en: '.nv-pie .nv-boton--primario', senalar: true },
+    { f: 170, en: '.nv-pie .nv-selector', senalar: true },
+    { f: 300, en: '[data-tour="exportar"]', senalar: true },
+  ],
+  rotulos: [
+    [10, 150, '*Ver la pieza: entera, como en la presentación'],
+    [150, 280, '*Sin música deja solo la voz'],
+    [280, 480, '*Exportar video y *enviar a la galería: eso ven los jurados'],
   ],
 });

@@ -18,6 +18,8 @@ const BORDE = 12;
 /** Anchos que prueba la burbuja, del más angosto al más ancho. */
 const ANCHOS = [400, 480, 560, 680];
 const ANCHO = ANCHOS[0];
+/** En pantallas angostas (un celular acostado) también prueba burbujas más angostas, para caber al lado de lo señalado. */
+const ANCHOS_ANGOSTA = [280, 320, ...ANCHOS];
 
 interface Caja {
   left: number;
@@ -57,7 +59,7 @@ export function Tour({ pasos, abierto, alCerrar }: Props) {
     const copia = b.cloneNode(true) as HTMLDivElement;
     copia.style.cssText = 'position:fixed;left:-10000px;top:0;visibility:hidden;transition:none;max-height:none';
     b.parentElement?.appendChild(copia);
-    const medidas = [...new Set(ANCHOS.map((w) => Math.min(w, vw - BORDE * 2)))].map((ancho) => {
+    const medidas = [...new Set((vw < 900 ? ANCHOS_ANGOSTA : ANCHOS).map((w) => Math.min(w, vw - BORDE * 2)))].map((ancho) => {
       copia.style.width = `${ancho}px`;
       return { ancho, alto: copia.offsetHeight };
     });

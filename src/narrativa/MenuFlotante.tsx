@@ -18,10 +18,15 @@ interface Props {
   ancla: HTMLElement;
   alCerrar: () => void;
   className?: string;
+  /**
+   * Si no cabe entero ni debajo ni encima (pantalla baja), se abre al lado
+   * del ancla, con toda la altura: así nunca tapa lo que se tocó.
+   */
+  alLado?: boolean;
   children: ReactNode;
 }
 
-export function MenuFlotante({ ancla, alCerrar, className = '', children }: Props) {
+export function MenuFlotante({ ancla, alCerrar, className = '', alLado = false, children }: Props) {
   const caja = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ left: number; top: number; alto: number } | null>(null);
   const cerrar = useRef(alCerrar);
@@ -37,8 +42,19 @@ export function MenuFlotante({ ancla, alCerrar, className = '', children }: Prop
     // Nunca sube sobre el encabezado de los pasos: en una pantalla baja taparía «Escuchar».
     const techo = Math.max(BORDE, (document.querySelector('.nv-camino')?.getBoundingClientRect().bottom ?? 0) + BORDE);
     const cabeAbajo = a.bottom + AIRE + m.height <= vh - BORDE;
-    const top = cabeAbajo ? a.bottom + AIRE : Math.max(techo, a.top - AIRE - m.height);
-    const left = Math.min(Math.max(BORDE, a.left), vw - m.width - BORDE);
+    const cabeArriba = a.top - AIRE - m.height >= techo;
+    const derecha = vw - BORDE - (a.right + AIRE) >= m.width;
+    const izquierda = a.left - AIRE - BORDE >= m.width;
+    let top: number;
+    let left: number;
+    if (!cabeAbajo && !cabeArriba && alLado && (derecha || izquierda)) {
+      // Al lado: a la altura de lo que se tocó, sin salirse por abajo.
+      top = Math.max(techo, Math.min(a.top - 40, vh - BORDE - m.height));
+      left = derecha ? a.right + AIRE : a.left - AIRE - m.width;
+    } else {
+      top = cabeAbajo ? a.bottom + AIRE : Math.max(techo, a.top - AIRE - m.height);
+      left = Math.min(Math.max(BORDE, a.left), vw - m.width - BORDE);
+    }
     // Si no cabe entero, se desplaza por dentro.
     const alto = Math.max(160, vh - top - BORDE);
     setPos((p) => (p && p.left === left && p.top === top && p.alto === alto ? p : { left, top, alto }));

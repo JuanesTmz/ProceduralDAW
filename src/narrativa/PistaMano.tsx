@@ -13,6 +13,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import { Icono } from './Icono';
+import { useEnDemo } from '../componentes/demo';
 
 const EVENTO = 'nv-pista';
 const guardada = (clave: string) => {
@@ -55,7 +56,9 @@ export function usePista(clave: string, hecho = false, orden = 1, alTocar?: stri
       /* sin almacenamiento: se queda solo en esta sesión */
     }
   };
-  const activa = (pendiente || repetida) && puesta;
+  // Dentro de un tutorial en video no se muestran: la mano del video ya enseña.
+  const demo = useEnDemo();
+  const activa = (pendiente || repetida) && puesta && !demo;
   // Hacer el gesto es la mejor señal de que ya se entendió.
   useEffect(() => {
     if (hecho && activa) cerrar();
@@ -125,21 +128,77 @@ interface Props {
   texto: string;
   /** Lo que lleva la cajita fantasma al arrastrar (sin esto, solo se mueve la mano). */
   etiqueta?: string;
+  /** Debajo (o encima) de qué va el globo, si no es del objetivo: p. ej. el nodo entero con su nombre. */
+  ancla?: () => Element | null;
   alCerrar: () => void;
 }
 
-/** Debajo del objetivo si cabe; si no, encima; y siempre dentro de la pantalla. */
-function lugarDelGlobo(ult: Punto, tam: { w: number; h: number }): { left: number; top: number } {
-  const margen = 8;
-  const abajo = ult.y + ult.h / 2 + 14;
-  const arriba = ult.y - ult.h / 2 - 14 - tam.h;
-  const top = abajo + tam.h <= window.innerHeight - margen ? abajo : arriba >= margen ? arriba : window.innerHeight - margen - tam.h;
-  const left = Math.min(Math.max(margen, ult.x), window.innerWidth - margen - tam.w);
-  return { left, top: Math.max(margen, top) };
+/** Mueve cada contenedor con desplazamiento (y, si hace falta, la página) para que el elemento se vea. */
+function asomar(el: Element): void {
+  for (let padre = el.parentElement; padre && padre !== document.body; padre = padre.parentElement) {
+    const estilo = getComputedStyle(padre);
+    if (!/(auto|scroll)/.test(estilo.overflowY) || padre.scrollHeight <= padre.clientHeight) continue;
+    const a = el.getBoundingClientRect();
+    const b = padre.getBoundingClientRect();
+    if (a.top < b.top + 8) padre.scrollTop -= b.top + 8 - a.top;
+    else if (a.bottom > b.bottom - 8) padre.scrollTop += a.bottom - (b.bottom - 8);
+  }
+  const r = el.getBoundingClientRect();
+  if (r.top < 0 || r.bottom > window.innerHeight) el.scrollIntoView({ block: 'nearest' });
 }
 
-export function PistaMano({ modo, origen, destinos, texto, etiqueta, alCerrar }: Props) {
-  const [m, setM] = useState<{ o: Punto | null; d: Punto[] }>({ o: null, d: [] });
+/** Un objetivo más grande que una casilla (una tarjeta, un botón): se resalta con borde, sin taparlo. */
+const esGrande = (p: Punto) => p.w > 60 || p.h > 60;
+
+interface Caja {
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+}
+const cajaDe = (p: Punto): Caja => ({ x0: p.x - p.w / 2, y0: p.y - p.h / 2, x1: p.x + p.w / 2, y1: p.y + p.h / 2 });
+const cruce = (a: Caja, b: Caja) =>
+  Math.max(0, Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0)) * Math.max(0, Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0));
+
+/**
+ * Dónde va el globo: debajo del objetivo, encima, a un lado o, si nada de eso
+ * sirve (un celular acostado), en la esquina más cercana. Gana el primer
+ * lugar que cabe en la pantalla y no tapa nada de lo que la mano enseña.
+ * Devuelve el centro en x (el globo se corre −50 % con CSS) y el borde de arriba.
+ */
+function lugarDelGlobo(ref: Punto, tam: { w: number; h: number }, evitar: Punto[]): { left: number; top: number } {
+  const margen = 8;
+  const aire = 14;
+  const W = window.innerWidth;
+  const H = window.innerHeight;
+  const enX = (x: number) => Math.min(Math.max(margen, x), W - margen - tam.w);
+  const enY = (y: number) => Math.min(Math.max(margen, y), H - margen - tam.h);
+  const r = cajaDe(ref);
+  const junto = [
+    { x: enX(ref.x - tam.w / 2), y: r.y1 + aire },
+    { x: enX(ref.x - tam.w / 2), y: r.y0 - aire - tam.h },
+    { x: r.x1 + aire, y: enY(ref.y - tam.h / 2) },
+    { x: r.x0 - aire - tam.w, y: enY(ref.y - tam.h / 2) },
+  ];
+  const lejos = (c: { x: number; y: number }) => Math.hypot(c.x + tam.w / 2 - ref.x, c.y + tam.h / 2 - ref.y);
+  const esquinas = [
+    { x: margen, y: margen },
+    { x: W - margen - tam.w, y: margen },
+    { x: margen, y: H - margen - tam.h },
+    { x: W - margen - tam.w, y: H - margen - tam.h },
+  ].sort((a, b) => lejos(a) - lejos(b));
+  const cabe = (c: { x: number; y: number }) => c.x >= margen - 0.5 && c.y >= margen - 0.5 && c.x + tam.w <= W - margen + 0.5 && c.y + tam.h <= H - margen + 0.5;
+  const tapa = (c: { x: number; y: number }) => {
+    const g = { x0: c.x, y0: c.y, x1: c.x + tam.w, y1: c.y + tam.h };
+    return [ref, ...evitar].reduce((suma, p) => suma + cruce(g, cajaDe(p)), 0);
+  };
+  const posibles = [...junto, ...esquinas].filter(cabe);
+  const elegido = posibles.find((c) => tapa(c) === 0) ?? [...posibles].sort((a, b) => tapa(a) - tapa(b))[0] ?? { x: enX(ref.x - tam.w / 2), y: enY(r.y1 + aire) };
+  return { left: elegido.x + tam.w / 2, top: elegido.y };
+}
+
+export function PistaMano({ modo, origen, destinos, texto, etiqueta, ancla, alCerrar }: Props) {
+  const [m, setM] = useState<{ o: Punto | null; d: Punto[]; a: Punto | null }>({ o: null, d: [], a: null });
   const globo = useRef<HTMLDivElement>(null);
   const [tamGlobo, setTamGlobo] = useState({ w: 230, h: 110 });
   // El globo se mide a sí mismo: así nunca se sale de la pantalla (en un celular acostado no cabe debajo).
@@ -150,14 +209,22 @@ export function PistaMano({ modo, origen, destinos, texto, etiqueta, alCerrar }:
     if (Math.abs(width - tamGlobo.w) > 1 || Math.abs(height - tamGlobo.h) > 1) setTamGlobo({ w: width, h: height });
   });
 
+  // Si lo que enseña quedó fuera de la vista (en un celular acostado, más abajo, o
+  // escondido en un estante con desplazamiento), se asoma una vez al aparecer.
+  useEffect(() => {
+    for (const el of [origen(), destinos()[0]]) if (el) asomar(el);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Se vuelve a medir de vez en cuando: la lista puede moverse o desplazarse.
   useLayoutEffect(() => {
     const medirTodo = () => {
       const o = medir(origen());
       const d = destinos().map(medir).filter((x): x is Punto => x !== null);
+      const an = medir(ancla?.());
       setM((a) => {
         const igual = (p: Punto | null, q: Punto | null) => (p === null && q === null) || (p && q && Math.abs(p.x - q.x) < 2 && Math.abs(p.y - q.y) < 2);
-        return igual(a.o, o) && a.d.length === d.length && a.d.every((p, i) => igual(p, d[i])) ? a : { o, d };
+        return igual(a.o, o) && igual(a.a, an) && a.d.length === d.length && a.d.every((p, i) => igual(p, d[i])) ? a : { o, d, a: an };
       });
     };
     medirTodo();
@@ -170,6 +237,8 @@ export function PistaMano({ modo, origen, destinos, texto, etiqueta, alCerrar }:
   const puntos = modo === 'arrastrar' ? (m.o && m.d[0] ? [m.o, m.d[0]] : []) : m.d.slice(0, 3);
   if (puntos.length < 2 && !(modo === 'tocar' && puntos.length > 0)) return null;
   const ult = puntos[puntos.length - 1];
+  // El globo se centra en el objetivo, pero se pone debajo (o encima) del ancla si la hay.
+  const refGlobo = m.a ? { x: ult.x, y: m.a.y, w: ult.w, h: m.a.h } : ult;
   const vars: Record<string, string> = {};
   puntos.forEach((p, i) => {
     vars[`--x${i}`] = `${p.x}px`;
@@ -189,14 +258,14 @@ export function PistaMano({ modo, origen, destinos, texto, etiqueta, alCerrar }:
       ) : (
         <>
           {puntos.map((p, i) => (
-            <span key={i} className="nv-pista__casilla" style={{ left: p.x - p.w / 2, top: p.y - p.h / 2, width: p.w, height: p.h, animationDelay: `${0.55 + i * 0.95}s` }} />
+            <span key={i} className={`nv-pista__casilla ${esGrande(p) ? 'nv-pista__casilla--grande' : ''}`} style={{ left: p.x - p.w / 2, top: p.y - p.h / 2, width: p.w, height: p.h, animationDelay: `${0.55 + i * 0.95}s` }} />
           ))}
           <span className="nv-pista__mano nv-pista__mano--tocar">
             <Icono n="hand-pointing-fill" tam={34} />
           </span>
         </>
       )}
-      <div ref={globo} className="nv-pista__globo" style={lugarDelGlobo(ult, tamGlobo)}>
+      <div ref={globo} className="nv-pista__globo" style={lugarDelGlobo(refGlobo, tamGlobo, puntos)}>
         <span>{texto}</span>
         <button type="button" onClick={alCerrar}>
           Entendido

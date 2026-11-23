@@ -139,7 +139,7 @@ function Dibujo() {
 
 export const tutorialCajitas: Composicion = {
   id: 'cajitas',
-  titulo: 'Las cajitas',
+  titulo: 'Sonidos en una palabra',
   descripcion: 'Un sonido o un silencio justo en una palabra.',
   duracion: DURA,
   Dibujo,
