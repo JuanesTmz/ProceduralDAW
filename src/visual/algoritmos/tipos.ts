@@ -74,6 +74,11 @@ export interface Entorno {
   imagen: CampoImagen | null;
   /** Cuánto manda la imagen sobre el campo, 0..1. */
   influenciaImagen: number;
+  /**
+   * Cuánto del color REAL de la foto toma cada elemento, 0..1: 1 con la
+   * paleta «Colores de la foto»; 0 si se eligió otra paleta (la foto se tiñe).
+   */
+  colorFoto: number;
   picos: Pico[];
   /** Cuánto deforman los picos, 0..1. */
   influenciaDatos: number;

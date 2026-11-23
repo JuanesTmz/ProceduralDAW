@@ -202,6 +202,23 @@ class Ondas implements Instancia {
       }
       ctx.stroke();
     }
+
+    // Con «Colores de la foto», las curvas toman el color de la foto: se pinta
+    // encima en modo «color», que les cambia el tono sin tocar su luz (el fondo
+    // negro sigue negro). Una sola imagen por cuadro: no cuesta nada.
+    const foto = e.imagen;
+    if (foto && e.colorFoto > 0) {
+      const pl = this.ancho / Math.max(1, this.alto);
+      let dw = this.ancho;
+      let dh = this.alto;
+      if (foto.proporcion > pl) dw = this.alto * foto.proporcion;
+      else dh = this.ancho / foto.proporcion;
+      ctx.save();
+      ctx.globalCompositeOperation = 'color';
+      ctx.globalAlpha = e.colorFoto;
+      ctx.drawImage(foto.fuente, (this.ancho - dw) / 2, (this.alto - dh) / 2, dw, dh);
+      ctx.restore();
+    }
   }
 }
 

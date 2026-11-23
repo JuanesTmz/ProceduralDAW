@@ -77,7 +77,7 @@ void main(){
     // La foto, reflejada en los gajos y repetida como un mosaico en espejo.
     vec2 m = q * 0.32 + 0.5;
     m = abs(fract(m * 0.5) * 2.0 - 1.0);
-    vec3 foto = muestraImg(m) * (0.55 + 0.9 * v);
+    vec3 foto = tintarFoto(muestraImg(m)) * (0.55 + 0.9 * v);
     col = mix(col, foto, uImgAmt);
   }
 
@@ -108,7 +108,7 @@ class Caleidoscopio implements Instancia {
     const { programa, u } = crearPrograma(this.gl, FRAGMENTO, [
       'uTime', 'uFase', 'uGiro', 'uLados', 'uZoom', 'uCapas', 'uLineas', 'uHue', 'uPulso',
       'uAnilloR', 'uAnilloA', 'uGrano', 'uCentro', 'uAspect', 'uC0', 'uC1', 'uC2', 'uC3', 'uC4',
-      'uImg', 'uImgAmt', 'uImgAR',
+      'uImg', 'uImgAmt', 'uImgAR', 'uColorFoto',
     ]);
     this.programa = programa;
     this.u = u;
@@ -149,7 +149,7 @@ class Caleidoscopio implements Instancia {
       this.edadesPrevias[tipo] = e.edadGolpe[tipo];
     }
 
-    this.imagen.usar(e.imagen?.fuente ?? null, e.imagen?.proporcion ?? 1, e.influenciaImagen, aspecto);
+    this.imagen.usar(e.imagen?.fuente ?? null, e.imagen?.proporcion ?? 1, e.influenciaImagen, aspecto, e.colorFoto);
     subirPaleta(gl, this.u, [0, 1, 2, 3, 4].map((i) => aRgb01(e.paleta[i] ?? e.paleta[e.paleta.length - 1])));
 
     gl.uniform1f(this.u.uTime, e.tiempo);

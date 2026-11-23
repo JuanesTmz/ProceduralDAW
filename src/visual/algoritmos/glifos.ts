@@ -122,12 +122,12 @@ void main(){
   if(uImgAmt > 0.001){
     float m = max(max(foto.r, foto.g), foto.b);
     vec3 viva = foto / max(m, 0.2) * (0.35 + 0.65 * m);        // los oscuros no desaparecen
-    color = mix(dePaleta, viva, uColor);
+    color = mix(dePaleta, tintarFoto(viva), max(uColor, uColorFoto));
   }
   color *= 0.55 + 0.6 * n + uPulso * 0.35;
 
   vec3 fondo = uC0 * 0.45;
-  if(uImgAmt > 0.001) fondo += foto * uFondo * 0.5;
+  if(uImgAmt > 0.001) fondo += tintarFoto(foto) * uFondo * 0.5;
   vec3 col = mix(fondo, color, tinta * visible);
   col = girarTono(col, uHue);
   gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
@@ -155,7 +155,7 @@ class Glifos implements Instancia {
       'uAtlas', 'uRes', 'uCelda', 'uTime', 'uFase', 'uN', 'uColor', 'uFondo', 'uContraste', 'uUmbral',
       'uOnda', 'uRemolino', 'uTurb', 'uLluvia', 'uCentelleo', 'uGlitch', 'uInvertir', 'uEscala', 'uHue',
       'uInfluence', 'uPulso', 'uRemolinos', 'uCuantos', 'uAspect', 'uC0', 'uC1', 'uC2', 'uC3', 'uC4',
-      'uImg', 'uImgAmt', 'uImgAR',
+      'uImg', 'uImgAmt', 'uImgAR', 'uColorFoto',
     ]);
     this.programa = programa;
     this.u = u;
@@ -209,7 +209,7 @@ class Glifos implements Instancia {
     if (e.edadGolpe.corte < e.delta + 0.001) this.glitch = 1;
     this.glitch = Math.max(0, this.glitch - e.delta * 3.5);
 
-    this.imagen.usar(e.imagen?.fuente ?? null, e.imagen?.proporcion ?? 1, e.influenciaImagen, this.ancho / Math.max(1, this.alto));
+    this.imagen.usar(e.imagen?.fuente ?? null, e.imagen?.proporcion ?? 1, e.influenciaImagen, this.ancho / Math.max(1, this.alto), e.colorFoto);
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, this.atlas);
     gl.activeTexture(gl.TEXTURE0);

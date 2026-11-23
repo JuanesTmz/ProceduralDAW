@@ -11,7 +11,8 @@
  * cualquier cosa que el estudiante dibuje suena afinada.
  */
 import { useEscucha } from './useEscucha';
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
+import type { PointerEvent as EventoPuntero } from 'react';
 import { motorAudio, type Reproduccion } from '../audio/motorAudio';
 import { useProyecto } from '../estado/ProyectoContext';
 import { SelectorInstrumento } from '../narrativa/SelectorInstrumento';
@@ -27,7 +28,8 @@ import {
   notasDeEscala,
   type NombreEscala,
 } from '../generativo/escalas';
-import { Ventana } from './Ventana';
+import { Ventana } from './Ventana';
+
 import { useEnVentana } from '../nube/Caras';
 
 const ESCALAS: NombreEscala[] = ['menorPentatonica', 'menor', 'dorica', 'frigia', 'mayor'];
@@ -74,9 +76,11 @@ export function VentanaMatriz({ escena = -1, alCerrar }: { escena?: number; alCe
           if (nota.paso !== paso) continue;
           const elemento = celdas.current.get(`${nota.grado}:${paso}`);
           if (!elemento) continue;
-          elemento.classList.remove('celda--latido');
-          void elemento.offsetWidth; // reinicia la animación
-          elemento.classList.add('celda--latido');
+          // Una animación web por casilla: reinicia sin forzar el cálculo de toda la rejilla.
+          elemento.animate(
+            [{ transform: 'scale(1.18)', opacity: 1 }, { transform: 'scale(1)', opacity: 1 }],
+            { duration: 220, easing: 'ease-out' },
+          );
         }
       }),
     [],
@@ -92,19 +96,33 @@ export function VentanaMatriz({ escena = -1, alCerrar }: { escena?: number; alCe
     actualizar((p) => ponerNota(p, escenaId, grado, paso, encender));
   };
 
-  const empezarAPintar = (grado: number, paso: number) => {
-    const encender = !encendidas.has(`${grado}:${paso}`);
-    pintando.current = encender;
-    escribir(grado, paso, encender);
-    if (encender) void motorAudio.escucharNota(grado, melodia.escala, melodia.octavaBase);
-  };
+  // Lo último que se sabe, para que las casillas (memorizadas) no se rehagan en cada cambio.
+  const vivo = useRef({ encendidas, escribir, escala: melodia.escala, octava: melodia.octavaBase });
+  vivo.current = { encendidas, escribir, escala: melodia.escala, octava: melodia.octavaBase };
 
   const pintar = usePintarArrastrando((clave) => {
     if (pintando.current === null) return;
+    const v = vivo.current;
     const [grado, paso] = clave.split(':').map(Number);
-    if (pintando.current === encendidas.has(clave)) return;
-    escribir(grado, paso, pintando.current);
-    if (pintando.current) void motorAudio.escucharNota(grado, melodia.escala, melodia.octavaBase);
+    if (pintando.current === v.encendidas.has(clave)) return;
+    v.escribir(grado, paso, pintando.current);
+    if (pintando.current) void motorAudio.escucharNota(grado, v.escala, v.octava);
+  });
+
+  // Estables: así cada casilla solo se redibuja si ella cambió.
+  const alBajarRef = useRef((e: EventoPuntero<HTMLElement>, grado: number, paso: number) => {
+    const v = vivo.current;
+    const encender = !v.encendidas.has(`${grado}:${paso}`);
+    pintando.current = encender;
+    v.escribir(grado, paso, encender);
+    if (encender) void motorAudio.escucharNota(grado, v.escala, v.octava);
+    pintarRef.current.alBajar(e, `${grado}:${paso}`);
+  });
+  const pintarRef = useRef(pintar);
+  pintarRef.current = pintar;
+  const registrar = useRef((clave: string, el: HTMLButtonElement | null) => {
+    if (el) celdas.current.set(clave, el);
+    else celdas.current.delete(clave);
   });
 
   const soltar = () => {
@@ -185,27 +203,16 @@ export function VentanaMatriz({ escena = -1, alCerrar }: { escena?: number; alCe
             <div ref={cabeza} className="cabeza-rejilla" style={{ opacity: 0 }} aria-hidden="true" />
             {filas.map((grado) =>
               Array.from({ length: cantidadPasos }, (_, paso) => {
-                const activa = encendidas.has(`${grado}:${paso}`);
                 return (
-                  <button
+                  <CeldaMatriz
                     key={`${grado}:${paso}`}
-                    type="button"
-                    ref={(el) => {
-                      const clave = `${grado}:${paso}`;
-                      if (el) celdas.current.set(clave, el);
-                      else celdas.current.delete(clave);
-                    }}
-                    className={`celda celda--matriz ${activa ? 'celda--encendida' : ''} ${
-                      paso % 4 === 0 ? 'celda--fuerte' : ''
-                    }`}
-                    aria-label={`${nombreNota(semitonos[grado], melodia.octavaBase)}, paso ${paso + 1}`}
-                    aria-pressed={activa}
-                    data-pintar={`${grado}:${paso}`}
-                    onPointerDown={(e) => {
-                      empezarAPintar(grado, paso);
-                      pintar.alBajar(e, `${grado}:${paso}`);
-                    }}
-                    onPointerMove={pintar.alMover}
+                    grado={grado}
+                    paso={paso}
+                    activa={encendidas.has(`${grado}:${paso}`)}
+                    nombre={nombreNota(semitonos[grado], melodia.octavaBase)}
+                    alBajar={alBajarRef.current}
+                    alMover={pintar.alMover}
+                    registrar={registrar.current}
                   />
                 );
               }),
@@ -277,3 +284,36 @@ export function VentanaMatriz({ escena = -1, alCerrar }: { escena?: number; alCe
     </Ventana>
   );
 }
+
+/** Una casilla de la matriz. Memorizada: tocar una no redibuja las otras 255. */
+const CeldaMatriz = memo(function CeldaMatriz({
+  grado,
+  paso,
+  activa,
+  nombre,
+  alBajar,
+  alMover,
+  registrar,
+}: {
+  grado: number;
+  paso: number;
+  activa: boolean;
+  nombre: string;
+  alBajar: (e: EventoPuntero<HTMLElement>, grado: number, paso: number) => void;
+  alMover: (e: EventoPuntero<HTMLElement>) => void;
+  registrar: (clave: string, el: HTMLButtonElement | null) => void;
+}) {
+  const clave = `${grado}:${paso}`;
+  return (
+    <button
+      type="button"
+      ref={(el) => registrar(clave, el)}
+      className={`celda celda--matriz ${activa ? 'celda--encendida' : ''} ${paso % 4 === 0 ? 'celda--fuerte' : ''}`}
+      aria-label={`${nombre}, paso ${paso + 1}`}
+      aria-pressed={activa}
+      data-pintar={clave}
+      onPointerDown={(e) => alBajar(e, grado, paso)}
+      onPointerMove={alMover}
+    />
+  );
+});

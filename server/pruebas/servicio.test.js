@@ -132,6 +132,12 @@ describe('archivos y galería', () => {
     let { datos } = await pedir(url, 'GET', '/api/admin/estado', { cookie: admin });
     const video = datos.videos.find((v) => v.id === enviado.datos.id);
     assert.equal(video.equipo, 'Con Video');
+    // Lo que llega a los jurados: la obra de esa entrega, para reproducirla en vivo.
+    const obra = await pedir(url, 'GET', `/api/videos/${enviado.datos.id}/obra`, { cookie: admin });
+    assert.equal(obra.estado, 200);
+    assert.ok('proyecto' in obra.datos);
+    const otro = await entrar(url, 'archivos a', 'clave a');
+    assert.equal((await pedir(url, 'GET', `/api/videos/${enviado.datos.id}/obra`, { cookie: otro })).estado, 404);
     const id = video.equipoId;
     assert.equal((await pedir(url, 'DELETE', `/api/admin/equipos/${id}`, { cookie: admin })).estado, 200);
     ({ datos } = await pedir(url, 'GET', '/api/admin/estado', { cookie: admin }));

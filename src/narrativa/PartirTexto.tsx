@@ -19,7 +19,7 @@ import {
   vozDesactualizada,
 } from '../estado/escenas';
 
-export function PartirTexto() {
+export function PartirTexto({ sinCabeza = false }: { sinCabeza?: boolean } = {}) {
   const { proyecto, actualizar } = useProyecto();
   const palabras = palabrasDe(proyecto.narracion.texto);
   const cortes = [...proyecto.cortesEscena].sort((a, b) => a - b);
@@ -56,6 +56,7 @@ export function PartirTexto() {
 
   return (
     <div className="nv-tarjeta nv-partir" data-bloqueo="historia:cortes">
+      {!sinCabeza && (
       <div className="nv-campo__fila">
         <span className="nv-campo__titulo">Tus escenas</span>
         <span className="nv-tenue nv-chico">Arrastra los límites para decidir dónde empieza cada una.</span>
@@ -87,6 +88,7 @@ export function PartirTexto() {
           </button>
         </div>
       </div>
+      )}
 
       <p className={`nv-partir__texto ${agarrado !== null ? 'nv-partir__texto--arrastrando' : ''}`}>
         {limites.slice(0, -1).map((desde, n) => {

@@ -130,7 +130,7 @@ void main(){
 
   if(uImgAmt > 0.001){
     vec2 uvImg = uMirror > 1.5 ? ps / vec2(uAspect, 1.0) + 0.5 : uv;
-    col = mix(col, oleo(uvImg, w, df, fn, rl), uImgAmt);
+    col = mix(col, tintarFoto(oleo(uvImg, w, df, fn, rl)), uImgAmt);
   }
   col += (hash21(uv * 512.0 + fract(uTime)) - 0.5) * uGrano;
   gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
@@ -153,7 +153,7 @@ class Nebulosa implements Instancia {
     const { programa, u } = crearPrograma(this.gl, FRAGMENTO, [
       'uTime', 'uFase', 'uFaseB', 'uAspect', 'uInfluence', 'uWarp', 'uFreq', 'uBlob', 'uCover',
       'uSoft', 'uEdge', 'uTwist', 'uMirror', 'uVeins', 'uHueRot', 'uGrano', 'uDeriva',
-      'uC0', 'uC1', 'uC2', 'uC3', 'uC4', 'uRemolinos', 'uCuantos', 'uImg', 'uImgAmt', 'uImgAR',
+      'uC0', 'uC1', 'uC2', 'uC3', 'uC4', 'uRemolinos', 'uCuantos', 'uImg', 'uImgAmt', 'uImgAR', 'uColorFoto',
     ]);
     this.programa = programa;
     this.u = u;
@@ -176,7 +176,7 @@ class Nebulosa implements Instancia {
     this.fase += e.delta * (0.15 + p.velocidad * 0.85) * (1 + reaccion * bandas.graves * 0.9);
     this.faseDeriva += e.delta * p.deriva * 0.25;
 
-    this.imagen.usar(e.imagen?.fuente ?? null, e.imagen?.proporcion ?? 1, e.influenciaImagen, this.ancho / Math.max(1, this.alto));
+    this.imagen.usar(e.imagen?.fuente ?? null, e.imagen?.proporcion ?? 1, e.influenciaImagen, this.ancho / Math.max(1, this.alto), e.colorFoto);
     subirPaleta(gl, this.u, [0, 1, 2, 3, 4].map((i) => aRgb01(e.paleta[i] ?? e.paleta[e.paleta.length - 1])));
 
     gl.uniform1f(this.u.uTime, e.tiempo);

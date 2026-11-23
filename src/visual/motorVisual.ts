@@ -67,6 +67,8 @@ export interface Ajustes {
   reaccion: number;
   imagen: CampoImagen | null;
   influenciaImagen: number;
+  /** Cuánto del color real de la foto usa cada elemento (ver Entorno). */
+  colorFoto: number;
   picos: Pico[];
   influenciaDatos: number;
   movimientoDatos: number;
@@ -120,6 +122,7 @@ class MotorVisual {
     reaccion: 0.8,
     imagen: null,
     influenciaImagen: 0.75,
+    colorFoto: 0,
     picos: [],
     influenciaDatos: 0.7,
     movimientoDatos: 0,
@@ -356,6 +359,7 @@ class MotorVisual {
       reaccion: a.reaccion,
       imagen: a.imagen,
       influenciaImagen: a.influenciaImagen,
+      colorFoto: a.imagen ? a.colorFoto : 0,
       picos: [...a.picos, ...dedo],
       influenciaDatos: a.toque ? Math.max(a.influenciaDatos, 0.9) : a.influenciaDatos,
       movimientoDatos: a.movimientoDatos,

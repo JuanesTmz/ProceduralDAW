@@ -11,15 +11,13 @@ import { useEffect, useRef, useState } from 'react';
 import type { PointerEvent as EventoPuntero } from 'react';
 import { motorAudio } from '../audio/motorAudio';
 import { useProyecto } from '../estado/ProyectoContext';
-import { duracionSeccion, formatearReloj, palabrasDe } from '../estado/proyecto';
+import { duracionSeccion, formatearReloj } from '../estado/proyecto';
 import { duracionVoz, EMOCIONES } from '../estado/escenas';
+import { ENTRADA_VOZ, inicioPalabra, palabrasDichas } from '../estado/ritmoVoz';
 import type { Cajita, Escena } from '../estado/tipos';
 import { FraseConCajitas } from './FraseConCajitas';
 import { Onda } from './VozEscena';
-import { useCuadro } from './useCuadro';
-
-/** La voz entra un instante después de que empieza la escena (lo mismo que el motor). */
-const ENTRADA_VOZ = 0.15;
+import { fijar, useCuadro } from './useCuadro';
 
 interface Props {
   escena: Escena;
@@ -41,25 +39,24 @@ export function BarraEscena({ escena, indice, tipos }: Props) {
   const lleno = useRef<HTMLSpanElement>(null);
   const cabeza = useRef<HTMLSpanElement>(null);
   const reloj = useRef<HTMLSpanElement>(null);
-  const palabras = palabrasDe(escena.texto).length;
 
   // Por dónde va lo que se oye, cuadro a cuadro: se escribe directo en la
   // barra. React solo redibuja cuando cambia una palabra o el play.
   useCuadro(() => {
     // ■ solo si lo que suena es ESTA escena (no un sonido suelto ni la pieza).
     const suena = motorAudio.claveActiva === `escena:${indice}`;
-    const pos = suena ? motorAudio.posicionOida : null;
+    // La barra sigue a la escena también cuando suena la obra entera.
+    const pos = motorAudio.estaSonando ? motorAudio.posicionOida : null;
     const sonandoYa = pos !== null && pos.indice === indice;
     const t = sonandoYa ? pos.segundos : desde;
-    const x = `${(Math.min(t, total) / total) * 100}%`;
-    if (lleno.current) lleno.current.style.width = x;
-    if (cabeza.current) {
-      cabeza.current.style.left = x;
-      cabeza.current.classList.toggle('nv-barra-escena__cabeza--quieta', !sonandoYa);
-    }
-    if (reloj.current) reloj.current.textContent = `${formatearReloj(t)} / ${formatearReloj(total)}`;
+    const x = `${((Math.min(t, total) / total) * 100).toFixed(2)}%`;
+    // Solo se escribe lo que cambió: quieta, la barra no obliga a repintar.
+    fijar(lleno.current, 'width', x);
+    fijar(cabeza.current, 'left', x);
+    cabeza.current?.classList.toggle('nv-barra-escena__cabeza--quieta', !sonandoYa);
+    fijar(reloj.current, 'texto', `${formatearReloj(t)} / ${formatearReloj(total)}`);
     setSonando(suena);
-    setDichas(sonandoYa && !escena.respiro ? Math.ceil(((t - ENTRADA_VOZ) / Math.max(0.5, voz)) * palabras) : -1);
+    setDichas(sonandoYa && !escena.respiro ? palabrasDichas(escena, t) : -1);
   });
 
   // Cambiar de escena vuelve el punto de arranque al principio.
@@ -97,8 +94,9 @@ export function BarraEscena({ escena, indice, tipos }: Props) {
             arrastrando.current = false;
             const s = segundoDe(ev);
             setDesde(s);
-            // Si ya sonaba, salta ahí; si no, queda marcado para el próximo play.
+            // Si ya sonaba (la escena o toda la obra), salta ahí; si no, queda marcado para el próximo play.
             if (sonando) tocar(s);
+            else if (motorAudio.claveActiva === 'pieza') void motorAudio.reproducirPieza(indice, s);
           }}
           onPointerCancel={() => (arrastrando.current = false)}
         >
@@ -118,7 +116,7 @@ export function BarraEscena({ escena, indice, tipos }: Props) {
               <span
                 key={c.id}
                 className="nv-barra-escena__cajita"
-                style={{ left: `${((ENTRADA_VOZ + (c.palabra / Math.max(1, palabras)) * voz) / total) * 100}%` }}
+                style={{ left: `${(inicioPalabra(escena, c.palabra) / total) * 100}%` }}
               />
             ))}
           <span ref={lleno} className="nv-barra-escena__lleno" />

@@ -68,7 +68,7 @@ interface EntradaVoz {
  *  - bucle:  el patrón en bucle, con todas las capas.
  */
 export type Reproduccion =
-  | { tipo: 'pieza' }
+  | { tipo: 'pieza'; indice?: number; desde?: number }
   | { tipo: 'escena'; indice: number; desde?: number }
   | { tipo: 'capa'; id: string; escena: number }
   | { tipo: 'bucle' };
@@ -454,11 +454,12 @@ class MotorAudio {
 
     switch (r.tipo) {
       case 'pieza':
+        // Toda la obra, desde el principio o desde un punto (la línea de tiempo).
         this.modo = 'pieza';
-        this.desde = 0;
+        this.desde = Math.max(0, r.indice ?? 0);
         this.soloUna = false;
         this.soloPista = null;
-        this.desdeSegundo = 0;
+        this.desdeSegundo = Math.max(0, r.desde ?? 0);
         break;
       case 'escena':
         this.modo = 'pieza';
@@ -595,9 +596,9 @@ class MotorAudio {
     return this.pedida?.tipo === 'capa' ? this.pedida.id : null;
   }
 
-  /** Toca la pieza entera, de la primera escena a la última. */
-  async reproducirPieza(): Promise<void> {
-    await this.reproducirCon({ tipo: 'pieza' });
+  /** Toca la pieza entera, de la primera escena a la última (o desde un punto de una escena). */
+  async reproducirPieza(indice = 0, desdeSegundo = 0): Promise<void> {
+    await this.reproducirCon({ tipo: 'pieza', indice, desde: desdeSegundo });
   }
 
   /** Toca una sola escena de la pieza, y para al terminarla. Puede arrancar a mitad. */

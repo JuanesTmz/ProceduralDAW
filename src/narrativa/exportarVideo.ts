@@ -27,7 +27,8 @@ import { motorAudio } from '../audio/motorAudio';
 import { motorVisual } from '../visual/motorVisual';
 import { enVivo } from '../visual/enVivo';
 import { palabrasDe } from '../estado/proyecto';
-import { duracionVoz, recorrido } from '../estado/escenas';
+import { recorrido } from '../estado/escenas';
+import { palabrasDichas } from '../estado/ritmoVoz';
 import type { GolpeVisual, Proyecto } from '../estado/tipos';
 
 /** El video: 1280×720 a 30 cuadros por segundo. */
@@ -306,10 +307,7 @@ export function exportarVideo(leerProyecto: () => Proyecto, alProgreso: (avance:
     const escena = recorrido(p)[motorAudio.seccionActual];
     if (escena && !escena.respiro && motorAudio.estaSonando) {
       const palabras = palabrasDe(escena.texto);
-      const reveladas = Math.min(
-        palabras.length,
-        Math.ceil((motorAudio.segundosEnSeccion / Math.max(0.5, duracionVoz(escena))) * palabras.length),
-      );
+      const reveladas = Math.min(palabras.length, palabrasDichas(escena, motorAudio.segundosEnSeccion));
       texto.pintar(escena.id, palabras, reveladas);
     } else {
       texto.borrar();

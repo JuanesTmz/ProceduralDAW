@@ -1,0 +1,1410 @@
+/* Diseñado y desarrollado por Juan Esteban Trillos · www.linkedin.com/in/juan-esteban-trillos */
+/* SONORA · rediseño de nov. 2026: el camino de cinco pasos, Música y Visuales
+   (las rondas finales del Figma). Va al final, después de ajustes.css.
+
+   Pensado para pantallas en horizontal: la tablet Lenovo (1280 × 800), un
+   computador, y un celular acostado (vista.ts lo deja en unos 1180 × 540 px
+   CSS). Lo que no cabe a lo alto se desplaza por dentro, nunca la página. */
+
+.nv { --nv-verde: #2ee6a8; --nv-cian: #5ce1ff; }
+
+/* =========================================================== el camino */
+.nv-camino { gap: 12px; padding: 8px 16px 10px; min-height: 66px; }
+.nv-camino__pasos { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.nv-camino__paso {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 5px 12px 5px 5px;
+  border-radius: 999px;
+  min-height: 48px;
+  text-align: left;
+  color: var(--nv-suave);
+  transition: background 0.15s;
+}
+.nv-camino__paso:hover { background: #ffffff0b; }
+.nv-camino__circulo {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 2px solid var(--nv-linea);
+  background: var(--nv-s2);
+  color: var(--nv-suave);
+  font-weight: 900;
+  font-size: 15px;
+}
+.nv-camino__paso--hecho .nv-camino__circulo { background: var(--nv-verde); border-color: var(--nv-verde); color: #0f1117; }
+.nv-camino__paso--actual .nv-camino__circulo { background: var(--nv-acento); border-color: var(--nv-acento); color: #0f1117; box-shadow: 0 0 0 4px #ffb02038; }
+.nv-camino__textos { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
+.nv-camino__textos strong { font-size: 15px; font-weight: 800; color: var(--nv-texto); }
+.nv-camino__paso:not(.nv-camino__paso--actual, .nv-camino__paso--hecho) .nv-camino__textos strong { color: var(--nv-suave); }
+.nv-camino__textos > span { font-size: 11.5px; font-weight: 700; white-space: nowrap; color: var(--nv-tenue); }
+.nv-camino__paso--hecho .nv-camino__textos > span { color: var(--nv-verde); }
+.nv-camino__paso--actual .nv-camino__textos > span { color: var(--nv-acento); }
+.nv-camino__union { width: 16px; height: 3px; flex: none; border-radius: 2px; background: var(--nv-linea); }
+.nv-camino__union--hecha { background: var(--nv-verde); }
+.nv-camino__escuchar { padding: 10px 18px; border-radius: 999px; }
+.nv-camino .nv-medidor__pista { width: 110px; }
+
+/* =========================================================== piezas comunes */
+.nv-contenido--fijo { overflow: hidden; display: flex; flex-direction: column; }
+.nv-cierre {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  display: grid !important;
+  place-items: center;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  background: var(--nv-s3) !important;
+  color: var(--nv-suave);
+}
+.nv-cierre:hover { color: var(--nv-texto); }
+.nv-boton svg, .nv-enlace svg { flex: none; }
+.nv-enlace { display: inline-flex; align-items: center; gap: 6px; }
+
+/* =========================================================== MÚSICA */
+.nv-paso-musica {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 16px 14px;
+  overflow: auto;
+}
+
+/* ---------- la línea de la obra ---------- */
+.nv-linea { display: flex; align-items: stretch; gap: 10px; flex: none; min-height: 66px; }
+.nv-linea__obra {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px 0 4px;
+  border-radius: 14px;
+  text-align: left;
+}
+.nv-linea__play {
+  width: 46px;
+  height: 46px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--nv-acento);
+  color: #0f1117;
+  box-shadow: 0 3px 0 #b87a0d;
+}
+.nv-linea__obra:active .nv-linea__play { transform: translateY(2px); box-shadow: 0 1px 0 #b87a0d; }
+.nv-linea__obra-textos { display: flex; flex-direction: column; line-height: 1.25; }
+.nv-linea__obra-textos strong { font-size: 14px; }
+.nv-linea__obra-textos .nv-mono { font-size: 12px; color: var(--nv-suave); }
+.nv-linea__base {
+  flex: none;
+  min-width: 112px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 14px;
+  border-radius: 14px;
+  border: 1.5px dashed var(--nv-acento);
+  background: #ffb0200f;
+  text-align: left;
+}
+.nv-linea__base--activa { border-style: solid; background: #ffb02026; box-shadow: 0 0 0 1px var(--nv-acento); }
+.nv-linea__base-rotulo { display: flex; align-items: center; gap: 4px; font-size: 10.5px; font-weight: 900; letter-spacing: 0.1em; color: var(--nv-acento); }
+.nv-linea__base strong { font-size: 14px; }
+.nv-linea__escenas { flex: 1; min-width: 0; display: flex; gap: 8px; }
+.nv-linea__escena {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  padding: 7px 10px 7px;
+  border-radius: 12px;
+  background: var(--nv-s1);
+  border-top: 3px solid var(--color);
+  cursor: pointer;
+  user-select: none;
+  touch-action: pan-y;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+.nv-linea__escena:hover { background: var(--nv-s2); }
+.nv-linea__escena--activa { background: var(--nv-s2); box-shadow: 0 0 0 2px var(--nv-acento); }
+.nv-linea__escena--respiro { border-top-style: dashed; }
+.nv-linea__fila { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 13px; }
+.nv-linea__num { color: var(--color); font-weight: 900; }
+.nv-linea__nombre { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nv-linea__marca { display: inline-grid; color: var(--nv-acento); flex: none; }
+.nv-linea__marca--lista { color: var(--nv-verde); }
+.nv-linea__dura { font-size: 11px; color: var(--nv-suave); flex: none; }
+.nv-linea__onda { position: relative; height: 24px; display: flex; align-items: center; }
+.nv-linea__onda .nv-onda { height: 24px; }
+.nv-linea__solo { font-size: 11px; font-style: italic; color: var(--nv-suave); }
+.nv-linea__cabezal { position: absolute; top: -5px; bottom: -5px; width: 2px; margin-left: -1px; background: var(--nv-acento); box-shadow: 0 0 6px var(--nv-acento); pointer-events: none; }
+.nv-linea__mas {
+  width: 42px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  border: 1.5px dashed var(--nv-linea) !important;
+  color: var(--nv-suave);
+}
+.nv-linea__mas:hover { color: var(--nv-texto); border-color: var(--nv-suave) !important; }
+
+/* ---------- la mesa (base o escena) ---------- */
+.nv-mesa {
+  --celda: 30px;
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px 16px 16px;
+  border-radius: 18px;
+  background: var(--nv-s1);
+}
+.nv-mesa__cabeza { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; row-gap: 8px; }
+.nv-mesa__num { font-size: 22px; font-weight: 900; line-height: 1; }
+.nv-mesa__estrella { color: var(--nv-acento); display: inline-grid; }
+.nv-mesa__nombre {
+  margin: 0;
+  min-width: 0;
+  max-width: 340px;
+  padding: 2px 6px;
+  border: 1px dashed transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--nv-texto);
+  font: inherit;
+  font-size: 22px;
+  font-weight: 800;
+  field-sizing: content;
+}
+input.nv-mesa__nombre { width: 12ch; }
+.nv-mesa__nombre--editable:hover, .nv-mesa__nombre--editable:focus { border-color: var(--nv-linea); outline: none; }
+.nv-mesa__escuchar { min-height: 40px; padding: 7px 14px; border-radius: 999px; gap: 7px; }
+.nv-mesa__reloj { font-size: 12px; font-weight: 800; opacity: 0.75; }
+.nv-mesa__retocada {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: #ffb0201f;
+  color: var(--nv-acento);
+  font-size: 12px;
+  font-weight: 800;
+}
+.nv-mesa__volver { font-size: 13px; }
+.nv-mesa__volver:hover { color: var(--nv-texto); }
+.nv-mesa__lista {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 15px;
+  border-radius: 999px;
+  border: 1px solid var(--nv-linea) !important;
+  color: var(--nv-suave);
+  font-weight: 800;
+}
+.nv-mesa__lista--on { background: var(--nv-verde); border-color: var(--nv-verde) !important; color: #0f1117; }
+.nv-mesa__golpes { display: flex; flex-direction: column; gap: 8px; }
+.nv-mesa__titulo { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.nv-mesa__rotulo { font-size: 16px; font-weight: 800; }
+.nv-mesa__pista { font-size: 12px; color: var(--nv-tenue); }
+.nv-mesa__pista--cabeza { font-size: 13px; color: var(--nv-suave); }
+.nv-mesa__velocidad { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--nv-suave); }
+.nv-mesa__velocidad input { width: 150px; accent-color: var(--nv-acento); }
+.nv-mesa__velocidad .nv-mono { min-width: 28px; color: var(--nv-texto); }
+.nv-mesa__pie { display: flex; align-items: flex-end; gap: 12px; margin-top: auto; flex-wrap: wrap; }
+
+/* las celdas dentro de la mesa: del tamaño de la app, sin estirarse */
+.nv-mesa .nv-celdas { grid-template-columns: 200px 1fr auto; column-gap: 10px; row-gap: 5px; }
+.nv-mesa .nv-celdas__pasos { gap: 4px; padding: 4px; }
+.nv-mesa .nv-celda { height: var(--celda); }
+.nv-mesa .nv-celdas__pasos--melodia .nv-celda { height: calc(var(--celda) - 6px); }
+.nv-mesa .nv-celdas__nombre { padding: 3px 6px 3px 3px; }
+.nv-mesa .nv-solo { width: 30px; height: 30px; }
+.nv-mesa .nv-suena { min-width: 0; padding: 3px; min-height: 30px; font-size: 0; gap: 0; }
+.nv-mesa .nv-suena__perilla { width: 24px; height: 24px; }
+.nv-mesa .nv-suena--on { padding-left: 25px; }
+
+/* ---------- las palabras ---------- */
+.nv-palabras { display: flex; flex-direction: column; gap: 8px; }
+.nv-palabras__cabeza { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.nv-palabras__leyenda {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  align-self: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.nv-palabras__leyenda--sonido { color: var(--nv-cian); border: 1px solid #5ce1ff66; background: #5ce1ff12; }
+.nv-palabras__leyenda--silencio { color: var(--nv-suave); border: 1px dashed var(--nv-linea); }
+.nv-palabras__texto {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: var(--nv-s2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 2px;
+  max-height: 128px;
+  overflow: auto;
+}
+.nv-palabra {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 7px;
+  border-radius: 9px;
+  border: 1.5px solid transparent !important;
+  font-size: 16px;
+  line-height: 1.2;
+  color: var(--nv-texto);
+  transition: background 0.12s;
+}
+.nv-palabra:hover { background: #ffffff10; }
+.nv-palabra--sonido { border-color: var(--nv-cian) !important; background: #5ce1ff14; font-weight: 800; }
+.nv-palabra--sonido svg { color: var(--nv-cian); }
+.nv-palabra--silencio { border: 1.5px dashed var(--nv-suave) !important; color: var(--nv-suave); font-weight: 800; }
+.nv-palabra--abierta { box-shadow: 0 0 0 2px var(--nv-acento); }
+.nv-palabra--dicha { background: var(--nv-acento) !important; border-color: var(--nv-acento) !important; color: #0f1117 !important; }
+.nv-palabra--dicha svg { color: #0f1117; }
+
+/* ventanita de una palabra (sobre el menú flotante) */
+.nv-flotante .nv-lista-flotante.nv-ventanita { max-height: min(480px, calc(100vh - 20px)); padding: 0; width: min(560px, calc(100vw - 24px)); }
+.nv-ventanita__caja { display: flex; flex-direction: column; gap: 10px; padding: 14px; }
+.nv-ventanita__cabeza { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.nv-ventanita__palabra { padding: 3px 10px; border-radius: 8px; background: var(--nv-s3); font-size: 15px; }
+.nv-ventanita__modos { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 12px; background: var(--nv-fondo); }
+.nv-ventanita .nv-ventanita__modo { justify-content: center; padding: 10px; border-radius: 9px; font-size: 14px; font-weight: 700; color: var(--nv-suave); border: 1.5px solid transparent; }
+.nv-ventanita .nv-ventanita__modo--activo { color: var(--nv-cian); background: #5ce1ff17; border-color: #5ce1ff88; }
+.nv-ventanita .nv-ventanita__modo--silencio.nv-ventanita__modo--activo { color: var(--nv-texto); background: var(--nv-s3); border-color: var(--nv-suave); }
+.nv-ventanita__nota { font-size: 12px; color: var(--nv-suave); }
+.nv-ventanita__sonidos { display: flex; flex-direction: column; gap: 10px; max-height: 236px; overflow: auto; padding-right: 2px; }
+.nv-ventanita__grupo { display: flex; flex-direction: column; gap: 6px; }
+.nv-ventanita__grupo-titulo { font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--nv-tenue); }
+.nv-ventanita__rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px; }
+.nv-ventanita .nv-ventanita__sonido {
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  min-height: 64px;
+  padding: 8px 6px;
+  border-radius: 12px;
+  background: var(--nv-s1);
+  border: 1.5px solid transparent;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--nv-texto);
+}
+.nv-ventanita .nv-ventanita__sonido svg { color: var(--nv-cian); }
+.nv-ventanita .nv-ventanita__sonido span { line-height: 1.15; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.nv-ventanita .nv-ventanita__sonido--puesto { border-color: var(--nv-cian); background: #5ce1ff17; }
+.nv-ventanita .nv-ventanita__sonido--grabar { background: #ff4d6d1a; border-color: #ff4d6d66; }
+.nv-ventanita .nv-ventanita__sonido--grabar svg { color: var(--nv-rojo); }
+.nv-ventanita__pie { display: flex; align-items: center; gap: 8px; }
+.nv-ventanita .nv-ventanita__pie .nv-boton { padding: 9px 14px; min-height: 40px; font-size: 14px; border-radius: 10px; }
+.nv-ventanita .nv-ventanita__pie .nv-boton--primario:hover { background: var(--nv-acento); }
+
+/* ---------- herramientas (abajo a la derecha) y volumen ---------- */
+.nv-herr { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+.nv-herr__boton {
+  --c: var(--nv-acento);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  padding: 8px 16px 8px 8px;
+  border-radius: 14px;
+  border: 1.5px solid color-mix(in srgb, var(--c) 70%, transparent) !important;
+  background: color-mix(in srgb, var(--c) 16%, var(--nv-s1));
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--c) 45%, #000);
+  text-align: left;
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+.nv-herr__boton:active { transform: translateY(2px); box-shadow: 0 1px 0 color-mix(in srgb, var(--c) 45%, #000); }
+.nv-herr__boton--rojo { --c: var(--nv-rojo); }
+.nv-herr__boton--verde { --c: #3ee08f; }
+.nv-herr__boton--ambar { --c: var(--nv-acento); }
+.nv-herr__boton--abierto { background: color-mix(in srgb, var(--c) 30%, var(--nv-s1)); }
+.nv-herr__icono { width: 38px; height: 38px; flex: none; display: grid; place-items: center; border-radius: 11px; background: var(--c); color: #0f1117; }
+.nv-herr__textos { display: flex; flex-direction: column; line-height: 1.2; }
+.nv-herr__textos strong { font-size: 15px; }
+.nv-herr__textos span { font-size: 11.5px; color: color-mix(in srgb, var(--c) 40%, var(--nv-suave)); }
+
+.nv-flotante .nv-lista-flotante.nv-volumen { max-height: min(520px, calc(100vh - 20px)); padding: 0; width: min(420px, calc(100vw - 24px)); }
+.nv-volumen__caja { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px 16px; }
+.nv-volumen__cabeza { display: flex; align-items: center; gap: 8px; color: var(--nv-acento); }
+.nv-volumen__cabeza strong { color: var(--nv-texto); font-size: 16px; }
+.nv-volumen__linea { height: 1px; background: var(--nv-linea); margin: 2px 0; }
+.nv-volumen .nv-mezcla__fila { padding: 6px 8px; }
+
+/* ---------- plantillas (en la base) ---------- */
+.nv-plantillas { flex: none; display: flex; flex-direction: column; gap: 10px; padding: 12px 14px 14px; border-radius: 18px; background: var(--nv-s1); }
+.nv-plantillas__cabeza { display: flex; align-items: center; gap: 8px; color: var(--nv-acento); }
+.nv-plantillas__cabeza strong { color: var(--nv-texto); font-size: 15px; }
+.nv-plantillas__lista { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 8px; }
+.nv-plantilla {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 84px;
+  padding: 8px 4px;
+  border-radius: 14px;
+  background: var(--nv-s2);
+  border: 1.5px solid transparent !important;
+  text-align: center;
+  transition: transform 0.08s, background 0.12s;
+}
+.nv-plantilla:active { transform: translateY(2px); }
+.nv-plantilla__icono { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 12px; background: #ffffff0f; font-size: 22px; }
+.nv-plantilla strong { font-size: 13px; }
+.nv-plantilla--activa { border-color: var(--nv-acento) !important; background: #ffb0201c; }
+.nv-plantilla--activa strong { color: var(--nv-acento); }
+.nv-plantilla__check { position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; display: grid; place-items: center; border-radius: 50%; background: var(--nv-acento); color: #0f1117; }
+.nv-plantilla--confirmar { border-color: var(--nv-rojo) !important; background: #ff4d6d1c; }
+.nv-plantilla--confirmar strong { color: var(--nv-rojo); }
+.nv-plantilla__nota { font-size: 10.5px; line-height: 1.2; color: var(--nv-rojo); }
+
+/* ---------- la emoción (Música y Visuales) ---------- */
+.nv-emo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px 8px 8px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--color) 9%, var(--nv-s1));
+  border: 1.5px solid color-mix(in srgb, var(--color) 55%, transparent);
+  min-width: 0;
+}
+.nv-emo__elegida { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.nv-emo__icono { width: 44px; height: 44px; flex: none; display: grid; place-items: center; border-radius: 12px; background: var(--color); color: #0f1117; }
+.nv-emo__textos { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+.nv-emo__textos strong { font-size: 16px; color: var(--color); }
+.nv-emo__textos span { font-size: 12px; color: var(--nv-suave); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nv-emo__separa { width: 1px; align-self: stretch; margin: 4px 0; background: var(--nv-linea); flex: none; }
+.nv-emo__otras { display: flex; gap: 4px; }
+.nv-emo__otra { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 2px 3px; border-radius: 10px; min-width: 48px; }
+.nv-emo__otra:hover { background: #ffffff0b; }
+.nv-emo__circulo { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: color-mix(in srgb, var(--c) 20%, transparent); color: var(--c); }
+.nv-emo__nombre { font-size: 10.5px; font-weight: 700; color: var(--nv-suave); }
+.nv-emo__fuerza, .nv-emo__respiro { display: flex; flex-direction: column; gap: 4px; }
+.nv-emo__rotulo { font-size: 10px; font-weight: 900; letter-spacing: 0.1em; color: var(--nv-tenue); }
+.nv-emo__barras { display: flex; gap: 4px; }
+.nv-emo__nivel { width: 32px; height: 32px; display: flex; align-items: flex-end; justify-content: center; gap: 2px; padding: 0 0 8px; border-radius: 8px; background: var(--nv-s2); }
+.nv-emo__nivel span { width: 4px; border-radius: 1px; background: var(--nv-linea); }
+.nv-emo__nivel .nv-emo__barra--on { background: var(--nv-suave); }
+.nv-emo__nivel--activo { background: var(--color); }
+.nv-emo__nivel--activo span { background: #0f111755; }
+.nv-emo__nivel--activo .nv-emo__barra--on { background: #0f1117; }
+.nv-emo__respiro input { width: 120px; accent-color: var(--color); }
+.nv-emo__respiro-botones { display: flex; gap: 4px; }
+
+/* =========================================================== VENTANAS: sonidos y grabar */
+.nv-biblio { display: flex; flex-direction: column; gap: 12px; min-height: 0; height: 100%; }
+.nv-grabalo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #ff4d6d14;
+  border: 1px solid #ff4d6d55;
+  flex: none;
+}
+.nv-grabalo__icono { width: 40px; height: 40px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--nv-rojo); color: #fff; }
+.nv-grabalo__textos { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+.nv-grabalo__textos strong { font-size: 14px; }
+.nv-grabalo__textos span { font-size: 12px; color: var(--nv-suave); }
+.nv-grabalo label { cursor: pointer; }
+.nv-biblio__grupos { display: flex; gap: 6px; flex-wrap: wrap; flex: none; }
+.nv-biblio__grupo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--nv-s2);
+  font-size: 13px;
+  font-weight: 700;
+}
+.nv-biblio__grupo--activo { background: var(--nv-acento); color: #0f1117; }
+.nv-biblio__cuantos { font-size: 11px; font-weight: 800; opacity: 0.6; }
+.nv-biblio__rejilla {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  align-content: start;
+  gap: 8px;
+}
+.nv-biblio__vacio { grid-column: 1 / -1; }
+.nv-ficha-son {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px 8px 8px;
+  border-radius: 12px;
+  background: var(--nv-s2);
+  border: 1.5px solid transparent !important;
+  text-align: left;
+  min-height: 56px;
+}
+.nv-ficha-son:hover { background: var(--nv-s3); }
+.nv-ficha-son__icono { width: 38px; height: 38px; flex: none; display: grid; place-items: center; border-radius: 10px; background: #5ce1ff1c; color: var(--nv-cian); }
+.nv-ficha-son__textos { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
+.nv-ficha-son__textos strong { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nv-ficha-son__textos span { font-size: 11.5px; color: var(--nv-suave); }
+.nv-ficha-son--activa .nv-ficha-son__icono { background: #2ee6a826; color: var(--nv-verde); }
+.nv-ficha-son--escogida { border-color: var(--nv-acento) !important; background: #ffb0201a; }
+.nv-ficha-son--escogida .nv-ficha-son__icono { background: var(--nv-acento); color: #0f1117; }
+.nv-ficha-son--escogida .nv-ficha-son__textos span { color: var(--nv-acento); }
+.nv-biblio__pie {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--nv-s2);
+}
+.nv-biblio__pie--listo { background: #ffb02014; box-shadow: inset 0 0 0 1px #ffb02055; }
+.nv-biblio__cambio { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; color: var(--nv-suave); }
+.nv-biblio__chip { padding: 5px 10px; border-radius: 8px; background: var(--nv-s3); color: var(--nv-texto); font-weight: 700; font-size: 13px; }
+.nv-biblio__chip--nuevo { background: #ffb02026; color: var(--nv-acento); }
+.nv-biblio__pie .nv-rojo { color: var(--nv-rojo); }
+
+.nv-grabadora { display: flex; flex-direction: column; gap: 14px; }
+.nv-grabadora__micro { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 18px 0 6px; text-align: center; }
+.nv-grabadora__micro label { cursor: pointer; }
+.nv-grabadora__boton {
+  width: 104px;
+  height: 104px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--nv-rojo);
+  color: #fff;
+  box-shadow: 0 0 0 10px #ff4d6d26, 0 4px 0 #9e1f38;
+}
+.nv-grabadora__boton--grabando { animation: nv-grabando 1.2s ease-in-out infinite; }
+@keyframes nv-grabando { 50% { box-shadow: 0 0 0 18px #ff4d6d14, 0 4px 0 #9e1f38; } }
+.nv-grabadora__estado { font-size: 18px; }
+.nv-grabadora__campo, .nv-grabadora__donde { display: flex; flex-direction: column; gap: 8px; }
+.nv-grabadora__pregunta { font-size: 14px; font-weight: 800; }
+.nv-grabadora__opciones { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.nv-grabadora__opcion {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--nv-s2);
+  border: 1.5px solid transparent !important;
+  text-align: left;
+}
+.nv-grabadora__opcion strong { display: flex; align-items: center; gap: 6px; font-size: 14px; }
+.nv-grabadora__opcion span { font-size: 12px; color: var(--nv-suave); }
+.nv-grabadora__opcion--activa { border-color: var(--nv-acento) !important; background: #ffb0201a; }
+.nv-grabadora__opcion--activa strong { color: var(--nv-acento); }
+.nv-grabadora__capas { display: flex; gap: 6px; flex-wrap: wrap; }
+.nv-grabadora__capa { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; background: var(--nv-s2); border: 1.5px solid transparent !important; font-weight: 700; font-size: 13px; }
+.nv-grabadora__capa--activa { border-color: var(--color) !important; background: color-mix(in srgb, var(--color) 18%, transparent); }
+.nv-grabadora__recorte { display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 14px; background: var(--nv-s2); }
+
+/* =========================================================== VISUALES */
+.nv-paso-visual {
+  --lado: 56%;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.nv-paso-visual--ancha { --lado: 31%; }
+.nv-paso-visual__arriba {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--lado);
+  gap: 14px;
+  padding: 12px 16px 10px;
+  transition: grid-template-columns 0.25s ease;
+}
+.nv-paso-visual__lado { min-height: 0; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
+.nv-paso-visual__lado > * { flex: none; }
+/* la vista previa es 16:9 si cabe; si no, cede alto para que la frase y la emoción se vean */
+.nv-paso-visual__lado > .nv-vista { flex: 0 1 auto; min-height: 150px; }
+.nv-paso-visual__lado .nv-barra-escena > .nv-tenue { display: none; }
+.nv-paso-visual__nota { margin: 0; display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 12px; background: var(--nv-s1); font-size: 13px; color: var(--nv-suave); }
+.nv-paso-visual__nota svg { color: var(--nv-acento); }
+
+/* ---------- la receta ---------- */
+.nv-receta { min-height: 0; display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border-radius: 18px; background: var(--nv-s1); }
+.nv-receta__pasos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 12px; background: var(--nv-s2); flex: none; }
+.nv-receta__paso { display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 38px; padding: 0 6px; border-radius: 9px; color: var(--nv-suave); font-weight: 700; font-size: 14px; }
+.nv-receta__paso:hover { color: var(--nv-texto); }
+.nv-receta__paso--actual { background: var(--nv-s3); color: var(--nv-texto); }
+.nv-receta__num { width: 20px; height: 20px; display: grid; place-items: center; border-radius: 50%; background: var(--nv-s3); font-size: 11px; font-weight: 900; }
+.nv-receta__paso--actual .nv-receta__num { background: var(--nv-acento); color: #0f1117; }
+.nv-receta__paso--hecho:not(.nv-receta__paso--actual) .nv-receta__num { background: transparent; color: var(--nv-verde); }
+.nv-receta__cuerpo { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 2px; }
+.nv-receta__encabezado { display: flex; flex-direction: column; gap: 2px; }
+.nv-receta__titulo { margin: 0; font-size: 19px; font-weight: 800; }
+.nv-receta__nota { font-size: 12.5px; color: var(--nv-tenue); }
+.nv-receta__rejilla { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.nv-receta__pie { display: flex; align-items: center; gap: 12px; flex: none; }
+.nv-receta__cuantos { display: flex; flex-direction: column; gap: 5px; }
+.nv-receta__puntos { display: flex; gap: 4px; }
+.nv-receta__puntos span { width: 18px; height: 4px; border-radius: 2px; background: var(--nv-s3); }
+.nv-receta__puntos .nv-receta__punto--hecho { background: var(--nv-verde); }
+.nv-receta__puntos .nv-receta__punto--actual { background: var(--nv-acento); }
+.nv-receta__listo { border-radius: 14px; padding: 13px 22px; font-size: 16px; }
+
+/* una opción de estilo o de colores */
+.nv-eleccion {
+  display: flex !important;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  min-height: 56px;
+  padding: 6px 10px 6px 6px;
+  border-radius: 12px;
+  background: var(--nv-s2);
+  border: 1.5px solid transparent !important;
+  text-align: left;
+  justify-content: flex-start !important;
+}
+.nv-eleccion:hover { background: var(--nv-s3); }
+.nv-eleccion--activa { border-color: var(--nv-acento) !important; background: #ffb02014; }
+.nv-eleccion__muestra { width: 64px !important; height: 44px !important; flex: none; border-radius: 8px; }
+.nv-eleccion__nombre { display: flex; flex-direction: column; gap: 3px; font-size: 14px; font-weight: 700; line-height: 1.2; min-width: 0; }
+.nv-eleccion__paleta { display: flex; width: 64px; height: 44px; flex: none; border-radius: 8px; overflow: hidden; }
+.nv-eleccion__paleta span { flex: 1; }
+.nv-eleccion__sugiere { align-self: flex-start; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 800; }
+.nv-eleccion--sorpresa { justify-content: center !important; gap: 8px; color: #fff; font-weight: 800; background: linear-gradient(120deg, #9f1ded, #ff5bff) !important; }
+
+/* la foto de fondo */
+.nv-fondo { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px 12px; border-radius: 14px; background: color-mix(in srgb, var(--nv-s2) 60%, transparent); }
+.nv-fondo__cabeza { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.nv-fondo__cabeza strong { font-size: 14px; }
+.nv-fondo__fotos { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.nv-fondo__foto { position: relative; }
+.nv-fondo__imagen { width: 60px; height: 44px; border-radius: 8px; background: var(--nv-s3) center / cover no-repeat; opacity: 0.85; display: block; }
+.nv-fondo__imagen:hover { opacity: 1; }
+.nv-fondo__foto--puesta .nv-fondo__imagen { opacity: 1; outline: 2px solid var(--nv-acento); outline-offset: 2px; }
+.nv-fondo__quitar { position: absolute; top: -8px; right: -8px; width: 20px; height: 20px; display: grid; place-items: center; border-radius: 50%; background: #0f1117; color: var(--nv-texto); border: 1.5px solid var(--nv-acento) !important; }
+.nv-fondo__subir { display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 14px; border-radius: 10px; border: 1.5px dashed var(--nv-linea); color: var(--nv-suave); font-size: 13px; font-weight: 700; cursor: pointer; }
+.nv-fondo__subir:hover { color: var(--nv-texto); border-color: var(--nv-suave); }
+
+/* mover la imagen: estante de cajitas a la izquierda, cajas en lista a la derecha */
+.nv-receta .nv-cajitas { flex: 1; min-height: 0; display: grid; grid-template-columns: 236px minmax(0, 1fr); gap: 12px; align-items: start; }
+.nv-receta .nv-cajitas > .nv-cajas { grid-column: 2; grid-row: 1; display: flex; flex-direction: column; gap: 6px; }
+.nv-receta .nv-cajitas > .nv-estante { grid-column: 1; grid-row: 1; }
+.nv-estante { display: flex; flex-direction: column; gap: 12px; padding: 12px; border-radius: 14px; background: var(--nv-s2); position: sticky; top: 0; }
+.nv-estante__aviso { font-size: 12px; font-weight: 700; color: var(--nv-acento); }
+.nv-estante__familia { display: flex; flex-direction: column; gap: 6px; }
+.nv-estante__titulo { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color); }
+.nv-estante__cuantas { color: var(--nv-tenue); }
+.nv-estante__cajitas { display: flex; flex-wrap: wrap; gap: 5px; }
+.nv-estante__cajitas .nv-cajita { display: inline-flex; align-items: center; gap: 6px; }
+.nv-estante__pista { font-size: 11.5px; color: var(--nv-tenue); }
+.nv-receta .nv-caja {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  grid-auto-flow: row;
+  align-items: center;
+  column-gap: 12px;
+  row-gap: 4px;
+  min-height: 52px;
+  padding: 8px 12px;
+}
+.nv-receta .nv-caja__titulo { grid-column: 1; grid-row: 1 / span 2; font-size: 14px; }
+.nv-receta .nv-caja > :not(.nv-caja__titulo) { grid-column: 2; }
+.nv-receta .nv-caja__mano { margin: 0; }
+
+/* golpes de la imagen */
+.nv-receta .nv-golpes-imagen { display: flex; flex-direction: column; gap: 8px; }
+.nv-receta .nv-celdas--imagen { grid-template-columns: 186px 1fr; row-gap: 4px; }
+.nv-receta .nv-celdas--imagen .nv-celda { height: 24px; }
+.nv-receta .nv-celdas--imagen .nv-celdas__nombre { padding: 2px 6px 2px 2px; }
+.nv-receta .nv-celdas--imagen .nv-solo { width: 26px; height: 26px; }
+
+/* ---------- la vista previa ---------- */
+.nv-vista { position: relative; flex: none; width: 100%; aspect-ratio: 16 / 9; border-radius: 16px; overflow: hidden; background: #07080c; }
+.nv-vista .nv-obra { position: absolute; inset: 0; border-radius: 0; }
+.nv-vista__fuera { position: absolute; inset: 0; display: grid; place-items: center; color: var(--nv-suave); font-size: 13px; }
+.nv-vista__chip {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100% - 20px);
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #0b0c12cc;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.nv-vista__chip svg { color: var(--nv-acento); }
+.nv-vista__emo { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 800; }
+.nv-vista__estado {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px 5px 10px;
+  border-radius: 999px;
+  background: #0b0c12cc;
+  color: var(--nv-acento);
+  font-size: 12px;
+  font-weight: 700;
+}
+.nv-vista__como { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; background: #ffffff12; color: var(--nv-suave); font-size: 12px; font-weight: 700; }
+.nv-vista__como:hover { color: var(--nv-texto); }
+.nv-vista__flecha { position: absolute; top: 50%; transform: translateY(-50%); width: 42px; height: 42px; display: grid; place-items: center; border-radius: 50%; background: #0b0c12aa; color: var(--nv-texto); }
+.nv-vista__flecha--izq { left: 10px; }
+.nv-vista__flecha--der { right: 10px; }
+.nv-vista__agrandar {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #000000a6;
+  border: 1px solid #ffffff33 !important;
+  color: #fff;
+  transition: transform 0.12s, background 0.12s;
+}
+.nv-vista__agrandar:hover { transform: scale(1.06); background: #000000d0; }
+.nv-paso-visual--ancha .nv-vista__chip { top: 6px; left: 6px; padding: 4px 8px; font-size: 11.5px; }
+.nv-paso-visual--ancha .nv-vista__emo, .nv-paso-visual--ancha .nv-vista__estado { display: none; }
+.nv-paso-visual--ancha .nv-vista__flecha { width: 30px; height: 30px; }
+.nv-paso-visual--ancha .nv-vista__agrandar { width: 34px; height: 34px; right: 6px; bottom: 6px; border-radius: 10px; }
+
+/* la frase y la barra de la escena, bajo la vista previa */
+.nv-paso-visual__lado .nv-barra-escena { padding: 10px 12px; border-radius: 14px; background: var(--nv-s1); gap: 8px; }
+.nv-paso-visual__lado .nv-barra-escena .nv-dentro__texto { font-size: 14px; max-height: 3.2em; }
+.nv-paso-visual--ancha .nv-paso-visual__lado .nv-barra-escena .nv-cajitas { display: none; }
+/* con la receta ancha, la emoción se apila */
+.nv-paso-visual--ancha .nv-emo { flex-wrap: wrap; }
+.nv-paso-visual--ancha .nv-emo__separa { display: none; }
+.nv-paso-visual--ancha .nv-emo__otras { width: 100%; justify-content: space-between; }
+.nv-paso-visual--ancha .nv-emo__fuerza { flex-direction: row; align-items: center; gap: 8px; margin-left: auto; }
+
+/* ---------- la visual en grande ---------- */
+.nv-grande { position: fixed; inset: 0; z-index: 80; height: 100dvh; background: #000; }
+.nv-grande .nv-obra { position: absolute; inset: 0; border-radius: 0; }
+.nv-grande__chip { position: absolute; top: 16px; left: 16px; display: flex; gap: 10px; align-items: center; padding: 8px 14px; border-radius: 999px; background: #0b0c12cc; font-size: 14px; }
+.nv-grande__pie { position: absolute; left: 16px; right: 16px; bottom: 16px; display: flex; align-items: center; gap: 12px; }
+.nv-grande__achicar {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: #000000a6;
+  border: 1px solid #ffffff33 !important;
+  color: #fff;
+}
+
+/* ---------- la tira de película ---------- */
+.nv-pelicula {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 16px 12px;
+  background:
+    repeating-linear-gradient(90deg, #ffffff14 0 10px, transparent 10px 22px) top / 100% 5px no-repeat,
+    repeating-linear-gradient(90deg, #ffffff14 0 10px, transparent 10px 22px) bottom / 100% 5px no-repeat,
+    #0b0c10;
+}
+.nv-pelicula__cuadros { flex: 1; min-width: 0; display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; padding: 4px 2px; }
+.nv-pelicula__cuadro { flex: none; display: flex; flex-direction: column; gap: 4px; width: 132px; text-align: left; }
+.nv-pelicula__foto { display: block; width: 100%; aspect-ratio: 16 / 9; border-radius: 9px; background-size: cover; border: 2px solid transparent; }
+.nv-pelicula__cuadro--obra .nv-pelicula__foto { border: 2px dashed #ffb02088; }
+.nv-pelicula__cuadro--activo .nv-pelicula__foto { border: 2px solid var(--nv-acento); box-shadow: 0 0 0 2px #ffb02040; }
+.nv-pelicula__cuadro--sonando .nv-pelicula__foto { box-shadow: 0 0 0 2px var(--nv-verde); }
+.nv-pelicula__nombre { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--nv-texto); }
+.nv-pelicula__nombre svg { color: var(--nv-acento); flex: none; }
+.nv-pelicula__num { color: var(--color); font-weight: 900; }
+.nv-pelicula__nombre .nv-pelicula__lista { color: var(--nv-verde); }
+.nv-pelicula__ver { flex: none; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12px; font-weight: 800; }
+.nv-pelicula__play { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 50%; background: var(--nv-acento); color: #0f1117; box-shadow: 0 3px 0 #b87a0d; }
+
+/* =========================================================== RESPONSIVE
+   Ancho: la tablet (1280) es la medida; en 1180 (celular acostado) y menos se
+   recorta texto secundario. Alto: debajo de 760 y de 620 todo se compacta. */
+@media (max-width: 1320px) {
+  .nv-camino__paso:not(.nv-camino__paso--actual) .nv-camino__textos > span { display: none; }
+  .nv-camino__union { width: 10px; }
+  .nv-plantillas__lista { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .nv-plantilla { min-height: 0; flex-direction: row; justify-content: flex-start; padding: 6px 8px; }
+  .nv-plantilla__icono { width: 34px; height: 34px; font-size: 18px; }
+}
+@media (max-width: 1240px) {
+  .nv-camino__paso:not(.nv-camino__paso--actual) .nv-camino__textos { display: none; }
+  .nv-camino__paso:not(.nv-camino__paso--actual) { padding-right: 5px; }
+  .nv-mesa .nv-celdas { grid-template-columns: 172px 1fr auto; }
+  .nv-herr__textos span { display: none; }
+  .nv-herr__boton { min-height: 48px; padding-right: 12px; }
+  .nv-emo__textos span { display: none; }
+  .nv-emo__otra { min-width: 40px; }
+  .nv-emo__nombre { font-size: 9.5px; }
+  .nv-linea__obra-textos { display: none; }
+  .nv-linea__base { min-width: 88px; padding: 6px 10px; }
+  .nv-paso-visual { --lado: 50%; }
+  .nv-paso-visual--ancha { --lado: 30%; }
+  .nv-receta .nv-cajitas { grid-template-columns: 200px minmax(0, 1fr); }
+  .nv-receta .nv-caja { grid-template-columns: 112px minmax(0, 1fr); }
+  .nv-receta .nv-celdas--imagen { grid-template-columns: 168px 1fr; }
+  .nv-pelicula__cuadro { width: 112px; }
+}
+@media (max-height: 760px) {
+  .nv-mesa { --celda: 25px; gap: 10px; padding: 10px 12px 12px; }
+  .nv-paso-musica { gap: 8px; padding: 8px 12px 10px; }
+  .nv-linea { min-height: 58px; }
+  .nv-linea__play { width: 40px; height: 40px; }
+  .nv-palabras__texto { max-height: 92px; }
+  .nv-palabra { font-size: 15px; padding: 4px 6px; }
+  .nv-paso-visual__arriba { padding: 8px 12px 8px; gap: 10px; }
+  .nv-pelicula { padding: 6px 12px 8px; }
+  .nv-pelicula__cuadro { width: 104px; }
+  .nv-pelicula__play { width: 40px; height: 40px; }
+}
+@media (max-height: 620px) {
+  .nv-camino { min-height: 52px; padding: 5px 12px 7px; }
+  .nv-camino__circulo { width: 30px; height: 30px; font-size: 13px; }
+  .nv-camino__paso { min-height: 40px; }
+  .nv-camino .nv-boton { min-height: 38px; }
+  .nv-mesa { --celda: 21px; gap: 8px; padding: 8px 12px 10px; }
+  .nv-mesa .nv-celdas { row-gap: 3px; }
+  .nv-mesa__golpes > .nv-mesa__titulo { display: none; }
+  .nv-mesa .nv-fila-son__texto span { display: none; }
+  .nv-mesa .nv-celdas__sonido { padding: 2px 4px; }
+  .nv-mesa .nv-suena { min-height: 26px; }
+  .nv-mesa .nv-suena__perilla { width: 20px; height: 20px; }
+  .nv-palabras { gap: 4px; }
+  .nv-palabras__texto { padding: 5px 8px; max-height: 64px; }
+  .nv-palabra { font-size: 14px; padding: 3px 5px; }
+  .nv-palabras__leyenda { padding: 2px 8px; }
+  .nv-paso-musica { padding: 6px 10px 8px; gap: 6px; }
+  .nv-mesa__nombre { font-size: 18px; }
+  .nv-mesa__escuchar, .nv-mesa__lista { min-height: 34px; }
+  .nv-mesa .nv-solo { width: 26px; height: 26px; }
+  .nv-mesa__pista { display: none; }
+  .nv-linea { min-height: 50px; }
+  .nv-linea__onda, .nv-linea__onda .nv-onda { height: 18px; }
+  .nv-herr__boton { min-height: 42px; }
+  .nv-herr__icono { width: 32px; height: 32px; }
+  .nv-emo__icono { width: 36px; height: 36px; }
+  .nv-emo__circulo { width: 28px; height: 28px; }
+  .nv-emo__nombre { display: none; }
+  .nv-receta { padding: 8px 10px; gap: 8px; }
+  .nv-receta__paso { min-height: 32px; }
+  .nv-receta__listo { padding: 9px 16px; font-size: 14px; }
+  .nv-eleccion { min-height: 46px; }
+  .nv-eleccion__muestra, .nv-eleccion__paleta { width: 52px !important; height: 34px !important; }
+  .nv-receta__nota { display: none; }
+  .nv-pelicula__cuadro { width: 88px; }
+  .nv-pelicula__nombre { font-size: 11px; }
+  .nv-pelicula__play { width: 34px; height: 34px; }
+  .nv-paso-visual__lado .nv-barra-escena .nv-cajitas { display: none; }
+}
+
+/* =========================================================== AJUSTES (22 nov, tarde)
+   Van al final para mandar sobre lo de arriba (también sobre sus @media). */
+
+/* Ventanas sin desenfoque detrás: desenfocar la pantalla entera en cada
+   cuadro era lo que volvía lenta la matriz (y cualquier ventana) en la tablet. */
+.velo { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(5, 7, 11, 0.8); }
+
+/* ---------- plantillas: arriba de la mesa, en una sola fila ---------- */
+.nv-plantillas { padding: 10px 14px 12px; gap: 8px; }
+.nv-plantillas__cabeza { flex-wrap: wrap; }
+.nv-plantillas__aviso { padding: 3px 10px; border-radius: 999px; background: #ff4d6d1f; color: var(--nv-rojo); font-size: 12px; font-weight: 800; }
+.nv-plantillas__lista { grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 8px; }
+.nv-plantilla { flex-direction: column; justify-content: center; min-height: 0; padding: 8px 4px 9px; gap: 6px; }
+.nv-plantilla__icono { width: 40px; height: 40px; font-size: 21px; }
+.nv-plantilla strong { max-width: 100%; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---------- «Marcar escena lista»: que no pase de largo ---------- */
+.nv-mesa__lista {
+  min-height: 46px;
+  gap: 10px;
+  padding: 0 18px 0 12px;
+  border: 2px solid var(--nv-verde) !important;
+  background: #2ee6a814;
+  color: var(--nv-verde);
+  font-size: 15px;
+  font-weight: 900;
+  box-shadow: 0 3px 0 #1d8f69;
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+.nv-mesa__lista:active { transform: translateY(2px); box-shadow: 0 1px 0 #1d8f69; }
+.nv-mesa__lista-caja { width: 22px; height: 22px; flex: none; display: grid; place-items: center; border-radius: 7px; border: 2px solid var(--nv-verde); }
+.nv-mesa__lista--on { background: var(--nv-verde); color: #0f1117; }
+.nv-mesa__lista--on .nv-mesa__lista-caja { background: #0f1117; border-color: #0f1117; color: var(--nv-verde); }
+.nv-mesa__quitar { min-height: 42px; border-radius: 999px; border-color: #ff4d6d66; color: var(--nv-rojo); font-weight: 800; }
+.nv-mesa__quitar:hover { background: #ff4d6d14; }
+
+/* la × de un respiro en la línea de la obra */
+.nv-linea__quitar {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  z-index: 2;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--nv-s3);
+  border: 1.5px solid var(--nv-linea) !important;
+  color: var(--nv-suave);
+}
+.nv-linea__quitar:hover { color: var(--nv-rojo); border-color: var(--nv-rojo) !important; }
+
+/* ---------- sonidos: la onda del escogido, y recortarla ---------- */
+.nv-biblio__onda { flex-basis: 100%; display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1px solid #ffb02033; }
+.nv-biblio__onda-titulo { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--nv-suave); }
+.nv-biblio .recorte { gap: 8px; }
+.nv-biblio .onda { height: 80px; }
+
+/* ---------- Visuales: dónde se está ---------- */
+.nv-contexto {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 16px 0;
+  padding: 8px 10px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--contexto) 13%, var(--nv-s1));
+  border: 1.5px solid color-mix(in srgb, var(--contexto) 55%, transparent);
+}
+.nv-contexto--obra { background: linear-gradient(90deg, #ffb02030, #ffb0200a 60%), var(--nv-s1); border-style: dashed; }
+.nv-contexto__icono { width: 42px; height: 42px; flex: none; display: grid; place-items: center; border-radius: 12px; background: var(--contexto); color: #0f1117; font-size: 20px; font-weight: 900; }
+.nv-contexto__textos { display: flex; flex-direction: column; min-width: 0; line-height: 1.15; flex: none; }
+.nv-contexto__rotulo { font-size: 10.5px; font-weight: 900; letter-spacing: 0.12em; text-transform: uppercase; color: var(--contexto); }
+.nv-contexto__textos strong { max-width: 280px; font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nv-contexto__nota {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 520px;
+  font-size: 12.5px;
+  line-height: 1.3;
+  color: var(--nv-suave);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.nv-contexto__flecha { width: 40px; height: 40px; flex: none; display: grid; place-items: center; border-radius: 50%; background: #0b0c1299; color: var(--nv-texto); }
+.nv-contexto__flecha:hover:not(:disabled) { background: #0b0c12; }
+.nv-contexto__como, .nv-contexto__ir { min-height: 40px; padding: 8px 14px; border-radius: 999px; }
+.nv-contexto__ir { border-color: var(--nv-acento) !important; color: var(--nv-acento); font-weight: 800; }
+/* la receta y la vista previa llevan el color del lugar */
+.nv-paso-visual .nv-receta { box-shadow: inset 0 3px 0 var(--contexto); }
+.nv-paso-visual .nv-vista { box-shadow: 0 0 0 2px color-mix(in srgb, var(--contexto) 70%, transparent); }
+.nv-paso-visual__arriba { padding-top: 10px; }
+
+.nv-receta__paso { position: relative; }
+.nv-receta__propio { width: 7px; height: 7px; flex: none; border-radius: 50%; background: var(--contexto); box-shadow: 0 0 0 2px var(--nv-s2); }
+.nv-receta__encabezado--fila { flex-direction: row; align-items: center; gap: 10px; flex-wrap: wrap; }
+.nv-receta__de-obra { padding: 3px 10px; border-radius: 999px; background: var(--nv-s3); color: var(--nv-suave); font-size: 11.5px; font-weight: 800; }
+.nv-receta__aviso { margin: 0; display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-radius: 10px; background: #ffb02014; color: var(--nv-acento); font-size: 12.5px; font-weight: 700; }
+.nv-eleccion__obra { align-self: flex-start; padding: 2px 8px; border-radius: 999px; background: #ffb02024; color: var(--nv-acento); font-size: 10.5px; font-weight: 800; }
+
+/* ---------- Movimiento: las cajitas quietas, las cajas se desplazan solas ---------- */
+.nv-receta__cuerpo--mover { overflow: hidden; }
+.nv-receta__cuerpo--mover > .nv-cajitas { flex: 1; min-height: 0; grid-template-rows: minmax(0, 1fr); align-items: stretch; }
+.nv-receta__cuerpo--mover .nv-cajitas > .nv-estante { position: static; min-height: 0; overflow-y: auto; }
+.nv-receta__cuerpo--mover .nv-cajitas > .nv-cajas { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-right: 4px; }
+.nv-receta .nv-caja { flex: none; }
+
+/* ---------- la tira de película: centrada y con progreso ---------- */
+.nv-pelicula { gap: 16px; }
+.nv-pelicula__resumen { flex: none; min-width: 74px; display: flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.nv-pelicula__resumen strong { font-size: 18px; font-weight: 900; color: var(--nv-verde); }
+.nv-pelicula__resumen span { font-size: 11px; font-weight: 700; color: var(--nv-suave); }
+.nv-pelicula__cuadros { justify-content: safe center; align-items: flex-end; padding: 14px 4px 2px; }
+.nv-pelicula__separa { width: 1px; flex: none; align-self: stretch; margin: 6px 2px 18px; background: #ffffff1f; }
+.nv-pelicula__cuadro { position: relative; width: 122px; transition: transform 0.15s; }
+.nv-pelicula__cuadro:hover .nv-pelicula__foto { filter: brightness(1.12); }
+.nv-pelicula__cuadro--activo { transform: translateY(-4px); }
+.nv-pelicula__cuadro--activo .nv-pelicula__foto { border: 2px solid var(--nv-acento); box-shadow: 0 0 0 3px #ffb02055, 0 8px 18px #000a; }
+.nv-pelicula__cuadro--activo .nv-pelicula__nombre { color: var(--nv-acento); }
+.nv-pelicula__aqui {
+  position: absolute;
+  top: -13px;
+  left: 50%;
+  z-index: 2;
+  transform: translateX(-50%);
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--nv-acento);
+  color: #0f1117;
+  font-size: 10.5px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.nv-pelicula__foto { position: relative; overflow: hidden; }
+.nv-pelicula__lista { position: absolute; top: 5px; right: 5px; width: 20px; height: 20px; display: grid; place-items: center; border-radius: 50%; background: var(--nv-verde); color: #0f1117; }
+.nv-pelicula__propia { position: absolute; top: 6px; left: 6px; width: 9px; height: 9px; border-radius: 50%; background: var(--color, var(--nv-acento)); box-shadow: 0 0 0 2px #0b0c10; }
+.nv-pelicula__avance { position: absolute; left: 0; bottom: 0; width: 0; height: 5px; background: var(--nv-verde); box-shadow: 0 0 8px var(--nv-verde); }
+.nv-pelicula__pasos { display: flex; gap: 3px; }
+.nv-pelicula__pasos span { flex: 1; height: 3px; border-radius: 2px; background: #ffffff1c; }
+.nv-pelicula__pasos .nv-pelicula__paso--hecho { background: var(--nv-verde); }
+
+@media (max-width: 1240px) {
+  .nv-contexto__nota { font-size: 12px; }
+  .nv-contexto__textos strong { max-width: 200px; font-size: 16px; }
+  .nv-pelicula__cuadro { width: 104px; }
+  .nv-plantilla__icono { width: 34px; height: 34px; font-size: 18px; }
+}
+@media (max-height: 760px) {
+  .nv-plantillas { padding: 8px 12px 10px; }
+  .nv-plantilla { flex-direction: row; justify-content: center; padding: 6px 4px; }
+  .nv-plantilla__icono { width: 30px; height: 30px; font-size: 16px; }
+  .nv-contexto { margin: 8px 12px 0; padding: 6px 8px; }
+  .nv-contexto__icono, .nv-contexto__flecha { width: 36px; height: 36px; }
+  .nv-pelicula__cuadro { width: 100px; }
+}
+@media (max-height: 620px) {
+  .nv-plantillas__cabeza .nv-mesa__pista { display: none; }
+  .nv-plantilla strong { font-size: 11.5px; }
+  .nv-plantilla__icono { display: none; }
+  .nv-mesa__lista { min-height: 38px; font-size: 13px; }
+  .nv-contexto { margin: 6px 10px 0; padding: 4px 6px; gap: 8px; }
+  .nv-contexto__nota { display: none; }
+  .nv-contexto__icono, .nv-contexto__flecha { width: 30px; height: 30px; font-size: 15px; }
+  .nv-contexto__textos strong { font-size: 14px; }
+  .nv-contexto__como, .nv-contexto__ir { min-height: 32px; padding: 4px 10px; font-size: 12px; }
+  .nv-pelicula { padding-top: 2px; padding-bottom: 4px; }
+  .nv-pelicula__cuadros { padding-top: 12px; }
+  .nv-pelicula__cuadro { width: 84px; }
+  .nv-pelicula__resumen strong { font-size: 15px; }
+}
+
+/* ---------- foto de fondo: sin foto, la puesta y borrar ---------- */
+.nv-fondo__sin {
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1.5px solid var(--nv-linea) !important;
+  color: var(--nv-suave);
+  font-size: 13px;
+  font-weight: 700;
+}
+.nv-fondo__sin--activo { border-color: var(--nv-acento) !important; color: var(--nv-acento); background: #ffb02014; }
+.nv-fondo__foto { position: relative; display: inline-flex; }
+.nv-fondo__marca {
+  position: absolute;
+  left: -6px;
+  top: -6px;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--nv-acento);
+  color: #0f1117;
+  pointer-events: none;
+}
+.nv-fondo__borrar {
+  position: absolute;
+  right: -7px;
+  top: -7px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #0f1117;
+  border: 1.5px solid var(--nv-linea) !important;
+  color: var(--nv-suave);
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+  z-index: 1;
+}
+.nv-fondo__borrar:hover { color: var(--nv-rojo); border-color: var(--nv-rojo) !important; }
+.nv-fondo__borrar--seguro { background: var(--nv-rojo); border-color: var(--nv-rojo) !important; color: #fff; }
+.nv-fondo__borrar--seguro:hover { color: #fff; }
+
+/* ---------- «Colores de la foto» ---------- */
+.nv-eleccion__paleta--foto { display: grid; place-items: center; background: var(--nv-s3) center / cover no-repeat; color: var(--nv-tenue); box-shadow: inset 0 0 0 1px #ffffff1f; }
+.nv-eleccion--foto:disabled { opacity: 0.55; cursor: default; }
+.nv-eleccion--foto:disabled:hover { background: var(--nv-s2); }
+.nv-eleccion__falta { font-size: 11px; font-weight: 700; color: var(--nv-tenue); }
+.nv-receta__aviso--foto { background: #2ee6a814; color: var(--nv-verde); }
+
+/* ---------- la barra de la escena: que se note y muestre el avance ---------- */
+.nv-barra-escena { border: 1.5px solid color-mix(in srgb, var(--color) 55%, transparent); background: color-mix(in srgb, var(--color) 7%, var(--nv-s1)); }
+.nv-barra-escena__fila { gap: 12px; justify-content: center; }
+.nv-barra-escena__play { width: 48px; height: 48px; background: var(--color); color: #0f1117; border-radius: 50%; box-shadow: 0 3px 0 color-mix(in srgb, var(--color) 50%, #000); font-size: 18px; }
+.nv-barra-escena__pista { height: 48px; border-radius: 12px; background: #0b0c12; border: 1px solid #ffffff1a; overflow: hidden; }
+.nv-barra-escena__lleno { background: color-mix(in srgb, var(--color) 38%, transparent); border-right: 2px solid var(--color); }
+.nv-barra-escena__cabeza { width: 4px; margin-left: -2px; border-radius: 2px; background: #fff; box-shadow: 0 0 10px #fff, 0 0 0 1px #0008; }
+.nv-barra-escena__cabeza--quieta { background: var(--color); width: 4px; box-shadow: 0 0 0 1px #0008; }
+.nv-barra-escena__reloj { min-width: 98px; padding: 6px 10px; border-radius: 10px; background: #0b0c12; color: var(--nv-texto); font-size: 14px; font-weight: 800; text-align: center; }
+@media (max-height: 760px) { .nv-barra-escena__play { width: 40px; height: 40px; } .nv-barra-escena__pista { height: 40px; } }
+
+/* ---------- matriz: barata de dibujar (256 casillas) ---------- */
+.matriz-rejilla__celdas .celda--matriz { contain: strict; background: #141b24; border: 1px solid #1f2833; transition: none; }
+.matriz-rejilla__celdas .celda--matriz.celda--fuerte { background: #18202a; }
+.matriz-rejilla__celdas .celda--matriz.celda--encendida { background: #5fd4ff; border-color: #5fd4ff; box-shadow: none; }
+.matriz-rejilla__celdas .celda--latido, .matriz-rejilla__celdas .celda--latido::after { animation: none; }
+.matriz-rejilla__celdas .cabeza-rejilla { box-shadow: none; transition: none; will-change: left; background: rgba(255, 255, 255, 0.75); }
+.ventana { box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5); }
+
+/* ---------- pistas animadas ---------- */
+.nv-pista { position: fixed; inset: 0; z-index: 70; height: auto; background: none; pointer-events: none; overflow: visible; }
+.nv-pista__repetir { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: var(--nv-s3); color: var(--nv-acento); font-size: 12px; font-weight: 800; }
+.nv-pista__mano { position: fixed; left: 0; top: 0; color: #fff; filter: drop-shadow(0 2px 3px #000c); opacity: 0; margin: -6px 0 0 -10px; }
+.nv-pista__cajita { position: fixed; left: 0; top: 0; padding: 7px 12px; border-radius: 10px; background: #3ee08f; color: #0f1117; font-weight: 800; font-size: 13px; opacity: 0; box-shadow: 0 6px 16px #000a; animation: nv-pista-cajita 3.4s ease-in-out infinite; }
+.nv-pista__objetivo { position: fixed; border-radius: 12px; border: 2px solid var(--nv-acento); opacity: 0; box-sizing: border-box; animation: nv-pista-objetivo 3.4s ease-in-out infinite; }
+.nv-pista__casilla { position: fixed; border-radius: 6px; background: var(--nv-acento); opacity: 0; box-sizing: border-box; animation: nv-pista-casilla 3.4s ease-in-out infinite; }
+.nv-pista__mano--arrastrar { animation: nv-pista-arrastre 3.4s ease-in-out infinite; }
+.nv-pista__mano--tocar { animation: nv-pista-toque 3.4s ease-in-out infinite; }
+@keyframes nv-pista-arrastre {
+  0% { opacity: 0; transform: translate(var(--x0), var(--y0)); }
+  10% { opacity: 1; transform: translate(var(--x0), var(--y0)); }
+  20% { opacity: 1; transform: translate(var(--x0), var(--y0)) scale(0.88); }
+  65% { opacity: 1; transform: translate(var(--x1), var(--y1)) scale(0.88); }
+  75% { opacity: 1; transform: translate(var(--x1), var(--y1)) scale(1); }
+  90%, 100% { opacity: 0; transform: translate(var(--x1), var(--y1)); }
+}
+@keyframes nv-pista-cajita {
+  0%, 18% { opacity: 0; transform: translate(var(--x0), var(--y0)) translate(-50%, -50%); }
+  22% { opacity: 1; transform: translate(var(--x0), var(--y0)) translate(-50%, -50%); }
+  65% { opacity: 1; transform: translate(var(--x1), var(--y1)) translate(-50%, -50%); }
+  76% { opacity: 0; transform: translate(var(--x1), var(--y1)) translate(-50%, -50%) scale(0.8); }
+  100% { opacity: 0; transform: translate(var(--x1), var(--y1)) translate(-50%, -50%); }
+}
+@keyframes nv-pista-objetivo { 0%, 45% { opacity: 0; } 60%, 80% { opacity: 1; box-shadow: 0 0 0 6px #ffb02033; } 95%, 100% { opacity: 0; } }
+@keyframes nv-pista-toque {
+  0% { opacity: 0; transform: translate(var(--x0), var(--y0)); }
+  8% { opacity: 1; transform: translate(var(--x0), var(--y0)); }
+  14% { transform: translate(var(--x0), var(--y0)) scale(0.82); }
+  20% { transform: translate(var(--x0), var(--y0)) scale(1); }
+  30% { transform: translate(var(--x1, var(--x0)), var(--y1, var(--y0))); }
+  36% { transform: translate(var(--x1, var(--x0)), var(--y1, var(--y0))) scale(0.82); }
+  42% { transform: translate(var(--x1, var(--x0)), var(--y1, var(--y0))) scale(1); }
+  52% { transform: translate(var(--x2, var(--x1, var(--x0))), var(--y2, var(--y1, var(--y0)))); }
+  58% { transform: translate(var(--x2, var(--x1, var(--x0))), var(--y2, var(--y1, var(--y0)))) scale(0.82); }
+  64% { opacity: 1; transform: translate(var(--x2, var(--x1, var(--x0))), var(--y2, var(--y1, var(--y0)))) scale(1); }
+  80%, 100% { opacity: 0; transform: translate(var(--x2, var(--x1, var(--x0))), var(--y2, var(--y1, var(--y0)))); }
+}
+@keyframes nv-pista-casilla { 0% { opacity: 0; } 6% { opacity: 0.95; box-shadow: 0 0 14px var(--nv-acento); } 40% { opacity: 0.95; } 70%, 100% { opacity: 0; } }
+.nv-pista__globo { position: fixed; width: 220px; display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 14px; background: #fffbe9; color: #0f1117; font-size: 13px; font-weight: 700; line-height: 1.3; box-shadow: 0 10px 28px #000b; pointer-events: auto; transform: translateX(-50%); }
+.nv-pista__globo button { align-self: flex-end; padding: 6px 14px; border-radius: 999px; background: #0f1117; color: #fff; font-size: 12px; font-weight: 800; }
+@media (prefers-reduced-motion: reduce) { .nv-pista__mano, .nv-pista__cajita, .nv-pista__objetivo, .nv-pista__casilla { animation-duration: 0.01s; animation-iteration-count: 1; } }
+
+
+/* ---------- pistas: el globo no cambia al pasar el cursor; botón corto para repetirlas ---------- */
+.nv-pista .nv-pista__globo, .nv-pista .nv-pista__globo:hover, .nv-pista .nv-pista__globo:active { background: #fffbe9 !important; color: #0f1117 !important; }
+.nv-pista .nv-pista__globo > span, .nv-pista .nv-pista__globo > span:hover { background: transparent !important; color: #0f1117 !important; }
+.nv-pista .nv-pista__globo button, .nv-pista .nv-pista__globo button:active { background: #0f1117 !important; color: #fff !important; }
+.nv-pista .nv-pista__globo button:hover { background: #2a2f3f !important; color: #fff !important; }
+.nv-pista__repetir { cursor: pointer; border: 0; flex: none; }
+.nv-pista__repetir--corto { width: 34px; height: 34px; justify-content: center; padding: 0; border-radius: 50%; }
+.nv-pelicula .nv-pista__repetir--corto { align-self: center; }
+
+/* la capa de la pista cubre la pantalla: nunca se pinta, ni al pasar el cursor por el globo */
+.nv.nv--incrustado.nv-pista, .nv.nv--incrustado.nv-pista:hover, .nv.nv--incrustado.nv-pista:focus-within { background: transparent !important; background-image: none !important; box-shadow: none !important; }
+
+/* =========================================================== VISUALES · dónde se está y la tira (23 nov) */
+
+/* la vista previa: el rótulo dice qué escena suena mientras corre la obra */
+.nv-vista__chip { font-size: 14px; padding: 7px 12px; }
+.nv-vista__chip--suena { background: #0b0c12ee; box-shadow: 0 0 0 2px var(--nv-verde); }
+.nv-vista__chip--suena > svg { color: var(--nv-verde); }
+
+
+/* ---- la cinta de abajo: una cinta métrica (regla de segundos + escenas alineadas) ---- */
+.nv-pelicula {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 16px 10px;
+  background: #0b0c10;
+  border-top: 1px solid #ffffff17;
+}
+.nv-pelicula > * { align-self: center; }
+.nv-pelicula__ver {
+  flex: none;
+  min-width: 78px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  border-radius: 16px;
+  background: #ffb02018;
+  border: 1.5px solid #ffb02066 !important;
+  color: var(--nv-acento);
+  font-size: 13px;
+  font-weight: 800;
+}
+.nv-pelicula__ver:hover:not(:disabled) { background: #ffb02030; }
+.nv-pelicula__play { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; background: var(--nv-acento); color: #0f1117; box-shadow: 0 3px 0 #b87a0d; }
+.nv-pelicula__ver--suena { background: #2dd4a31f; border-color: var(--nv-verde) !important; color: var(--nv-verde); }
+.nv-pelicula__ver--suena .nv-pelicula__play { background: var(--nv-verde); box-shadow: 0 3px 0 #1a8f6e; }
+.nv-pelicula__ver:disabled { opacity: 0.45; }
+.nv-pelicula__resumen { flex: none; min-width: 84px; display: flex; flex-direction: column; align-items: center; line-height: 1.2; }
+.nv-pelicula__reloj { font-size: 13px; font-weight: 800; color: var(--nv-texto); margin-bottom: 4px; }
+.nv-pelicula__resumen strong { font-size: 18px; font-weight: 900; color: var(--nv-verde); }
+.nv-pelicula__resumen > span:last-child { font-size: 11px; font-weight: 700; color: var(--nv-suave); }
+
+/* la cinta */
+.nv-cinta { flex: 1; min-width: 0; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; padding: 10px 2px 6px; }
+.nv-cinta__interior { display: flex; align-items: stretch; gap: 12px; min-width: min-content; }
+.nv-cinta__tramos { position: relative; flex: 1 0 auto; display: flex; flex-direction: column; gap: 4px; }
+.nv-cinta__reglas, .nv-cinta__filas { display: flex; }
+.nv-cinta__celda { position: relative; flex: 1 1 0; min-width: 88px; box-sizing: border-box; padding: 0 2px; }
+
+/* la regla de segundos: se toca o se arrastra para saltar */
+.nv-cinta__reglas { height: 26px; border-radius: 8px 8px 3px 3px; background: #ffffff0d; cursor: ew-resize; touch-action: none; user-select: none; }
+.nv-cinta__regla { padding: 0; }
+.nv-cinta__marcas {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, #ffffff55 0 1px, transparent 1px) left bottom / calc(100% / var(--dur)) 36% repeat-x,
+    linear-gradient(90deg, #ffffffaa 0 1px, transparent 1px) left bottom / calc(500% / var(--dur)) 62% repeat-x,
+    linear-gradient(90deg, #ffb020 0 2px, transparent 2px) left top / 100% 100% no-repeat;
+}
+.nv-cinta__hora { position: absolute; left: 6px; top: 3px; font-size: 10.5px; font-weight: 800; color: #ffffffbb; font-variant-numeric: tabular-nums; pointer-events: none; }
+
+/* las escenas, justo debajo, tan anchas como duran */
+.nv-cinta__escena {
+  position: relative;
+  width: 100%;
+  height: 64px;
+  display: block;
+  overflow: hidden;
+  border-radius: 10px;
+  border: 2px solid transparent !important;
+  text-align: left;
+  background: #12141c;
+  box-shadow: inset 0 4px 0 var(--color);
+  opacity: 0.82;
+  transition: transform 0.14s, opacity 0.14s;
+}
+.nv-cinta__escena:hover { opacity: 1; }
+.nv-cinta__foto { position: absolute; inset: 0; background-size: cover; }
+.nv-cinta__escena::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, #0b0c10f0 8%, #0b0c1088 55%, #0b0c1033); }
+.nv-cinta__escena--respiro .nv-cinta__foto { background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--color) 20%, #12141c) 0 7px, #12141c 7px 14px) !important; }
+.nv-cinta__lleno { position: absolute; z-index: 1; left: 0; top: 0; bottom: 0; width: 0; background: color-mix(in srgb, var(--color) 48%, transparent); border-right: 3px solid #fff; }
+.nv-cinta__nombre { position: absolute; z-index: 2; top: 9px; left: 7px; right: 6px; display: flex; align-items: center; gap: 5px; }
+.nv-cinta__num { flex: none; width: 20px; height: 20px; display: grid; place-items: center; border-radius: 50%; background: var(--color); color: #0f1117; font-size: 12px; font-weight: 900; }
+.nv-cinta__texto { min-width: 0; font-size: 12.5px; font-weight: 800; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 3px #000c; }
+.nv-cinta__lista { flex: none; margin-left: auto; width: 17px; height: 17px; display: grid; place-items: center; border-radius: 50%; background: var(--nv-verde); color: #0f1117; }
+.nv-cinta__pie { position: absolute; z-index: 2; left: 7px; right: 7px; bottom: 7px; display: flex; align-items: center; gap: 6px; }
+.nv-cinta__pasos { flex: 1; display: flex; gap: 3px; }
+.nv-cinta__pasos span { flex: 1; height: 4px; border-radius: 2px; background: #ffffff33; }
+.nv-cinta__pasos .nv-cinta__paso--hecho { background: var(--nv-verde); }
+.nv-cinta__propia { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--color); box-shadow: 0 0 0 2px #0b0c10; }
+
+/* la escena que se edita: sube y se enmarca; la que suena, con borde verde */
+.nv-cinta__escena--aqui { opacity: 1; transform: translateY(-4px); border-color: #fff !important; box-shadow: inset 0 4px 0 var(--color), 0 0 0 3px var(--color), 0 8px 18px #000b; }
+.nv-cinta__escena--aqui .nv-cinta__texto { color: #fff; }
+.nv-cinta__escena--suena { opacity: 1; }
+.nv-cinta__escena--suena:not(.nv-cinta__escena--aqui) { border-color: var(--nv-verde) !important; }
+
+/* toda la obra: la pieza dorada del comienzo */
+.nv-cinta__obra {
+  flex: none;
+  width: 104px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px;
+  border-radius: 12px;
+  border: 2px solid #ffb020 !important;
+  background: linear-gradient(135deg, #3a0ca3, #b5179e 62%, #d98a0b);
+  color: #fff;
+  box-shadow: inset 0 0 18px #ffb02055;
+  opacity: 0.9;
+  transition: transform 0.14s;
+}
+.nv-cinta__obra:hover { opacity: 1; }
+.nv-cinta__obra svg { color: #ffd166; }
+.nv-cinta__obra strong { font-size: 11.5px; font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase; }
+.nv-cinta__obra .nv-cinta__pasos { flex: none; width: 70%; }
+.nv-cinta__obra--aqui { opacity: 1; transform: translateY(-3px); border-color: #fff !important; box-shadow: 0 0 0 3px #ffb020, 0 8px 18px #000b; }
+
+/* la marca que recorre la cinta, y la que sigue al dedo */
+.nv-cinta__cabezal { position: absolute; z-index: 5; top: -4px; bottom: -2px; width: 3px; margin-left: -1.5px; border-radius: 2px; background: #fff; box-shadow: 0 0 0 1px #0b0c10, 0 0 10px #fff; pointer-events: none; }
+.nv-cinta__cabezal::before { content: ""; position: absolute; top: -1px; left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-top-color: #fff; border-bottom: 0; }
+.nv-cinta__fantasma { position: absolute; z-index: 4; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--nv-acento); pointer-events: none; }
+
+/* ---- Visuales: el botón «Como la obra» del pie, y la foto de fondo primero ---- */
+.nv-receta__como { min-height: 40px; padding: 6px 12px; border-radius: 999px; font-size: 13px; }
+.nv-fondo { gap: 6px; padding: 8px 10px 10px; border-radius: 14px; background: #ffb02010; border: 1.5px solid #ffb02055; }
+.nv-fondo__icono { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 8px; background: var(--nv-acento); color: #0f1117; align-self: center; }
+.nv-fondo__cabeza { align-items: center; gap: 8px; }
+.nv-fondo__cabeza strong { font-size: 15px; color: var(--nv-acento); }
+.nv-fondo__fotos { gap: 6px; }
+.nv-fondo__imagen { width: 56px; height: 40px; }
+.nv-fondo__subir, .nv-fondo__sin { height: 40px; }
+
+/* estilos y colores: tres por fila y más compactos, para que quepan sin tanto scroll */
+.nv-receta__rejilla { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.nv-eleccion { min-height: 48px; gap: 9px; padding: 5px 8px 5px 5px; }
+.nv-eleccion__muestra, .nv-eleccion__paleta { width: 50px !important; height: 36px !important; }
+.nv-eleccion__nombre { font-size: 13px; gap: 2px; }
+.nv-receta__cuerpo { gap: 8px; }
+.nv-receta__titulo { font-size: 17px; }
+
+/* movimiento: el estante de cajitas con más aire, y las cajas un poco más angostas */
+.nv-receta .nv-cajitas { grid-template-columns: 300px minmax(0, 1fr); }
+.nv-receta .nv-caja { grid-template-columns: 124px minmax(0, 1fr); }
+.nv-estante { gap: 10px; padding: 10px 12px; }
+.nv-estante__cajitas--foto { flex-wrap: nowrap; }
+.nv-estante__cajitas--foto .nv-cajita { flex: 1 1 0; min-width: 0; justify-content: center; padding: 4px 6px; }
+.nv-cajita--nueva-foto:not(:first-child) { margin-left: 0; }
+.nv-estante__cajitas .nv-cajita { font-size: 12px; }
+
+@media (max-width: 1320px) {
+  .nv-receta .nv-cajitas { grid-template-columns: 270px minmax(0, 1fr); }
+}
+@media (max-width: 1240px) {
+  .nv-receta .nv-cajitas { grid-template-columns: 250px minmax(0, 1fr); }
+  .nv-receta .nv-caja { grid-template-columns: 108px minmax(0, 1fr); }
+  .nv-cinta__celda { min-width: 76px; }
+  .nv-cinta__obra { width: 88px; }
+}
+@media (max-height: 760px) {
+  .nv-pelicula { padding: 6px 12px 8px; }
+  .nv-cinta { padding-top: 8px; }
+  .nv-cinta__escena { height: 56px; }
+  .nv-cinta__reglas { height: 22px; }
+  .nv-pelicula__play { width: 36px; height: 36px; }
+  .nv-pelicula__ver { min-width: 66px; padding: 6px 8px; font-size: 12px; }
+}
+@media (max-height: 620px) {
+  .nv-cinta__escena { height: 48px; }
+  .nv-cinta__nombre { top: 6px; }
+  .nv-cinta__reglas { height: 20px; }
+  .nv-cinta__hora { top: 2px; font-size: 9.5px; }
+}
+
+/* ---- la cinta vuelve a ser de película: perforaciones arriba y abajo, cuadros enmarcados ---- */
+.nv-pelicula {
+  padding: 16px 16px 16px;
+  border-top: 0;
+  background:
+    repeating-linear-gradient(90deg, #ffffff2e 0 10px, transparent 10px 22px) 0 4px / 100% 6px no-repeat,
+    repeating-linear-gradient(90deg, #ffffff2e 0 10px, transparent 10px 22px) 0 calc(100% - 4px) / 100% 6px no-repeat,
+    linear-gradient(#15161d, #0b0c10 22%, #0b0c10 78%, #15161d);
+  box-shadow: inset 0 1px 0 #ffffff14, inset 0 -1px 0 #ffffff14;
+}
+.nv-cinta { padding: 8px 2px 4px; }
+/* cada escena es un cuadro de la película, con su marco oscuro */
+.nv-cinta__celda:not(.nv-cinta__regla) { padding: 0 3px; }
+.nv-cinta__escena { border-radius: 8px; outline: 3px solid #1c1e28; outline-offset: -1px; }
+.nv-cinta__escena--aqui { outline-color: transparent; }
+.nv-cinta__obra { border-radius: 8px; outline: 3px solid #1c1e28; outline-offset: -1px; }
+.nv-cinta__obra--aqui { outline-color: transparent; }
+
+@media (max-height: 760px) {
+  .nv-pelicula { padding: 14px 12px 14px; }
+}
+@media (max-height: 620px) {
+  .nv-pelicula { padding: 12px 12px 12px; }
+}
+
+/* ---- la familia de fotos del estante: subir y, si hay muchas, se desliza de lado ---- */
+.nv-estante__fotos { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: thin; overscroll-behavior-x: contain; }
+.nv-estante__subir {
+  flex: none;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 68px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  border: 1.5px dashed color-mix(in srgb, var(--color) 70%, transparent);
+  color: var(--color);
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.nv-estante__subir:hover { background: color-mix(in srgb, var(--color) 14%, transparent); }
+.nv-estante__mas { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 8px; background: var(--color); color: #0f1117; font-size: 18px; font-weight: 900; line-height: 1; }
+.nv-estante__foto { flex: none; display: flex; flex-direction: column; gap: 4px; padding: 6px; border-radius: 10px; background: color-mix(in srgb, var(--color) 10%, var(--nv-s1)); }
+.nv-estante__foto .nv-cajita { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; margin: 0; }
+
+/* ---- fotos del estante: cada foto es una cajita entera (miniatura y nombre), como en Figma ---- */
+.nv-estante__fotos { align-items: flex-start; flex-wrap: wrap; overflow-x: visible; gap: 8px 6px; }
+.nv-cajita--foto-entera {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 64px;
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: none;
+  color: var(--nv-suave);
+  font-size: 11px;
+}
+.nv-cajita--foto-entera .nv-cajita__foto {
+  width: 52px;
+  height: 40px;
+  border-radius: 8px;
+  background: center / cover no-repeat #2d3244;
+  border: 2px solid color-mix(in srgb, var(--color) 70%, transparent);
+}
+.nv-cajita--foto-entera.nv-cajita--escogida { box-shadow: none; color: var(--color); }
+.nv-cajita--foto-entera.nv-cajita--escogida .nv-cajita__foto { border-color: #fff; box-shadow: 0 0 0 3px var(--color); }
+.nv-cajita__pie-foto { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nv-caja__canal {
+  border: none;
+  border-radius: 6px;
+  background: #0f111726;
+  color: #0f1117;
+  font: inherit;
+  padding: 1px 2px;
+  cursor: pointer;
+}

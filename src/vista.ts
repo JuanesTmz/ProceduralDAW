@@ -2,16 +2,16 @@
 /**
  * Ajusta la vista a la tablet.
  *
- * La interfaz está pensada para una pantalla de al menos 1366 × 715 px CSS.
- * En una tablet más chica (o con la barra del navegador ocupando alto), el
- * navegador móvil puede trabajar con una «ventana virtual» más ancha y
- * encogerla para que quepa: todo se ve igual que en el computador, solo más
- * pequeño. Aquí se calcula cuánto hay que encoger y se le dice al navegador
- * con la etiqueta viewport. En computador o con la tablet en vertical no se
- * toca nada.
+ * Desde nov. 2026 la interfaz es responsive en horizontal: se acomoda sola
+ * desde unos 1180 × 520 px CSS (la tablet Lenovo, de 1280 × 800, se ve a
+ * tamaño real). En una pantalla más chica —un celular acostado— el navegador
+ * móvil trabaja con una «ventana virtual» de esa medida y la encoge para que
+ * quepa. Aquí se calcula cuánto hay que encoger y se le dice al navegador
+ * con la etiqueta viewport. En computador o con la pantalla en vertical no
+ * se toca nada.
  */
-const ANCHO_BASE = 1366;
-const ALTO_BASE = 715;
+const ANCHO_BASE = 1180;
+const ALTO_BASE = 520;
 
 export function ajustarVista(): void {
   const meta = document.querySelector<HTMLMetaElement>('meta[name="viewport"]');

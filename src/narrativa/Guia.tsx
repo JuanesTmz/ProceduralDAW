@@ -89,6 +89,9 @@ function marcarVisto(clave: string): void {
   }
 }
 
+/** Las pantallas que enseñan con pistas animadas en vez de abrir un video. */
+const CON_PISTAS = new Set<string>(['historia', 'escena-musica', 'escena-visual']);
+
 export function Guia({ pantalla }: { pantalla: Pantalla }) {
   const videos = videosDe(pantalla);
   const [visto, setVisto] = useState(() => leerVistos().has(pantalla));
@@ -106,7 +109,8 @@ export function Guia({ pantalla }: { pantalla: Pantalla }) {
     const yaVisto = leerVistos().has(pantalla);
     setVisto(yaVisto);
     const primero = videosDe(pantalla)[0];
-    if (yaVisto || !primero) return;
+    // Donde hay pistas animadas (coach marks), el video no se abre solo: sigue en el «?».
+    if (yaVisto || !primero || CON_PISTAS.has(pantalla)) return;
     const t = window.setTimeout(() => {
       // Si otro tutorial ya está abierto (una ventana sobre otra), no se apilan.
       if (document.querySelector('.tu-ventana')) return;

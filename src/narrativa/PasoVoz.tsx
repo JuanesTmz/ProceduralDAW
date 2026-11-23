@@ -153,7 +153,7 @@ export function PasoVoz({ alSeguir }: { alSeguir: () => void }) {
                 className="nv-boton nv-boton--primario"
                 onClick={() => (esUltima ? alSeguir() : setIndice(indice + 1))}
               >
-                {esUltima ? 'Ir a Escenas  →' : 'Siguiente escena  →'}
+                {esUltima ? 'Ir a Música  →' : 'Siguiente escena  →'}
               </button>
             </>
           ) : (

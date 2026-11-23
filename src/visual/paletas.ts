@@ -68,3 +68,40 @@ export function rampaCss(colores: string[], x: number, alfa = 1): string {
   const [r, g, b] = rampa(colores, x);
   return alfa >= 1 ? `rgb(${r},${g},${b})` : `rgba(${r},${g},${b},${alfa.toFixed(3)})`;
 }
+
+/**
+ * La paleta especial «Colores de la foto»: cada partícula, figura o línea
+ * toma el color real de la foto donde está. Se elige sola al poner una foto
+ * de fondo; elegir otra paleta tiñe la foto con esos colores.
+ */
+export const PALETA_FOTO = 'foto';
+
+/**
+ * Los colores más presentes de una foto como paleta de cinco, de oscuro a
+ * claro: la usan los fondos y lo que no toma color de un punto de la foto.
+ */
+export function paletaDeFoto(colores: string[]): string[] {
+  const luz = (hex: string) => {
+    const [r, g, b] = aRgb(hex);
+    return 0.299 * r + 0.587 * g + 0.114 * b;
+  };
+  const orden = [...colores].sort((a, b) => luz(a) - luz(b));
+  while (orden.length < 5) orden.push(orden[orden.length - 1] ?? '#808080');
+  return orden.slice(0, 5);
+}
+
+/**
+ * El color de la foto en un punto (r, g, b en 0..1), con los oscuros
+ * levantados: sobre el fondo negro, una zona oscura de la foto no debe
+ * desaparecer del todo. Devuelve 0..255.
+ */
+export function colorVivo(r: number, g: number, b: number): [number, number, number] {
+  const m = Math.max(r, g, b);
+  const k = (0.35 + 0.65 * m) / Math.max(m, 0.2);
+  return [Math.round(Math.min(1, r * k) * 255), Math.round(Math.min(1, g * k) * 255), Math.round(Math.min(1, b * k) * 255)];
+}
+
+/** Mezcla dos colores 0..255: t = 0 da el primero, 1 el segundo. */
+export function mezclarRgb(a: [number, number, number], b: [number, number, number], t: number): [number, number, number] {
+  return [Math.round(a[0] + (b[0] - a[0]) * t), Math.round(a[1] + (b[1] - a[1]) * t), Math.round(a[2] + (b[2] - a[2]) * t)];
+}

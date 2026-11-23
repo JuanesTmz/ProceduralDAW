@@ -308,6 +308,14 @@ export interface Escena {
   reacciones?: ReglaReaccion[];
   /** Los golpes de la imagen propios de esta escena (si no, los de toda la pieza). */
   efectosPasos?: Partial<Record<GolpeVisual, boolean[]>>;
+  /** El equipo marcó la música de esta escena como lista (el camino cuenta «n de m listas»). */
+  listaMusica?: boolean;
+  /** Cuántos pasos de Visuales (estilo, colores, movimiento, golpes) ya dieron por listos aquí. */
+  pasosVisual?: number;
+  /** El estilo propio de esta escena (si no, el de toda la obra). */
+  algoritmo?: NombreAlgoritmo;
+  /** La paleta propia de esta escena (si no, la de toda la obra). */
+  paleta?: string;
 }
 
 export type ReaccionVisual = 'bombo' | 'voz' | 'quieta';
@@ -368,6 +376,57 @@ export interface Historia {
    * estación, en orden). Es la ayuda para escribir el monólogo final.
    */
   estaciones?: string[];
+  /** Lo que el equipo aporta en cada estación del recorrido (texto, audio o foto). */
+  aportes?: AporteHistoria[];
+  /** Estación 2: la oportunidad con la que cada integrante hizo match. */
+  matches?: MatchHistoria[];
+  /** Estación 5: los jóvenes de otros labs a quienes entrevistaron. */
+  personas?: PersonaHistoria[];
+  /** Estación 2: las oportunidades que encontraron; cada integrante dice «yo hice match» en una. */
+  oportunidades?: OportunidadHistoria[];
+}
+
+export interface OportunidadHistoria {
+  id: string;
+  categoria: 'estudiar' | 'crear' | 'participar' | 'trabajar';
+  institucion: string;
+  programa: string;
+  tipo: 'inscripcion' | 'preinscripcion' | 'formulario';
+  /** Quiénes del equipo hicieron match con ella. */
+  personas: string[];
+}
+
+/** Algo que el equipo deja en una estación: una nota, un audio o una foto de la galería. */
+export interface AporteHistoria {
+  id: string;
+  /** Índice de la estación (0 a 5). */
+  estacion: number;
+  /** La pregunta a la que responde ('p0', 'p1'…) o 'vivido' (lo que vivimos aquí) o 'fotos'. */
+  columna: string;
+  tipo: 'texto' | 'audio' | 'foto';
+  texto?: string;
+  url?: string;
+  duracion?: number;
+  /** Quién lo dejó. */
+  autor: string;
+}
+
+export interface MatchHistoria {
+  id: string;
+  /** Quién del equipo hizo el match. */
+  persona: string;
+  programa: string;
+  institucion: string;
+  tipo: 'inscripcion' | 'preinscripcion' | 'formulario';
+}
+
+/** Una persona de otro lab y lo que respondió a las 7 preguntas (texto o nota de voz). */
+export interface PersonaHistoria {
+  id: string;
+  nombre: string;
+  colegio: string;
+  foto?: string;
+  respuestas: { texto?: string; url?: string; duracion?: number }[];
 }
 
 /**
@@ -441,6 +500,8 @@ export interface Visual {
   efectosPasos?: Partial<Record<GolpeVisual, boolean[]>>;
   /** Brillo, zoom, giro… de la obra entera, a mano (0..1). */
   obra?: Record<string, number>;
+  /** Cuántos pasos de Visuales ya dieron por listos para toda la obra. */
+  pasosVisual?: number;
 }
 
 /** Bucle del patrón, o recorrido completo por las secciones. */

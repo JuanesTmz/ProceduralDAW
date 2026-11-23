@@ -17,6 +17,8 @@ import express from 'express';
 import { pipeline } from 'node:stream/promises';
 import { Transform } from 'node:stream';
 import { abrirArchivos } from './archivos.js';
+import { Readable } from 'node:stream';
+import { crearVideos, derivados } from './videos.js';
 import { abrirDatos } from './datos/index.js';
 import { crearSalas } from './salas.js';
 import { COOKIE_ADMIN, adminVigente, crearAdmin, esAdmin, rankingActual, rankingPublico } from './admin.js';
@@ -42,6 +44,9 @@ const limite = crearLimite();
 const datos = await abrirDatos();
 const salas = crearSalas(datos);
 const almacen = await abrirArchivos();
+// Los videos de la galería se pasan a MP4 (ver videos.js); al arrancar, también los que ya estaban.
+const videos = crearVideos({ almacen, datos });
+void videos.prepararTodos();
 
 const app = express();
 // Container Apps pone un proxy delante: la IP real viene en X-Forwarded-For.
@@ -190,7 +195,7 @@ async function recibirArchivo(req, res, { tipos, maximo, carpeta }) {
 }
 
 /** Manda un archivo del almacén; acepta pedidos por pedazos (para adelantar un audio o un video). */
-async function servirArchivo(req, res, ficha, cache) {
+async function servirArchivo(req, res, ficha, cache, descargar = req.query.descargar) {
   res.set({ 'Content-Type': ficha.tipo, 'Accept-Ranges': 'bytes', 'Cache-Control': cache });
   const rango = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range ?? '');
   let desde = 0;
@@ -201,7 +206,7 @@ async function servirArchivo(req, res, ficha, cache) {
     if (desde > hasta) return res.status(416).set('Content-Range', `bytes */${ficha.bytes}`).end();
     res.status(206).set('Content-Range', `bytes ${desde}-${hasta}/${ficha.bytes}`);
   }
-  if (req.query.descargar) res.attachment(String(req.query.descargar));
+  if (descargar) res.attachment(String(descargar));
   res.set('Content-Length', String(hasta - desde + 1));
   if (ficha.bytes === 0) return res.end();
   await pipeline(await almacen.leer(ficha.ruta, desde, hasta - desde + 1), res);
@@ -236,7 +241,11 @@ app.get('/api/archivos/:id', conEquipoOPanel, async (req, res) => {
 app.post('/api/videos', conEquipo, async (req, res) => {
   const video = await recibirArchivo(req, res, { tipos: /^video\//, maximo: 400 * 1024 * 1024, carpeta: 'videos/' });
   if (!video) return;
+  // Lo que se califica es la obra tal como estaba al mandarla: se guarda una copia del proyecto.
+  const obra = salas.proyecto(req.equipoId) ?? JSON.parse((await datos.cargarProyecto(req.equipoId))?.contenido ?? 'null');
+  if (obra) await almacen.guardar(derivados(video.ruta).obra, Readable.from([Buffer.from(JSON.stringify(obra))]), 'application/json');
   await datos.registrarVideo(video);
+  videos.encolar(video);
   void registrar(req.equipoId, 'video-enviado', `${(video.bytes / 1024 / 1024).toFixed(1)} MB${video.persona ? ` por ${video.persona}` : ''}`);
   res.status(201).json({ id: video.id });
 });
@@ -244,10 +253,43 @@ app.post('/api/videos', conEquipo, async (req, res) => {
 app.get('/api/videos/:id', conEquipoOPanel, async (req, res) => {
   const ficha = /^[0-9a-f-]{36}$/.test(req.params.id) ? await datos.videoPorId(req.params.id) : null;
   if (!ficha || (!req.esAdmin && ficha.equipoId !== req.equipoId)) return res.status(404).json({ error: 'No existe.' });
-  await servirArchivo(req, res, ficha, 'private, max-age=3600');
+  // Si ya está el MP4 (ver videos.js), va ese: empieza al instante, se adelanta y se ve en cualquier celular.
+  const listo = req.query.original ? null : await videos.ficha(ficha);
+  if (!listo) return servirArchivo(req, res, ficha, 'private, max-age=60');
+  const nombre = req.query.descargar ? `${String(req.query.descargar).replace(/\.webm$/i, '')}.mp4` : undefined;
+  await servirArchivo(req, res, { ruta: derivados(ficha.ruta).mp4, tipo: 'video/mp4', bytes: listo.mp4Bytes }, 'private, max-age=86400', nombre);
 });
 
-app.use('/api/admin', crearAdmin({ datos, salas, almacen, sesiones, registrar }));
+/**
+ * La obra tal como estaba cuando el equipo mandó este video: el panel la
+ * reproduce en vivo con el motor de la app (ver narrativa/VistaObra.tsx).
+ * Las entregas de antes no tienen copia: va el proyecto de ahora.
+ */
+app.get('/api/videos/:id/obra', conEquipoOPanel, async (req, res) => {
+  const ficha = /^[0-9a-f-]{36}$/.test(req.params.id) ? await datos.videoPorId(req.params.id) : null;
+  if (!ficha || (!req.esAdmin && ficha.equipoId !== req.equipoId)) return res.status(404).json({ error: 'No existe.' });
+  res.set('Cache-Control', 'private, no-cache');
+  try {
+    const trozos = [];
+    for await (const t of await almacen.leer(derivados(ficha.ruta).obra, 0, 64 * 1024 * 1024)) trozos.push(t);
+    return res.json({ proyecto: JSON.parse(Buffer.concat(trozos).toString('utf8')), copia: true });
+  } catch {
+    const enVivo = salas.proyecto(ficha.equipoId);
+    const fila = enVivo ? null : await datos.cargarProyecto(ficha.equipoId);
+    res.json({ proyecto: enVivo ?? (fila ? JSON.parse(fila.contenido) : null), copia: false });
+  }
+});
+
+/** La portada del video para la galería (una imagen, en vez de bajar el video). */
+app.get('/api/videos/:id/portada', conEquipoOPanel, async (req, res) => {
+  const ficha = /^[0-9a-f-]{36}$/.test(req.params.id) ? await datos.videoPorId(req.params.id) : null;
+  if (!ficha || (!req.esAdmin && ficha.equipoId !== req.equipoId)) return res.status(404).json({ error: 'No existe.' });
+  const listo = await videos.ficha(ficha);
+  if (!listo) return res.status(404).json({ error: 'Todavía no está.' });
+  await servirArchivo(req, res, { ruta: derivados(ficha.ruta).jpg, tipo: 'image/jpeg', bytes: listo.jpgBytes }, 'private, max-age=86400');
+});
+
+app.use('/api/admin', crearAdmin({ datos, salas, almacen, sesiones, registrar, videos }));
 
 app.use('/api', (_req, res) => res.status(404).json({ error: 'No existe.' }));
 // Cualquier error de la API responde JSON, no una página.

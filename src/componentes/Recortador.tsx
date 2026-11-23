@@ -19,10 +19,15 @@ interface Props {
   url: string;
   /** Se llama con el audio ya recortado. */
   alGuardar: (recorte: Blob, duracion: number) => void;
-  alDescartar: () => void;
+  /** Sin esto no aparece «Descartar». */
+  alDescartar?: () => void;
+  /** Empezar con el sonido entero elegido (para sonidos de la biblioteca, ya limpios). */
+  entero?: boolean;
+  /** El texto del botón de guardar. */
+  textoGuardar?: string;
 }
 
-export function Recortador({ url, alGuardar, alDescartar }: Props) {
+export function Recortador({ url, alGuardar, alDescartar, entero = false, textoGuardar = '✓ Guardar este sonido' }: Props) {
   const [buffer, setBuffer] = useState<AudioBuffer | null>(null);
   const [picos, setPicos] = useState<number[]>([]);
   const [inicio, setInicio] = useState(0);
@@ -44,7 +49,7 @@ export function Recortador({ url, alGuardar, alDescartar }: Props) {
         if (!vivo) return;
         setBuffer(b);
         setPicos(picosDe(b, COLUMNAS));
-        const bordes = bordesDelSonido(b);
+        const bordes = entero ? { inicio: 0, fin: b.duration } : bordesDelSonido(b);
         setInicio(bordes.inicio);
         setFin(bordes.fin);
       })
@@ -54,7 +59,7 @@ export function Recortador({ url, alGuardar, alDescartar }: Props) {
     return () => {
       vivo = false;
     };
-  }, [url]);
+  }, [url, entero]);
 
   // Dibujar la onda, con lo que queda fuera del recorte en gris.
   useEffect(() => {
@@ -198,11 +203,13 @@ export function Recortador({ url, alGuardar, alDescartar }: Props) {
               disabled={guardando}
               onClick={() => void guardar()}
             >
-              {guardando ? 'Recortando…' : '✓ Guardar este sonido'}
+              {guardando ? 'Recortando…' : textoGuardar}
             </button>
-            <button type="button" className="boton boton--peligro" onClick={alDescartar}>
-              Descartar
-            </button>
+            {alDescartar && (
+              <button type="button" className="boton boton--peligro" onClick={alDescartar}>
+                Descartar
+              </button>
+            )}
           </div>
         </>
       )}

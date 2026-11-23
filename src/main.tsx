@@ -15,6 +15,8 @@ import './estilos/pantalla.css';
 import './estilos/narrativa.css';
 import './estilos/nube.css';
 import './estilos/ajustes.css';
+import './estilos/escenas.css';
+import './estilos/historia.css';
 import App from './App';
 import { ajustarVista } from './vista';
 

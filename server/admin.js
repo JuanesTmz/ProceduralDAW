@@ -48,7 +48,7 @@ export async function rankingActual(datos) {
   return armarRanking(equipos, calificaciones);
 }
 
-export function crearAdmin({ datos, salas, almacen, sesiones, registrar }) {
+export function crearAdmin({ datos, salas, almacen, sesiones, registrar, videos: preparados }) {
   const rutas = express.Router();
   rutas.use(async (req, res, siguiente) => {
     req.admin = await adminVigente(req, sesiones, datos);
@@ -81,7 +81,8 @@ export function crearAdmin({ datos, salas, almacen, sesiones, registrar }) {
       admins,
       equipos: equipos.map((e) => ({ id: e.id, nombre: e.nombre, congelado: Boolean(e.congelado), creado: e.creado })),
       salas: salas.resumen(),
-      videos,
+      // Cada video dice si ya está en MP4 (y tiene portada) o si se está preparando.
+      videos: await Promise.all(videos.map(async (v) => ({ ...v, ...(await preparados.estado(v)) }))),
     });
   });
 
@@ -125,7 +126,10 @@ export function crearAdmin({ datos, salas, almacen, sesiones, registrar }) {
     if (!equipo) return res.status(404).json({ error: 'Ese equipo ya no existe.' });
     salas.expulsar(id);
     const restos = await datos.borrarEquipo(id);
-    for (const ruta of restos) await almacen.borrar(ruta).catch((e) => console.error('No se pudo borrar', ruta, e.message));
+    for (const ruta of restos) {
+      await almacen.borrar(ruta).catch((e) => console.error('No se pudo borrar', ruta, e.message));
+      await preparados.borrarDerivados(ruta);
+    }
     void registrar(null, 'equipo-borrado', `${equipo.nombre} (id ${id}, ${restos.length} archivo(s))`);
     res.json({ ok: true });
   });
@@ -257,6 +261,7 @@ export function crearAdmin({ datos, salas, almacen, sesiones, registrar }) {
     const ruta = await datos.borrarVideo(String(req.params.id));
     if (!ruta) return res.status(404).json({ error: 'Ese video ya no existe.' });
     await almacen.borrar(ruta).catch((e) => console.error('No se pudo borrar', ruta, e.message));
+    await preparados.borrarDerivados(ruta);
     void registrar(null, 'video-borrado', String(req.params.id));
     res.json({ ok: true });
   });

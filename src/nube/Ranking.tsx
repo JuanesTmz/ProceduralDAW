@@ -9,9 +9,9 @@
  */
 import { useEffect, useState } from 'react';
 import { api, type FilaPublica } from './api';
+import { Ic } from './admin/Ic';
 import '../estilos/ranking.css';
 
-const MEDALLAS = ['🥇', '🥈', '🥉'];
 
 /** «4,35» */
 const nota5 = (x: number) => x.toLocaleString('es-CO', { maximumFractionDigits: 2 });
@@ -30,8 +30,8 @@ export function TablaRanking({ filas }: { filas: FilaPublica[] }) {
       <div className="rk-podio">
         {orden.map((f) => (
           <div key={f.nombre} className={`rk-escalon rk-escalon--${f.puesto}`}>
-            <span className="rk-medalla" aria-hidden>
-              {MEDALLAS[f.puesto - 1]}
+            <span className={`rk-medalla rk-medalla--${f.puesto}`}>
+              <Ic n="medalla" tam={30} />
             </span>
             <strong className="rk-escalon__nombre">{f.nombre}</strong>
             <span className="rk-escalon__total">{nota5(f.total)}</span>

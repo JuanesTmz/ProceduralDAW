@@ -37,7 +37,9 @@
   gap: 4px;
   text-align: center;
 }
-.rk-medalla { font-size: 34px; line-height: 1; }
+.rk-medalla { display: grid; place-items: center; line-height: 1; color: #fce905; }
+.rk-medalla--2 { color: #c9d1e0; }
+.rk-medalla--3 { color: #e0915a; }
 .rk-escalon__nombre {
   font-size: 16px;
   max-width: 100%;

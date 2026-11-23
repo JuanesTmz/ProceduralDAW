@@ -20,7 +20,8 @@
  * algoritmo sea barato — no hay que redibujar la historia, ya está pintada.
  */
 import { ruido } from '../perlin';
-import { rampa } from '../paletas';
+import { colorVivo, mezclarRgb, rampa } from '../paletas';
+import type { Muestra } from '../imagenDatos';
 import type { Algoritmo, Entorno, Instancia } from './tipos';
 import { porcentaje } from './tipos';
 
@@ -212,6 +213,7 @@ class Flujo implements Instancia {
       // La imagen tuerce la corriente: las partículas resbalan por el borde
       // de la silueta en vez de atravesarlo.
       let tono = q.tono;
+      let foto: Muestra | null = null;
       if (imgAmt > 0 && e.imagen) {
         const [dx, dy] = e.imagen.pendiente(u, v, proporcion);
         const fuerza = Math.hypot(dx, dy);
@@ -220,8 +222,8 @@ class Flujo implements Instancia {
           const borde = Math.atan2(dx, -dy);
           angulo = angulo * (1 - imgAmt) + borde * imgAmt;
         }
-        const m = e.imagen.muestra(u, v, proporcion);
-        tono = q.tono * (1 - imgAmt) + m.l * imgAmt;
+        foto = e.imagen.muestra(u, v, proporcion);
+        tono = q.tono * (1 - imgAmt) + foto.l * imgAmt;
       }
 
       // Los picos arremolinan lo que pasa cerca.
@@ -279,8 +281,15 @@ class Flujo implements Instancia {
         continue; // sin trazo: si no, deja una raya de lado a lado
       }
 
-      const [r, g, b] = rampa(e.paleta, tono);
-      const brillo = 0.22 + bandas.amplitud * reaccion * 0.5 + p.brillo * 0.5;
+      let rgb = rampa(e.paleta, tono);
+      let brillo = 0.22 + bandas.amplitud * reaccion * 0.5 + p.brillo * 0.5;
+      if (foto) {
+        // Como en GenArt: la partícula toma el color real de la foto donde pasa,
+        // y se apaga donde la foto es oscura. Con la estela, la foto aparece.
+        if (e.colorFoto > 0) rgb = mezclarRgb(rgb, colorVivo(foto.r, foto.g, foto.b), e.colorFoto);
+        brillo = brillo * (1 - imgAmt + imgAmt * (0.25 + 1.1 * foto.l)) + imgAmt * 0.12;
+      }
+      const [r, g, b] = rgb;
       ctx.strokeStyle = `rgba(${r},${g},${b},${Math.min(0.95, brillo).toFixed(3)})`;
       ctx.lineWidth = p.grosor * (0.7 + bandas.golpe * reaccion * 1.2);
       ctx.beginPath();

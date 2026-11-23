@@ -34,6 +34,7 @@ import { algoritmoDe, valoresPorDefecto, type Mando } from '../visual/algoritmos
 import { PALETAS } from '../visual/paletas';
 import { enVivo } from '../visual/enVivo';
 import { motorAudio } from '../audio/motorAudio';
+import { PistaMano, usePista } from './PistaMano';
 import { Escenario } from './Escenario';
 import { useCuadro } from './useCuadro';
 
@@ -299,7 +300,7 @@ function MesaDeCajitas({ soltar, children }: { soltar: (destino: string, cajita:
 }
 
 /** Una cajita de la bandeja: se arrastra a una caja, o se toca y luego se toca la caja. */
-function CajitaArrastrable({ cajita }: { cajita: Cajita }) {
+function CajitaArrastrable({ cajita, entera = false }: { cajita: Cajita; entera?: boolean }) {
   const { escogida, setEscogida, setArrastre, soltar } = useMano();
   const inicio = useRef<{ x: number; y: number } | null>(null);
   const moviendo = useRef(false);
@@ -311,7 +312,7 @@ function CajitaArrastrable({ cajita }: { cajita: Cajita }) {
   return (
     <button
       type="button"
-      className={`nv-cajita ${elegida ? 'nv-cajita--escogida' : ''} ${cajita.foto?.primera ? 'nv-cajita--nueva-foto' : ''}`}
+      className={`nv-cajita ${elegida ? 'nv-cajita--escogida' : ''} ${cajita.foto?.primera ? 'nv-cajita--nueva-foto' : ''} ${entera ? 'nv-cajita--foto-entera' : ''}`}
       style={{ ['--color' as string]: COLOR_GRUPO[cajita.grupo] }}
       onPointerDown={(ev: EventoPuntero<HTMLButtonElement>) => {
         ev.currentTarget.setPointerCapture(ev.pointerId);
@@ -322,7 +323,15 @@ function CajitaArrastrable({ cajita }: { cajita: Cajita }) {
         const i = inicio.current;
         if (!i) return;
         if (!moviendo.current && Math.hypot(ev.clientX - i.x, ev.clientY - i.y) > 8) moviendo.current = true;
-        if (moviendo.current) setArrastre({ cajita, x: ev.clientX, y: ev.clientY });
+        if (!moviendo.current) return;
+        setArrastre({ cajita, x: ev.clientX, y: ev.clientY });
+        // Si las cajas se desplazan solas (Visuales, paso 3), acercarse al borde las corre.
+        const lista = document.querySelector<HTMLElement>('.nv-receta .nv-cajas');
+        if (lista && lista.scrollHeight > lista.clientHeight) {
+          const r = lista.getBoundingClientRect();
+          if (ev.clientY < r.top + 56) lista.scrollTop -= 16;
+          else if (ev.clientY > r.bottom - 56) lista.scrollTop += 16;
+        }
       }}
       onPointerUp={(ev) => {
         if (moviendo.current) {
@@ -340,16 +349,22 @@ function CajitaArrastrable({ cajita }: { cajita: Cajita }) {
         setArrastre(null);
         inicio.current = null;
       }}
-      title={cajita.foto ? `${cajita.foto.nombre} · ${cajita.nombre}` : cajita.nombre}
+      title={entera ? cajita.nombre : cajita.foto ? `${cajita.foto.nombre} · ${cajita.nombre}` : cajita.nombre}
     >
-      {cajita.foto && (
+      {entera ? (
+        <>
+          <span className="nv-cajita__foto" style={cajita.foto?.url ? { backgroundImage: `url(${cajita.foto.url})` } : undefined} />
+          <span className="nv-cajita__pie-foto">{cajita.nombre}</span>
+        </>
+      ) : null}
+      {!entera && cajita.foto && (
         <span
           className="nv-cajita__mini"
           style={cajita.foto.url ? { backgroundImage: `url(${cajita.foto.url})` } : undefined}
           aria-label={cajita.foto.nombre}
         />
       )}
-      {cajita.nombre}
+      {!entera && cajita.nombre}
     </button>
   );
 }
@@ -390,15 +405,95 @@ function Caja({ destino, titulo, alProbar, children, bloqueo }: { destino: strin
 }
 
 /**
+ * La familia de las fotos, siempre arriba del estante: «Subir foto» y, al lado,
+ * cada foto con sus cajitas (luz, color, bordes). Si hay muchas, la fila se
+ * desliza de lado en vez de crecer.
+ */
+function FamiliaFotos({ cajitas }: { cajitas: Cajita[] }) {
+  const { actualizar } = useProyecto();
+  const [leyendo, setLeyendo] = useState(false);
+  const fotos = cajitas.filter((c) => c.foto?.primera);
+
+  const subir = async (archivos: FileList | null) => {
+    if (!archivos?.length) return;
+    setLeyendo(true);
+    try {
+      for (const archivo of Array.from(archivos)) {
+        const datos = await leerArchivoDatos(archivo);
+        const url = crearUrl(archivo);
+        actualizar((p) => {
+          p.archivosDatos.push({ ...datos, nombre: `Foto ${fotosDe(p).length + 1}`, url });
+        });
+      }
+    } finally {
+      setLeyendo(false);
+    }
+  };
+
+  return (
+    <div className="nv-estante__familia" style={{ ['--color' as string]: COLOR_GRUPO.foto }} data-bloqueo="visual:fotos">
+      <span className="nv-estante__titulo">
+        Fotos
+        <span className="nv-estante__cuantas">{fotos.length}</span>
+      </span>
+      <div className="nv-estante__fotos">
+        {/* Cada foto es una sola cajita: la foto entera. En la caja se elige qué se lee de ella (luz, color, bordes). */}
+        {fotos.map((primera) => (
+          <CajitaArrastrable key={primera.clave} cajita={{ ...primera, nombre: primera.foto!.nombre }} entera />
+        ))}
+        <label className="nv-estante__subir" title="Subir fotos de la galería">
+          <span className="nv-estante__mas">{leyendo ? '…' : '+'}</span>
+          {leyendo ? 'Leyendo' : 'Subir'}
+          <input type="file" accept="image/*" multiple hidden onChange={(ev) => void subir(ev.target.files)} />
+        </label>
+      </div>
+    </div>
+  );
+}
+
+/**
  * La bandeja tiene alto fijo: una pestaña por grupo (Relato, Sonido,
  * Instrumentos, Fotos) y una sola fila con las cajitas del grupo elegido.
  * Si no caben (muchas fotos), la fila se desliza de lado en vez de crecer.
  */
-function Bandeja({ grupos }: { grupos: { titulo: string; cajitas: Cajita[] }[] }) {
+function Bandeja({ grupos, estante = false }: { grupos: { titulo: string; cajitas: Cajita[] }[]; estante?: boolean }) {
   const { escogida } = useMano();
   const llenos = grupos.filter((g) => g.cajitas.length > 0);
   const [elegido, setElegido] = useState(llenos[0]?.titulo ?? '');
   const actual = llenos.find((g) => g.titulo === elegido) ?? llenos[0];
+  // El estante muestra todas las familias a la vez, una debajo de otra (Visuales, paso 3).
+  if (estante) {
+    return (
+      <div className="nv-estante">
+        {escogida && (
+          <span className="nv-estante__aviso">
+            Toca una caja para poner «{escogida.foto ? `${escogida.foto.nombre} · ` : ''}
+            {escogida.nombre}»
+          </span>
+        )}
+        {grupos
+          .filter((g) => g.cajitas.length > 0 || g.titulo === 'Fotos')
+          .map((g) =>
+            g.titulo === 'Fotos' ? (
+              <FamiliaFotos key={g.titulo} cajitas={g.cajitas} />
+            ) : (
+              <div key={g.titulo} className="nv-estante__familia" style={{ ['--color' as string]: COLOR_GRUPO[g.cajitas[0].grupo] }}>
+                <span className="nv-estante__titulo">
+                  {g.titulo}
+                  <span className="nv-estante__cuantas">{g.cajitas.length}</span>
+                </span>
+                <div className="nv-estante__cajitas">
+                  {g.cajitas.map((c) => (
+                    <CajitaArrastrable key={c.clave} cajita={c} />
+                  ))}
+                </div>
+              </div>
+            ),
+          )}
+        <span className="nv-estante__pista">Arrastra una cajita a una caja, o tócala y luego toca la caja.</span>
+      </div>
+    );
+  }
   return (
     <div className="nv-bandeja">
       <div className="nv-bandeja__cabeza">
@@ -452,16 +547,8 @@ const CANALES_FOTO: { canal: string; nombre: string }[] = [
 ];
 
 function cajitasDeDatos(p: Proyecto): { titulo: string; cajitas: Cajita[] }[] {
+  // De arriba a abajo: fotos, instrumentos, sonido y relato.
   return [
-    { titulo: 'Relato', cajitas: RELATO },
-    { titulo: 'Sonido', cajitas: SONIDO },
-    {
-      titulo: 'Instrumentos',
-      cajitas: [
-        ...p.patron.filas.map((f) => ({ clave: `golpe:${f.id}`, nombre: f.nombre, grupo: 'instrumento' as const })),
-        { clave: 'golpe:melodia', nombre: 'Melodía', grupo: 'instrumento' },
-      ],
-    },
     {
       titulo: 'Fotos',
       cajitas: fotosDe(p).flatMap((f) =>
@@ -473,6 +560,15 @@ function cajitasDeDatos(p: Proyecto): { titulo: string; cajitas: Cajita[] }[] {
         })),
       ),
     },
+    {
+      titulo: 'Instrumentos',
+      cajitas: [
+        ...p.patron.filas.map((f) => ({ clave: `golpe:${f.id}`, nombre: f.nombre, grupo: 'instrumento' as const })),
+        { clave: 'golpe:melodia', nombre: 'Melodía', grupo: 'instrumento' },
+      ],
+    },
+    { titulo: 'Sonido', cajitas: SONIDO },
+    { titulo: 'Relato', cajitas: RELATO },
   ];
 }
 
@@ -493,10 +589,11 @@ const aceptaColores = (clave: string) => clave === 'emocion' || clave.startsWith
 /** Cuántas cajas se ven de entrada; las demás, con «ver más». */
 const CAJAS_A_LA_VISTA = 9;
 
-function Mover({ escena }: { escena: Escena | null }) {
+export function Mover({ escena, estante = false }: { escena: Escena | null; estante?: boolean }) {
   const { proyecto, actualizar } = useProyecto();
-  const [todas, setTodas] = useState(false);
-  const alg = algoritmoDe(proyecto.visual.algoritmo);
+  const [todas, setTodas] = useState(estante);
+  // Los mandos son los del estilo que se ve: el de la escena si tiene uno propio.
+  const alg = algoritmoDe(escena?.algoritmo ?? proyecto.visual.algoritmo);
   const valores = { ...valoresPorDefecto(alg), ...(proyecto.visual.parametros[alg.id] ?? {}) };
   const barras = useRef(new Map<string, HTMLSpanElement>());
   const conexion = (destino: string) => proyecto.conexionesVisual.find((c) => c.destino === destino);
@@ -557,9 +654,27 @@ function Mover({ escena }: { escena: Escena | null }) {
     obra('saturacion'),
   ];
   const visibles = todas ? cajas : cajas.slice(0, CAJAS_A_LA_VISTA);
+  // La pista enseña a soltar una cajita en una caja; se va cuando ya pusieron una.
+  const puestas = useRef(proyecto.conexionesVisual.length);
+  const pista = usePista('cajitas', estante && proyecto.conexionesVisual.length > puestas.current, 2, undefined, estante);
 
   return (
     <MesaDeCajitas soltar={soltar}>
+      {estante && pista.visible && (
+        <PistaMano
+          modo="arrastrar"
+          etiqueta="Voz"
+          texto="Arrastra una cajita a una caja: así se mueve esa parte de la imagen."
+          origen={() => [...document.querySelectorAll('.nv-estante .nv-cajita')].find((e) => e.textContent?.trim() === 'Voz') ?? document.querySelector('.nv-estante .nv-cajita')}
+          destinos={() => {
+            const lista = document.querySelector('.nv-cajas')?.getBoundingClientRect();
+            const libre = [...document.querySelectorAll<HTMLElement>('.nv-cajas .nv-caja[data-caja]')].filter((e) => e.dataset.caja !== 'paleta' && e.querySelector('.nv-caja__vacia'));
+            const visible = libre.find((e) => lista && e.getBoundingClientRect().top >= lista.top && e.getBoundingClientRect().bottom <= lista.bottom);
+            return visible ? [visible] : [];
+          }}
+          alCerrar={pista.cerrar}
+        />
+      )}
       <div className="nv-cajas">
         {visibles.map(({ destino, titulo, mando, obra: idObra }) => {
           const c = conexion(destino);
@@ -569,7 +684,29 @@ function Mover({ escena }: { escena: Escena | null }) {
               {c && dato ? (
                 <>
                   <span className="nv-caja__puesta" style={{ ['--color' as string]: COLOR_GRUPO[dato.grupo] }}>
-                    <span className="nv-caja__dato">{dato.nombre}</span>
+                    {c.fuente.startsWith('archivo:') && destino !== 'paleta' && c.fuente.split(':').length === 3 ? (
+                      <>
+                        <span className="nv-caja__dato">{dato.nombre.split(' · ')[0]} ·</span>
+                        <select
+                          className="nv-caja__canal"
+                          value={c.fuente.split(':')[2]}
+                          onClick={(ev) => ev.stopPropagation()}
+                          onChange={(ev) => {
+                            const [, id] = c.fuente.split(':');
+                            soltar(destino, { clave: `archivo:${id}:${ev.target.value}`, nombre: '', grupo: 'foto' });
+                          }}
+                          aria-label="Qué se lee de la foto"
+                        >
+                          {CANALES_FOTO.map((k) => (
+                            <option key={k.canal} value={k.canal}>
+                              {k.nombre.toLowerCase()}
+                            </option>
+                          ))}
+                        </select>
+                      </>
+                    ) : (
+                      <span className="nv-caja__dato">{dato.nombre}</span>
+                    )}
                     <button
                       type="button"
                       className="nv-caja__quitar"
@@ -645,13 +782,13 @@ function Mover({ escena }: { escena: Escena | null }) {
             </Caja>
           );
         })}
-        {cajas.length > CAJAS_A_LA_VISTA && (
+        {!estante && cajas.length > CAJAS_A_LA_VISTA && (
           <button type="button" className="nv-caja nv-caja--mas" onClick={() => setTodas(!todas)}>
             {todas ? 'Ver menos' : `+ ${cajas.length - CAJAS_A_LA_VISTA} más`}
           </button>
         )}
       </div>
-      <Bandeja grupos={cajitasDeDatos(proyecto)} />
+      <Bandeja grupos={cajitasDeDatos(proyecto)} estante={estante} />
     </MesaDeCajitas>
   );
 }
@@ -678,10 +815,13 @@ const COLOR_GOLPE: Record<GolpeVisual, string> = {
  * una fila por efecto y una casilla por paso de la vuelta. Se tocan o se
  * pintan arrastrando el dedo; el ▶ de cada fila prueba el efecto.
  */
-function Golpes({ escena }: { escena: Escena | null }) {
+export function Golpes({ escena, pista: conPista = false }: { escena: Escena | null; pista?: boolean }) {
   const { proyecto, actualizar } = useProyecto();
   const n = proyecto.patron.cantidadPasos;
   const pasos = pasosEfectosDe(proyecto, escena);
+  const encendidas = ORDEN_GOLPES.reduce((a, g) => a + (pasos[g] ?? []).filter(Boolean).length, 0);
+  const inicial = useRef(encendidas);
+  const pista = usePista('golpes', conPista && encendidas !== inicial.current, 3, undefined, conPista);
   const cabeza = useRef<HTMLDivElement>(null);
   const pintando = useRef<boolean | null>(null);
   useCabezaLectora(cabeza, n);
@@ -701,6 +841,20 @@ function Golpes({ escena }: { escena: Escena | null }) {
 
   return (
     <div className="nv-golpes-imagen" data-bloqueo={`escena:${escena?.id ?? 'general'}:golpes-imagen`}>
+      {conPista && pista.visible && (
+        <PistaMano
+          modo="tocar"
+          texto="Toca una casilla: en ese momento de la vuelta, la imagen da el golpe. También puedes arrastrar para pintar varias."
+          origen={() => null}
+          destinos={() => {
+            const filas = [...document.querySelectorAll('.nv-golpes-imagen .nv-celdas__pasos')];
+            const fila = filas.find((f) => !f.querySelector('.nv-celda--on')) ?? filas[0];
+            const celdas = fila ? [...fila.querySelectorAll('.nv-celda')] : [];
+            return [1, 5, 9].map((i) => celdas[i]).filter(Boolean);
+          }}
+          alCerrar={pista.cerrar}
+        />
+      )}
       <div className="nv-campo__fila">
         <span className="nv-tenue nv-chico">Toca una casilla: en ese momento de la vuelta, la imagen da el golpe.</span>
         <span className="nv-espacio" />

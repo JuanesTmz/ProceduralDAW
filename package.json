@@ -20,6 +20,8 @@
     "servidor": "npm --prefix server run dev"
   },
   "dependencies": {
+    "@iconify-icons/ph": "2.0.0",
+    "@iconify/react": "6.0.4",
     "fflate": "^0.8.3",
     "fix-webm-duration": "^1.0.6",
     "hydra-synth": "^1.4.0",

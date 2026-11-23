@@ -2,10 +2,10 @@
 /**
  * Calificar y Ranking.
  *
- * - FormularioCalificar: el panel que se abre al lado del video en la Galería.
- *   Un criterio a la vez: qué se mira, la guía 5/3/1 y la nota de 1 a 5 (un
- *   decimal); al final,
- *   el resumen y el comentario. Se guarda solo al dejar de escribir. Cada
+ * - Leccion: la calificación de un equipo como lección de Duolingo, debajo de
+ *   la carta del mazo (pestaña Calificar). Un criterio a la vez: qué se mira,
+ *   las respuestas 5/3/1 y la nota de 1 a 5 (un decimal); al final, el
+ *   resumen y el comentario. Se guarda solo al dejar de escribir. Cada
  *   cuenta de admin es un jurado; si califican varias, se promedia.
  * - RankingAdmin (pestaña Ranking): el promedio de los jurados por equipo y el
  *   interruptor que lo muestra (o lo oculta) en la pantalla de entrada.
@@ -16,6 +16,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { CRITERIOS, GUIAS, leerNota, notaFinal, type Criterio, type FilaRanking, type Notas } from '../../../server/compartido/rubrica.js';
 import { TablaRanking } from '../Ranking';
+import { Ic, icCriterio } from './Ic';
 
 export interface Calificacion {
   equipoId: number;
@@ -78,7 +79,7 @@ export function useCalificaciones() {
 /** Cuántos criterios tienen nota. */
 export const cuantos = (notas: Notas) => CRITERIOS.filter((c) => leerNota(notas[c.id]) !== null).length;
 
-// ---------------------------------------------------------------- Formulario
+// ---------------------------------------------------------------- La lección
 
 /** El color de cada criterio: uno de los 7 de la marca. */
 export const COLOR_CRITERIO: Record<string, string> = {
@@ -104,24 +105,48 @@ function notasDe(textos: Record<string, string>): Notas {
   return notas;
 }
 
+/** Sube o baja media nota (el ajuste fino de los botones ±), sin salirse de 1 a 5. */
+function ajustar(texto: string, delta: number): string {
+  const actual = leerNota(texto) ?? 3;
+  const nueva = Math.min(5, Math.max(1, Math.round((actual + delta) * 10) / 10));
+  return escrito(nueva);
+}
+
 /** El paso después del último criterio: el resumen. */
 const RESUMEN = CRITERIOS.length;
 
 /**
- * La calificación de este jurado a un equipo, un criterio a la vez: qué se
- * mira, la guía 5/3/1 y la nota. Al final, el resumen con el comentario. Va con `key={equipoId}`: al
- * cambiar de equipo empieza de nuevo con lo guardado.
+ * La calificación de un equipo como una lección de Duolingo: arriba la barra
+ * de progreso (7 criterios y el resumen), en el medio la pregunta con tres
+ * respuestas gordas (5 · 3 · 1) y el ajuste fino, y abajo la franja que dice
+ * cómo va y lleva al siguiente. En el resumen, «Lista» manda la carta del
+ * equipo a un lado y trae la siguiente.
+ *
+ * Devuelve sus partes sueltas (progreso, pregunta y pie): el mazo las acomoda
+ * en su rejilla. Va con `key={equipoId}`; lo escrito se guarda solo (y, si
+ * se cambia de equipo antes de guardar, se guarda al salir).
  */
-export function FormularioCalificar({
+export function Leccion({
   equipoId,
+  equipo,
   mia,
   otras,
   alGuardar,
+  alTerminar,
+  alCambiar,
+  textoListo = 'Lista · siguiente equipo',
 }: {
   equipoId: number;
+  equipo: string;
   mia: Calificacion | null;
   otras: Calificacion[];
   alGuardar: () => Promise<void>;
+  /** «Lista»: la calificación está completa y se pasa al siguiente equipo. */
+  alTerminar: () => void;
+  /** Cuántos criterios lleva: el mazo lo usa para dejar (o no) deslizar a «lista». */
+  alCambiar?: (listos: number) => void;
+  /** El botón del resumen completo: en el mazo pasa al siguiente equipo; en la galería cierra. */
+  textoListo?: string;
 }) {
   // Lo que escribe este jurado vive aquí: el refresco de cada pocos segundos no lo pisa.
   const [textos, setTextos] = useState<Record<string, string>>(() =>
@@ -135,12 +160,14 @@ export function FormularioCalificar({
   });
   const [estado, setEstado] = useState<Estado>(null);
   const reloj = useRef<number | undefined>(undefined);
+  /** Lo que falta por guardar, si el reloj todavía no lo mandó. */
+  const pendiente = useRef<{ notas: Notas; comentario: string } | null>(null);
   const vuelta = useRef(0);
   const casilla = useRef<HTMLInputElement>(null);
-  const pasos = useRef<HTMLElement>(null);
 
   const guardar = useCallback(
     (notas: Notas, c: string) => {
+      pendiente.current = null;
       const esta = ++vuelta.current;
       setEstado('guardando');
       pedir('PUT', `equipos/${equipoId}/calificacion`, { notas, comentario: c })
@@ -156,9 +183,21 @@ export function FormularioCalificar({
     [equipoId, alGuardar],
   );
 
-  useEffect(() => () => window.clearTimeout(reloj.current), []);
+  // Al irse a otro equipo (deslizar la carta), lo que estaba por guardarse se guarda ya.
+  const guardarRef = useRef(guardar);
+  guardarRef.current = guardar;
+  useEffect(
+    () => () => {
+      window.clearTimeout(reloj.current);
+      const p = pendiente.current;
+      if (p) guardarRef.current(p.notas, p.comentario);
+    },
+    [],
+  );
+
   const programar = (t: Record<string, string>, c: string, espera = 700) => {
     window.clearTimeout(reloj.current);
+    pendiente.current = { notas: notasDe(t), comentario: c };
     reloj.current = window.setTimeout(() => guardar(notasDe(t), c), espera);
   };
   const escribirNota = (criterio: string, texto: string, espera?: number) => {
@@ -168,199 +207,212 @@ export function FormularioCalificar({
   };
   const ir = (n: number) => {
     // Al cambiar de criterio, lo escrito se guarda sin esperar.
-    programar(textos, comentario, 0);
+    if (pendiente.current) programar(textos, comentario, 0);
     setPaso(Math.max(0, Math.min(RESUMEN, n)));
-    // El criterio nuevo se lee desde arriba.
-    pasos.current?.scrollIntoView({ block: 'nearest' });
   };
 
   const notas = notasDe(textos);
   const final = notaFinal(notas);
   const listos = CRITERIOS.filter((c) => notas[c.id] !== undefined).length;
   const c: Criterio | undefined = CRITERIOS[paso];
-  const mala = c ? textos[c.id].trim() !== '' && notas[c.id] === undefined : false;
+  const nota = c ? notas[c.id] : undefined;
+  const mala = c ? textos[c.id].trim() !== '' && nota === undefined : false;
+  const primeroQueFalta = CRITERIOS.findIndex((x) => notas[x.id] === undefined);
+
+  useEffect(() => alCambiar?.(listos), [listos, alCambiar]);
+
+  // Enter avanza (o, en el resumen completo, da la carta por lista), salvo escribiendo el comentario.
+  const siguiente = () => {
+    if (c) return ir(paso + 1);
+    if (final !== null) {
+      if (pendiente.current) guardar(pendiente.current.notas, pendiente.current.comentario);
+      alTerminar();
+    } else if (primeroQueFalta >= 0) ir(primeroQueFalta);
+  };
+  const siguienteRef = useRef(siguiente);
+  siguienteRef.current = siguiente;
+  useEffect(() => {
+    const tecla = (e: KeyboardEvent) => {
+      if (e.key !== 'Enter' || (e.target as HTMLElement).closest('textarea, button, a')) return;
+      e.preventDefault();
+      siguienteRef.current();
+    };
+    window.addEventListener('keydown', tecla);
+    return () => window.removeEventListener('keydown', tecla);
+  }, []);
+
+  const guardado =
+    estado === 'guardando' ? (
+      <span className="lc-guardado">Guardando…</span>
+    ) : estado === 'guardado' ? (
+      <span className="lc-guardado lc-guardado--ok"><Ic n="check" tam={12} /> Guardado</span>
+    ) : estado === 'error' ? (
+      <button type="button" className="lc-guardado lc-guardado--error" onClick={() => guardar(notas, comentario)}>
+        No se guardó · reintentar
+      </button>
+    ) : null;
+
+  // La franja de abajo: gris mientras falta la respuesta, verde con respuesta, roja si lo escrito no vale.
+  const tono = c ? (mala ? 'mal' : nota !== undefined ? 'bien' : 'nada') : final !== null ? 'oro' : 'nada';
 
   return (
-    <form className="cf" onSubmit={(e) => e.preventDefault()}>
-      <nav ref={pasos} className="cf-pasos" aria-label="Criterios">
-        {CRITERIOS.map((x, i) => {
-          const nota = notas[x.id];
-          return (
-            <button
-              key={x.id}
-              type="button"
-              className={`cf-paso ${i === paso ? 'cf-paso--actual' : ''} ${nota !== undefined ? 'cf-paso--lista' : ''}`}
-              style={{ '--c': COLOR_CRITERIO[x.id] } as CSSProperties}
-              title={`${x.nombre} · ${x.peso} %`}
-              onClick={() => ir(i)}
-            >
-              <span className="cf-paso__icono" aria-hidden>
-                {x.icono}
-              </span>
-              <span className="cf-paso__nota">{nota === undefined ? '·' : escrito(nota)}</span>
-            </button>
-          );
-        })}
+    <>
+      <nav className="lc-progreso" aria-label="Criterios">
+        {CRITERIOS.map((x, i) => (
+          <button
+            key={x.id}
+            type="button"
+            className={`lc-progreso__tramo ${notas[x.id] !== undefined ? 'lc-progreso__tramo--lleno' : ''} ${i === paso ? 'lc-progreso__tramo--aqui' : ''}`}
+            style={{ '--c': COLOR_CRITERIO[x.id] } as CSSProperties}
+            title={`${x.nombre}: ${notas[x.id] === undefined ? 'sin nota' : escrito(notas[x.id])}`}
+            onClick={() => ir(i)}
+          />
+        ))}
         <button
           type="button"
-          className={`cf-paso cf-paso--resumen ${paso === RESUMEN ? 'cf-paso--actual' : ''} ${final !== null ? 'cf-paso--lista' : ''}`}
+          className={`lc-progreso__meta ${paso === RESUMEN ? 'lc-progreso__meta--aqui' : ''} ${final !== null ? 'lc-progreso__meta--lista' : ''}`}
           title="Resumen y comentario"
           onClick={() => ir(RESUMEN)}
         >
-          <span className="cf-paso__icono" aria-hidden>
-            ✓
-          </span>
-          <span className="cf-paso__nota">{listos}/7</span>
+          {final !== null ? <Ic n="estrella" tam={16} /> : `${listos}/7`}
         </button>
       </nav>
 
-      {c ? (
-        <section key={c.id} className="cf-criterio" style={{ '--c': COLOR_CRITERIO[c.id] } as CSSProperties}>
-          <header className="cf-cabeza">
-            <span className="cf-cabeza__icono" aria-hidden>
-              {c.icono}
-            </span>
-            <div className="cf-cabeza__texto">
-              <span className="cf-cabeza__num">
-                Criterio {paso + 1} de 7 · vale {c.peso} %
+      <section className="lc-pregunta">
+        {c ? (
+          <div key={c.id} className="lc-criterio" style={{ '--c': COLOR_CRITERIO[c.id] } as CSSProperties}>
+            <div className="lc-criterio__cabeza">
+              <span className="lc-criterio__icono">
+                <Ic n={icCriterio(c.id)} tam={19} />
               </span>
-              <h3 className="cf-cabeza__nombre">{c.nombre}</h3>
+              <span className="lc-criterio__nombre">{c.nombre}</span>
+              <span className="lc-criterio__peso">vale {c.peso} %</span>
             </div>
-          </header>
-          <p className="cf-pregunta">{c.pregunta}</p>
-
-          <div className="cf-guias" role="group" aria-label="Guía de la rúbrica">
-            {GUIAS.map((g) => (
-              <button
-                key={g.id}
-                type="button"
-                className={`cf-guia cf-guia--${g.id} ${notas[c.id] === g.nota ? 'cf-guia--puesta' : ''}`}
-                onClick={() => {
-                  escribirNota(c.id, String(g.nota), 0);
-                  casilla.current?.focus();
-                }}
-              >
-                <b className="cf-guia__nota">{g.nota}</b>
-                <span className="cf-guia__texto">
-                  <strong>{g.nombre}.</strong> {c.guias[g.id]}
-                </span>
+            <h2 className="lc-criterio__pregunta">{c.pregunta}</h2>
+            <div className="lc-respuestas" role="group" aria-label={`Nota de ${c.nombre}`}>
+              {GUIAS.map((g) => (
+                <button
+                  key={g.id}
+                  type="button"
+                  className={`lc-respuesta lc-respuesta--${g.id} ${nota === g.nota ? 'lc-respuesta--puesta' : ''}`}
+                  aria-pressed={nota === g.nota}
+                  onClick={() => escribirNota(c.id, String(g.nota), 0)}
+                >
+                  <span className="lc-respuesta__nota">{g.nota}</span>
+                  <span className="lc-respuesta__texto">
+                    <strong>{g.nombre}</strong>
+                    {c.guias[g.id]}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <div className="lc-ajuste">
+              <span className="lc-ajuste__rotulo">Ajusta la nota</span>
+              <button type="button" className="lc-ajuste__boton" onClick={() => escribirNota(c.id, ajustar(textos[c.id], -0.5))} aria-label="Media nota menos">
+                  <Ic n="menos" tam={18} />
               </button>
-            ))}
-          </div>
-
-          <div className="cf-poner">
-            <label className="cf-poner__casilla">
-              <span>Nota</span>
               <input
                 ref={casilla}
-                className={`cf-nota ${mala ? 'cf-nota--mala' : ''}`}
+                className={`lc-ajuste__nota ${mala ? 'lc-ajuste__nota--mala' : ''}`}
                 value={textos[c.id]}
                 inputMode="decimal"
                 placeholder="–"
                 maxLength={3}
                 aria-label={`Nota de ${c.nombre}, de 1 a 5`}
                 onChange={(e) => escribirNota(c.id, e.target.value)}
-                onBlur={() => programar(textos, comentario, 0)}
-                onKeyDown={(e) => e.key === 'Enter' && ir(paso + 1)}
+                onBlur={() => pendiente.current && programar(textos, comentario, 0)}
               />
-              <span className="cf-poner__de">de 1 a 5</span>
-            </label>
-            <span className="nv-espacio" />
-            <button
-              type="button"
-              className="nv-boton nv-boton--chico cf-atras"
-              disabled={paso === 0}
-              onClick={() => ir(paso - 1)}
-              aria-label="Criterio anterior"
-            >
-              ‹
-            </button>
-            <button type="button" className="nv-boton nv-boton--chico nv-boton--primario" onClick={() => ir(paso + 1)}>
-              {paso === RESUMEN - 1 ? 'Ver resumen ›' : 'Siguiente ›'}
-            </button>
-          </div>
-          {mala && <p className="cf-aviso">Escribe un número de 1 a 5, con máximo un decimal (por ejemplo 4,5).</p>}
-        </section>
-      ) : (
-        <section className="cf-resumen">
-          <div className="cf-resumen__cabeza">
-            <span className="cf-cabeza__num">Tu calificación</span>
-            <div className="cf-resumen__final">
-              <strong>{final === null ? '–' : nota5(final)}</strong>
-              <span>/ 5</span>
+              <button type="button" className="lc-ajuste__boton" onClick={() => escribirNota(c.id, ajustar(textos[c.id], 0.5))} aria-label="Media nota más">
+                <Ic n="mas" tam={18} />
+              </button>
+              <span className="lc-ajuste__de">de 1 a 5 · se puede escribir con decimal (4,3)</span>
             </div>
-            {final === null && (
-              <span className="cf-falta">
-                {7 - listos === 1 ? 'Falta 1 criterio' : `Faltan ${7 - listos} criterios`}: cuenta en el ranking cuando estén los 7.
-              </span>
-            )}
           </div>
-          <ul className="cf-resumen__lista">
-            {CRITERIOS.map((x, i) => {
-              const nota = notas[x.id];
-              return (
-                <li key={x.id}>
-                  <button
-                    type="button"
-                    className="cf-resumen__fila"
-                    style={{ '--c': COLOR_CRITERIO[x.id] } as CSSProperties}
-                    onClick={() => ir(i)}
-                  >
-                    <span aria-hidden>{x.icono}</span>
-                    <span className="cf-resumen__nombre">{x.nombre}</span>
-                    <span className="cf-resumen__peso">{x.peso} %</span>
-                    <span className="cf-resumen__barra">
-                      <span style={{ width: nota === undefined ? 0 : `${(nota / 5) * 100}%` }} />
-                    </span>
-                    <strong className={nota === undefined ? 'cf-resumen__vacia' : ''}>{nota === undefined ? 'falta' : escrito(nota)}</strong>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-          <label className="cf-comentario">
-            <span className="cf-rotulo">Comentario (opcional, solo lo ven los admins)</span>
-            <textarea
-              value={comentario}
-              placeholder="Lo que más te gustó, lo que le faltó…"
-              rows={3}
-              maxLength={2000}
-              onChange={(e) => {
-                setComentario(e.target.value);
-                programar(textos, e.target.value, 800);
-              }}
-            />
-          </label>
-          {otras.length > 0 && (
-            <div className="cf-otros">
-              <span className="cf-rotulo">Otros jurados</span>
-              {otras.map((o) => {
-                const suya = notaFinal(o.notas);
+        ) : (
+          <div className="lc-resumen">
+            <div className="lc-resumen__final">
+              <span className="lc-resumen__rotulo">Tu nota para {equipo}</span>
+              <strong>{final === null ? '–' : nota5(final)}</strong>
+              <span className="lc-resumen__de">/ 5</span>
+            </div>
+            <ul className="lc-resumen__lista">
+              {CRITERIOS.map((x, i) => {
+                const n = notas[x.id];
                 return (
-                  <span key={o.juez} className="cf-otros__uno" title={o.comentario ?? undefined}>
-                    {o.juezNombre} <b>{suya === null ? `${cuantos(o.notas)}/7` : nota5(suya)}</b>
-                  </span>
+                  <li key={x.id}>
+                    <button type="button" className="lc-resumen__fila" style={{ '--c': COLOR_CRITERIO[x.id] } as CSSProperties} onClick={() => ir(i)}>
+                      <Ic n={icCriterio(x.id)} tam={16} />
+                      <span className="lc-resumen__nombre">{x.corto}</span>
+                      <span className="lc-resumen__barra">
+                        <span style={{ width: n === undefined ? 0 : `${(n / 5) * 100}%` }} />
+                      </span>
+                      <strong className={n === undefined ? 'lc-resumen__vacia' : ''}>{n === undefined ? 'falta' : escrito(n)}</strong>
+                    </button>
+                  </li>
                 );
               })}
-            </div>
-          )}
-        </section>
-      )}
-
-      <footer className="cf-pie">
-        <span className="cf-pie__etiqueta">Nota final</span>
-        <strong className="cf-pie__nota">{final === null ? '–' : nota5(final)}</strong>
-        <span className="cf-pie__de">/ 5</span>
-        <span className="nv-espacio" />
-        {estado === 'guardando' && <span className="cf-estado">Guardando…</span>}
-        {estado === 'guardado' && <span className="cf-estado cf-estado--ok">✓ Guardado</span>}
-        {estado === 'error' && (
-          <button type="button" className="nv-enlace cf-estado cf-estado--error" onClick={() => guardar(notas, comentario)}>
-            No se guardó · reintentar
-          </button>
+            </ul>
+            <label className="lc-resumen__comentario">
+              <span className="lc-resumen__rotulo">Comentario (opcional, solo lo ven los admins)</span>
+              <textarea
+                value={comentario}
+                placeholder="Lo que más te gustó, lo que le faltó…"
+                rows={2}
+                maxLength={2000}
+                onChange={(e) => {
+                  setComentario(e.target.value);
+                  programar(textos, e.target.value, 800);
+                }}
+              />
+            </label>
+            {otras.length > 0 && (
+              <div className="lc-resumen__otros">
+                <span className="lc-resumen__rotulo">Otros jurados</span>
+                {otras.map((o) => {
+                  const suya = notaFinal(o.notas);
+                  return (
+                    <span key={o.juez} className="lc-resumen__otro" title={o.comentario ?? undefined}>
+                      {o.juezNombre} <b>{suya === null ? `${cuantos(o.notas)}/7` : nota5(suya)}</b>
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         )}
+      </section>
+
+      <footer className={`lc-pie lc-pie--${tono}`}>
+        <button type="button" className="lc-pie__atras" disabled={paso === 0} onClick={() => ir(paso - 1)} aria-label="Anterior">
+          <Ic n="atras" tam={20} />
+        </button>
+        <span className="lc-pie__mensaje">
+          {c ? (
+            mala ? (
+              <>
+                <span className="lc-pie__icono"><Ic n="cerrar" tam={18} /></span> Escribe un número de 1 a 5, con máximo un decimal.
+              </>
+            ) : nota !== undefined ? (
+              <>
+                <span className="lc-pie__icono"><Ic n="check" tam={18} /></span> ¡Bien! {c.corto}: <b>{escrito(nota)}</b>
+              </>
+            ) : (
+              'Elige una respuesta o escribe la nota.'
+            )
+          ) : final !== null ? (
+            <>
+              <span className="lc-pie__icono"><Ic n="estrella" tam={18} /></span> ¡Calificación completa! Nota final <b>{nota5(final)}</b>
+            </>
+          ) : (
+            `${7 - listos === 1 ? 'Falta 1 criterio' : `Faltan ${7 - listos} criterios`}: cuenta en el ranking cuando estén los 7.`
+          )}
+        </span>
+        {guardado}
+        <button type="button" className="lc-pie__seguir" onClick={siguiente}>
+          {c ? (nota === undefined && !mala ? 'Saltar' : paso === RESUMEN - 1 ? 'Ver resumen' : 'Siguiente') : final !== null ? textoListo : 'Ir al que falta'}
+        </button>
       </footer>
-    </form>
+    </>
   );
 }
 
@@ -385,42 +437,53 @@ export function RankingAdmin({ equipos }: { equipos: EquipoCal[] }) {
   };
 
   return (
-    <main className="pa-rk">
-      <div className={`nv-tarjeta pa-rk__interruptor ${datos.publico ? 'pa-rk__interruptor--abierto' : ''}`}>
+    <main className="pa-pagina pa-rk">
+      <div className="pa-cabeza">
+        <span className="pa-cabeza__icono">
+          <Ic n="trofeo" tam={28} />
+        </span>
         <div>
-          <strong>{datos.publico ? 'El ranking se ve en la entrada' : 'El ranking está oculto'}</strong>
-          <p className="nv-sub nv-chico">
-            {datos.publico
-              ? 'En la pantalla de entrada aparece «🏆 Ver el ranking» y cualquiera puede verlo. Se actualiza solo.'
-              : 'Solo lo ven los admins. Cuando lo muestres, aparece el botón «🏆 Ver el ranking» en la entrada.'}
-          </p>
+          <h1 className="pa-cabeza__titulo">Ranking</h1>
+          <p className="pa-cabeza__sub">El promedio de los jurados. Un equipo entra cuando tiene los 7 criterios calificados.</p>
         </div>
-        <span className="nv-espacio" />
-        <button
-          type="button"
-          className={`nv-boton ${datos.publico ? 'nv-boton--peligro' : 'nv-boton--primario'}`}
-          disabled={cambiando}
-          onClick={cambiar}
-        >
-          {datos.publico ? 'Ocultar el ranking' : 'Mostrar en la entrada'}
-        </button>
       </div>
 
-      <div className="nv-tarjeta">
-        <span className="nv-etiqueta nv-tenue">Así se ve en la entrada</span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={datos.publico}
+        className={`pa-tarjeta pa-rk__interruptor ${datos.publico ? 'pa-rk__interruptor--abierto' : ''}`}
+        disabled={cambiando}
+        onClick={cambiar}
+      >
+        <span className="pa-rk__texto">
+          <strong>{datos.publico ? 'Se ve en la entrada' : 'Oculto en la entrada'}</strong>
+          <span>
+            {datos.publico
+              ? 'En la entrada aparece «Ver el ranking» y cualquiera puede verlo. Se actualiza solo.'
+              : 'Solo lo ven los admins. Tócalo para que aparezca «Ver el ranking» en la entrada.'}
+          </span>
+        </span>
+        <span className="pa-rk__switch" aria-hidden>
+          <span />
+        </span>
+      </button>
+
+      <div className="pa-tarjeta">
+        <span className="pa-rotulo">Así se ve en la entrada</span>
         <TablaRanking filas={datos.ranking} />
       </div>
 
       {datos.ranking.length > 0 && (
-        <div className="nv-tarjeta pa-rk__detalle">
-          <span className="nv-etiqueta nv-tenue">Detalle por criterio (nota de 1 a 5, promedio de los jurados)</span>
+        <div className="pa-tarjeta pa-rk__detalle">
+          <span className="pa-rotulo">Detalle por criterio (nota de 1 a 5, promedio de los jurados)</span>
           <div className="pa-rk__tabla" role="table">
             <div className="pa-rk__fila pa-rk__fila--cabeza" role="row">
               <span>#</span>
               <span>Equipo</span>
               {CRITERIOS.map((c) => (
                 <span key={c.id} title={c.nombre} style={{ color: COLOR_CRITERIO[c.id] }}>
-                  {c.icono} {c.corto} <span className="nv-tenue">{c.peso}%</span>
+                  <Ic n={icCriterio(c.id)} tam={14} /> {c.corto} <span className="nv-tenue">{c.peso}%</span>
                 </span>
               ))}
               <span>Final</span>

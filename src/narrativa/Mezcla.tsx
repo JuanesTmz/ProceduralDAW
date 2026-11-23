@@ -14,7 +14,7 @@ import { Ventana } from '../componentes/Ventana';
 import { useReproduccion } from './useReproduccion';
 
 /** La voz puede subir por encima de 1: a veces se graba bajito. */
-const MAXIMO_VOZ = 1.6;
+export const MAXIMO_VOZ = 1.6;
 
 export function BotonMezcla() {
   const [abierta, setAbierta] = useState(false);
@@ -91,7 +91,7 @@ export function VentanaMezcla({ alCerrar }: { alCerrar: () => void }) {
   );
 }
 
-function Fila({
+export function Fila({
   nombre,
   detalle,
   color,

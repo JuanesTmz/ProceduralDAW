@@ -21,3 +21,21 @@ export function useCuadro(alCuadro: () => void): void {
     return () => cancelAnimationFrame(id);
   }, []);
 }
+
+const escrito = new WeakMap<HTMLElement, Map<string, string>>();
+
+/**
+ * Escribe un texto ('texto') o una propiedad de estilo en un nodo, pero solo
+ * si cambió. Escribir lo mismo en cada cuadro obliga al navegador a volver a
+ * pintar 60 veces por segundo aunque nada se mueva, y en la tablet (más aún
+ * con una ventana abierta encima) eso vuelve lenta toda la pantalla.
+ */
+export function fijar(nodo: HTMLElement | null | undefined, propiedad: string, valor: string): void {
+  if (!nodo) return;
+  let previos = escrito.get(nodo);
+  if (!previos) escrito.set(nodo, (previos = new Map()));
+  if (previos.get(propiedad) === valor) return;
+  previos.set(propiedad, valor);
+  if (propiedad === 'texto') nodo.textContent = valor;
+  else nodo.style.setProperty(propiedad, valor);
+}

@@ -32,7 +32,8 @@
  * El tiempo se acumula cuadro a cuadro: mover la velocidad cambia el ritmo
  * desde ahora y no hace saltar la rejilla.
  */
-import { rampa } from '../paletas';
+import { colorVivo, mezclarRgb, rampa } from '../paletas';
+import type { Muestra } from '../imagenDatos';
 import type { Algoritmo, Entorno, Instancia } from './tipos';
 import { eleccion, porcentaje } from './tipos';
 
@@ -433,14 +434,20 @@ class Marejada implements Instancia {
         }
         radio *= 1 + reaccion * bandas.agudos * 0.8 * azarCelda;
 
+        let foto: Muestra | null = null;
         if (imgAmt > 0 && e.imagen) {
-          const m = e.imagen.muestra(px / w, py / h, proporcion);
-          radio *= 1 - imgAmt + imgAmt * (0.3 + 1.2 * m.l);
-          tono = tono * (1 - imgAmt) + m.l * imgAmt;
+          foto = e.imagen.muestra(px / w, py / h, proporcion);
+          // La foto decide el tamaño: lo claro crece y lo oscuro casi desaparece,
+          // así el retrato se arma con las figuras.
+          radio *= 1 - imgAmt + imgAmt * (0.12 + 1.45 * foto.l);
+          tono = tono * (1 - imgAmt) + foto.l * imgAmt;
         }
         if (radio < 0.4) continue;
 
-        const [r, g, b] = rampa(e.paleta, tono);
+        let rgb = rampa(e.paleta, tono);
+        // Con «Colores de la foto», cada figura lleva el color de su punto de la foto.
+        if (foto && e.colorFoto > 0) rgb = mezclarRgb(rgb, colorVivo(foto.r, foto.g, foto.b), e.colorFoto);
+        const [r, g, b] = rgb;
         const color = `rgba(${r},${g},${b},${Math.min(1, alfa + brillo).toFixed(3)})`;
         ctx.fillStyle = color;
         ctx.strokeStyle = color;

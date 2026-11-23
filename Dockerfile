@@ -15,6 +15,10 @@ LABEL org.opencontainers.image.title="SONORA" \
       org.opencontainers.image.authors="Juan Esteban Trillos <https://www.linkedin.com/in/juan-esteban-trillos>" \
       org.opencontainers.image.description="Diseñado y desarrollado por Juan Esteban Trillos"
 WORKDIR /app
+# ffmpeg pasa los videos de la galería a MP4 (ver server/videos.js).
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ffmpeg \
+ && rm -rf /var/lib/apt/lists/*
 COPY server/package.json server/package-lock.json ./server/
 RUN npm --prefix server ci --omit=dev
 COPY server ./server

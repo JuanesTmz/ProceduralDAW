@@ -19,7 +19,8 @@ import { useEffect, useRef, useState } from 'react';
 import { motorAudio } from '../audio/motorAudio';
 import { useProyecto } from '../estado/ProyectoContext';
 import { palabrasDe } from '../estado/proyecto';
-import { duracionVoz, intensidadDeEscena, recorrido } from '../estado/escenas';
+import { intensidadDeEscena, recorrido } from '../estado/escenas';
+import { palabrasDichas } from '../estado/ritmoVoz';
 import { paletaDeEmocion, VALOR_REACCION } from '../estado/imagen';
 import { useEnDemo } from '../componentes/demo';
 import { estiloDeObra, pasosEfectosDe, PARAMETROS_OBRA } from '../estado/efectos';
@@ -28,7 +29,7 @@ import { valorDato } from '../estado/datos';
 import { algoritmoDe, valoresPorDefecto } from '../visual/algoritmos';
 import { campoDe } from '../visual/imagenDatos';
 import { motorVisual } from '../visual/motorVisual';
-import { paletaDe } from '../visual/paletas';
+import { PALETA_FOTO, PALETA_POR_DEFECTO, paletaDe, paletaDeFoto } from '../visual/paletas';
 import { enVivo } from '../visual/enVivo';
 import type { Escena, GolpeVisual } from '../estado/tipos';
 
@@ -116,9 +117,25 @@ function EscenarioVivo({ escenaFija, texto = true }: Props) {
       const indice = sonando ? motorAudio.seccionActual : lista.findIndex((e) => e.id === fija.current);
       const escena: Escena | undefined = lista[indice] ?? lista[0];
       const v = p.visual;
-      const alg = algoritmoDe(v.algoritmo);
-      const parametros = { ...valoresPorDefecto(alg), ...(v.parametros[v.algoritmo] ?? {}) };
-      let paleta = v.paletaPropia ?? paletaDe(v.paleta).colores;
+      // Una escena puede tener su propio estilo, paleta y foto; si no, usa los de toda la obra.
+      // Sin escena fija y en silencio se está viendo «toda la obra»: nada propio.
+      const propia = sonando || Boolean(fija.current) ? escena : undefined;
+      const algoritmo = propia?.algoritmo ?? v.algoritmo;
+      const alg = algoritmoDe(algoritmo);
+      const parametros = { ...valoresPorDefecto(alg), ...(v.parametros[algoritmo] ?? {}) };
+      // La foto de fondo que se ve: la de la escena si tiene, si no la de la obra.
+      const campo = campoDe(propia?.imagenUrl ?? v.imagenUrl);
+      // «Colores de la foto»: cada elemento toma el color real de la foto donde está.
+      const idPaleta = propia?.paleta ?? v.paleta;
+      let colorFoto = 0;
+      let paleta: string[];
+      if (idPaleta === PALETA_FOTO) {
+        const deFoto = campo?.colores();
+        paleta = deFoto && deFoto.length > 0 ? paletaDeFoto(deFoto) : paletaDe(PALETA_POR_DEFECTO).colores;
+        colorFoto = campo ? 1 : 0;
+      } else {
+        paleta = propia?.paleta ? paletaDe(propia.paleta).colores : (v.paletaPropia ?? paletaDe(v.paleta).colores);
+      }
       let reaccion = v.reaccion;
       const fraccion = sonando ? motorAudio.fraccionSeccion : 0;
 
@@ -151,6 +168,8 @@ function EscenarioVivo({ escenaFija, texto = true }: Props) {
             if (archivo?.colores && archivo.colores.length >= 2) paleta = archivo.colores;
             else if (deLaFoto && deLaFoto.length >= 2) paleta = deLaFoto;
             else if (c.fuente === 'emocion') paleta = paletaDeEmocion(escena.emocion);
+            // Una cajita en «Colores» manda sobre los colores de la foto: así lo quisieron.
+            colorFoto = 0;
             continue;
           }
           // Un mando: se mueve hacia donde diga el dato, con la fuerza de la cajita.
@@ -190,13 +209,15 @@ function EscenarioVivo({ escenaFija, texto = true }: Props) {
       empujar('retuerce', ['pliegue', 'ondulacion', 'turbulencia', 'remolino', 'complejidad', 'curvas', 'cambio'], 0.5, 2);
 
       motorVisual.actualizar({
-        algoritmo: v.algoritmo,
+        algoritmo,
         parametros,
         paleta,
         alfabeto: v.alfabeto,
         reaccion,
-        imagen: campoDe(escena?.imagenUrl ?? v.imagenUrl),
-        influenciaImagen: v.influenciaImagen,
+        imagen: campo,
+        // La foto tiene que notarse en todos los estilos, no solo en algunos.
+        influenciaImagen: Math.max(0.85, v.influenciaImagen),
+        colorFoto,
         picos: [],
         influenciaDatos: 0,
         movimientoDatos: 0,
@@ -211,10 +232,7 @@ function EscenarioVivo({ escenaFija, texto = true }: Props) {
         return;
       }
       const palabras = palabrasDe(escena.texto);
-      const voz = duracionVoz(escena);
-      const reveladas = sonando
-        ? Math.min(palabras.length, Math.ceil((motorAudio.segundosEnSeccion / Math.max(0.5, voz)) * palabras.length))
-        : palabras.length;
+      const reveladas = sonando ? Math.min(palabras.length, palabrasDichas(escena, motorAudio.segundosEnSeccion)) : palabras.length;
       // Las cajitas de imagen golpean cuando la voz llega a su palabra.
       if (sonando && escena.id === escenaPrevia && escena.cajitas) {
         for (const c of escena.cajitas) {

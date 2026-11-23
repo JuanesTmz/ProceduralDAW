@@ -9,6 +9,7 @@ import type { ReactNode } from 'react';
 import type { Proyecto } from './tipos';
 import { colorDeSonido, crearProyectoInicial } from './proyecto';
 import { escenasASecciones } from './escenas';
+import { alCambiarRitmo } from './ritmoVoz';
 import { aplicarPad } from './patronEscena';
 import { migrarReacciones } from './efectos';
 import { conexionesVisualIniciales } from './imagen';
@@ -33,6 +34,45 @@ const Contexto = createContext<ContextoProyecto | null>(null);
 async function deLaSala(sala: Sala): Promise<Proyecto | null> {
   const enSala = sala.leer();
   return enSala ? (JSON.parse(await rehidratar(JSON.stringify(enSala))) as Proyecto) : null;
+}
+
+/**
+ * Un proyecto guardado, listo para abrir: lo que falte (campos nuevos) sale
+ * del proyecto vacío y se le aplican los cambios de formato de cada época.
+ * Lo usan la tablet al abrir y el panel al reproducir una entrega.
+ */
+export function completarProyecto(guardado: Proyecto): Proyecto {
+  const base = crearProyectoInicial();
+  const completo = {
+    ...base,
+    ...guardado,
+    visual: { ...base.visual, ...guardado.visual },
+    historia: { ...base.historia, ...guardado.historia },
+  };
+  // Ya no hay dos labs: un proyecto de antes abre como cualquiera, con los datos de ejemplo si no tenía.
+  if (completo.track) {
+    completo.track = 'ia';
+    if (completo.conexionesVisual.length === 0) completo.conexionesVisual = conexionesVisualIniciales(completo.visual.algoritmo);
+  }
+  // Proyectos de antes: el cuadro del Pad ahora escribe celdas, así que
+  // lo que el cuadro de cada escena generaba se pasa a celdas propias.
+  for (const e of [...completo.escenas, ...completo.respiros]) {
+    for (const [id, r] of Object.entries(e.reglas ?? {})) {
+      const yaTiene = id === 'melodia' ? Boolean(e.notas) : Boolean(e.golpes?.[id]);
+      if (!yaTiene) aplicarPad(completo, e.id, id, r.golpes, r.azar);
+    }
+  }
+  // Noviembre 2026: la música ya no se mueve con datos, y la voz se graba
+  // solo escena por escena (las grabadas de corrido siguen sonando).
+  completo.conexiones = [];
+  completo.modoVoz = 'escena';
+  // Los golpes de la imagen por sonido pasan a celdas.
+  migrarReacciones(completo);
+  if (!completo.historia.estaciones) completo.historia.estaciones = ['', '', '', '', ''];
+  if (completo.escenas.length > 0) completo.secciones = escenasASecciones(completo);
+  // El color de cada pista sale de su sonido: así las guardadas toman la paleta vigente.
+  for (const f of completo.patron.filas) f.color = colorDeSonido(f.tipo, f.sampleUrl);
+  return completo;
 }
 
 export function ProveedorProyecto({ children }: { children: ReactNode }) {
@@ -66,37 +106,7 @@ export function ProveedorProyecto({ children }: { children: ReactNode }) {
     (sala ? deLaSala(sala) : cargar())
       .then((guardado) => {
         if (!vigente || !guardado) return;
-        const base = crearProyectoInicial();
-        const completo = {
-          ...base,
-          ...guardado,
-          visual: { ...base.visual, ...guardado.visual },
-          historia: { ...base.historia, ...guardado.historia },
-        };
-        // Ya no hay dos labs: un proyecto de antes abre como cualquiera, con los datos de ejemplo si no tenía.
-        if (completo.track) {
-          completo.track = 'ia';
-          if (completo.conexionesVisual.length === 0) completo.conexionesVisual = conexionesVisualIniciales(completo.visual.algoritmo);
-        }
-        // Proyectos de antes: el cuadro del Pad ahora escribe celdas, así que
-        // lo que el cuadro de cada escena generaba se pasa a celdas propias.
-        for (const e of [...completo.escenas, ...completo.respiros]) {
-          for (const [id, r] of Object.entries(e.reglas ?? {})) {
-            const yaTiene = id === 'melodia' ? Boolean(e.notas) : Boolean(e.golpes?.[id]);
-            if (!yaTiene) aplicarPad(completo, e.id, id, r.golpes, r.azar);
-          }
-        }
-        // Noviembre 2026: la música ya no se mueve con datos, y la voz se graba
-        // solo escena por escena (las grabadas de corrido siguen sonando).
-        completo.conexiones = [];
-        completo.modoVoz = 'escena';
-        // Los golpes de la imagen por sonido pasan a celdas.
-        migrarReacciones(completo);
-        if (!completo.historia.estaciones) completo.historia.estaciones = ['', '', '', '', ''];
-        if (completo.escenas.length > 0) completo.secciones = escenasASecciones(completo);
-        // El color de cada pista sale de su sonido: así las guardadas toman la paleta vigente.
-        for (const f of completo.patron.filas) f.color = colorDeSonido(f.tipo, f.sampleUrl);
-        poner(completo);
+        poner(completarProyecto(guardado));
       })
       .finally(() => vigente && setCargando(false));
     return () => {
@@ -163,6 +173,18 @@ export function ProveedorProyecto({ children }: { children: ReactNode }) {
     },
     [poner, sala],
   );
+
+  // Al terminar de escuchar una grabación, las cajitas se acomodan a cómo se dijo cada palabra.
+  useEffect(() => {
+    if (cargando) return;
+    return alCambiarRitmo(() => {
+      const hay = actual.current.escenas.some((e) => e.cajitas && e.cajitas.length > 0);
+      if (!hay || sala?.quieta()) return;
+      const borrador = structuredClone(actual.current) as Proyecto;
+      borrador.secciones = escenasASecciones(borrador);
+      poner(borrador, true);
+    });
+  }, [cargando, sala, poner]);
 
   // Solo en desarrollo: tocar el estado desde la consola para diagnosticar.
   if (import.meta.env.DEV) {

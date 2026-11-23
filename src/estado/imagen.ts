@@ -43,7 +43,8 @@ export const ORDEN_ESTILOS: NombreAlgoritmo[] = ['flujo', 'nebulosa', 'ondas', '
 /** Las conexiones con las que arranca el lab de IA en la imagen. */
 export function conexionesVisualIniciales(algoritmo: NombreAlgoritmo): Conexion[] {
   const ids = new Set(algoritmoDe(algoritmo).mandos.map((m) => m.id));
-  const lista: Conexion[] = [nuevaConexion('emocion', 'paleta')];
+  // La caja «Colores» arranca vacía: así manda la paleta que elijan en Visuales (paso 2).
+  const lista: Conexion[] = [];
   if (ids.has('velocidad')) lista.push(nuevaConexion('voz', 'velocidad'));
   if (ids.has('tamano')) lista.push(nuevaConexion('bombo', 'tamano'));
   return lista;

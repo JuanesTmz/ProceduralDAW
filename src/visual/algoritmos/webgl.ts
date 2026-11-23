@@ -23,6 +23,7 @@ varying vec2 vUv;
 uniform vec3 uC0, uC1, uC2, uC3, uC4;
 uniform sampler2D uImg;
 uniform float uImgAmt, uImgAR, uAspect;
+uniform float uColorFoto;
 
 vec3 mod289(vec3 x){ return x - floor(x * (1.0 / 289.0)) * 289.0; }
 vec2 mod289(vec2 x){ return x - floor(x * (1.0 / 289.0)) * 289.0; }
@@ -63,6 +64,12 @@ vec3 muestraImg(vec2 uv){
   if (uImgAR > uAspect) su.x = 0.5 + (su.x - 0.5) * (uAspect / uImgAR);
   else                  su.y = 0.5 + (su.y - 0.5) * (uImgAR / uAspect);
   return texture2D(uImg, clamp(su, 0.0, 1.0)).rgb;
+}
+/* La foto con su color real (uColorFoto = 1, paleta «Colores de la foto»)
+   o teñida con la paleta según su luz (0, si eligieron otra paleta). */
+vec3 tintarFoto(vec3 foto){
+  float l = dot(foto, vec3(0.299, 0.587, 0.114));
+  return mix(rampa(l), foto, uColorFoto);
 }
 `;
 
@@ -140,7 +147,7 @@ export class TexturaImagen {
   }
 
   /** Sube la foto si cambió y la deja lista para dibujar. */
-  usar(fuente: TexImageSource | null, proporcion: number, cuanto: number, aspecto: number): void {
+  usar(fuente: TexImageSource | null, proporcion: number, cuanto: number, aspecto: number, colorFoto = 1): void {
     const gl = this.gl;
     if (fuente && this.subida !== fuente) {
       gl.bindTexture(gl.TEXTURE_2D, this.textura);
@@ -151,6 +158,7 @@ export class TexturaImagen {
     gl.uniform1f(this.u.uImgAmt, fuente ? cuanto : 0);
     gl.uniform1f(this.u.uImgAR, fuente ? proporcion : 1);
     gl.uniform1f(this.u.uAspect, aspecto);
+    gl.uniform1f(this.u.uColorFoto, colorFoto);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.textura);
   }

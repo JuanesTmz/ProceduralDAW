@@ -119,7 +119,7 @@ void main(){
   float dentro = 1.0 - smoothstep(-0.004, 0.004, d);
   vec3 interior = rampa(clamp(0.38 + 0.5 * c - d * 2.6, 0.0, 1.0));
   if(uImgAmt > 0.001){
-    vec3 foto = muestraImg(uv);
+    vec3 foto = tintarFoto(muestraImg(uv));
     interior = mix(interior, foto * (0.7 + 0.5 * clamp(-d * 8.0, 0.0, 1.0)), uImgAmt);
   }
   col = mix(col, interior, dentro);
@@ -157,7 +157,7 @@ class Pegajoso implements Instancia {
     const { programa, u } = crearPrograma(this.gl, FRAGMENTO, [
       'uTime', 'uFaseB', 'uGiro', 'uCuantas', 'uTam', 'uGrosor', 'uPeg', 'uCont', 'uFigura',
       'uPulso', 'uHue', 'uA', 'uB', 'uAtrib', 'uExtras', 'uNExtras', 'uAspect', 'uC0', 'uC1', 'uC2', 'uC3', 'uC4',
-      'uImg', 'uImgAmt', 'uImgAR',
+      'uImg', 'uImgAmt', 'uImgAR', 'uColorFoto',
     ]);
     this.programa = programa;
     this.u = u;
@@ -203,7 +203,7 @@ class Pegajoso implements Instancia {
     const objetivo = reaccion * (bandas.golpe * 0.9 + bandas.graves * 0.4);
     this.pulso += (objetivo - this.pulso) * Math.min(1, e.delta * (objetivo > this.pulso ? 20 : 5));
 
-    this.imagen.usar(e.imagen?.fuente ?? null, e.imagen?.proporcion ?? 1, e.influenciaImagen, this.ancho / Math.max(1, this.alto));
+    this.imagen.usar(e.imagen?.fuente ?? null, e.imagen?.proporcion ?? 1, e.influenciaImagen, this.ancho / Math.max(1, this.alto), e.colorFoto);
     subirPaleta(gl, this.u, [0, 1, 2, 3, 4].map((i) => aRgb01(e.paleta[i] ?? e.paleta[e.paleta.length - 1])));
 
     // Los graves vuelven las figuras más pegajosas: se puentean desde más lejos.

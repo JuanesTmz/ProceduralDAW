@@ -13,6 +13,7 @@
  */
 import type { NombreEscala } from '../generativo/escalas';
 import { nuevoId, palabrasDe, segundosPorVuelta } from './proyecto';
+import { iniciosDePalabras } from './ritmoVoz';
 import type { Emocion, Escena, Fuerza, Proyecto, Seccion } from './tipos';
 
 /** Límite de la pieza completa, en segundos. */
@@ -297,10 +298,11 @@ export function escenasASecciones(p: Proyecto): Seccion[] {
       escala: perfil.escala,
       emocion: escena.emocion,
       fuerza: escena.fuerza,
-      cajitas: escena.cajitas?.map((c) => ({
-        ...c,
-        t: (c.palabra / Math.max(1, palabrasDe(escena.texto).length)) * duracionVoz(escena),
-      })),
+      // Cada cajita cae cuando de verdad se dice su palabra, según cómo se grabó la voz.
+      cajitas: escena.cajitas?.map((c, _, todas) => {
+        const inicios = todas.length > 0 ? iniciosDePalabras(escena) : [];
+        return { ...c, t: inicios[c.palabra] ?? 0 };
+      }),
       pasosFilas: escena.golpes,
       notas: escena.notas,
       voz:
